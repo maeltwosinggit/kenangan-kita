@@ -1,0 +1,9 @@
+{
+  "extends": "../../packages/config/typescript/base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx"
+  },
+  "include": ["app", "src", "*.ts", "*.tsx"],
+  "exclude": ["node_modules"]
+}
+
