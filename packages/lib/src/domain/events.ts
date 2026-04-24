@@ -51,3 +51,39 @@ export async function getEventByCode(eventCode: string) {
   return (data as EventRow | null) ?? null;
 }
 
+export async function getEventById(eventId: string) {
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase
+    .from("events")
+    .select("id,name,event_date,event_code,reveal_mode,gallery_visible")
+    .eq("id", eventId)
+    .maybeSingle();
+
+  if (error) throw error;
+  return (data as EventRow | null) ?? null;
+}
+
+export async function setEventGalleryVisibility(eventId: string, galleryVisible: boolean) {
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase
+    .from("events")
+    .update({ gallery_visible: galleryVisible })
+    .eq("id", eventId)
+    .select("id,name,event_date,event_code,reveal_mode,gallery_visible")
+    .single();
+
+  if (error) throw error;
+  return data as EventRow;
+}
+
+export async function listAllEvents() {
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase
+    .from("events")
+    .select("id,name,event_date,event_code,reveal_mode,gallery_visible")
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+  return (data as EventRow[]) ?? [];
+}
+

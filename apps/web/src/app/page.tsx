@@ -9,9 +9,15 @@ export default function HomePage() {
       <div className="mt-6 space-y-3">
         <Link
           className="block rounded-lg bg-slate-900 px-4 py-3 text-center text-sm font-medium text-white"
+          href="/admin/events"
+        >
+          Admin Dashboard
+        </Link>
+        <Link
+          className="block rounded-lg border border-slate-300 px-4 py-3 text-center text-sm font-medium"
           href="/admin/events/new"
         >
-          Create Event (Admin)
+          Create Event
         </Link>
         <Link
           className="block rounded-lg border border-slate-300 px-4 py-3 text-center text-sm font-medium"
