@@ -1,6 +1,7 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import { QueryProvider } from "@/providers/query-provider";
+import ConditionalHeader from "@/components/conditional-header";
 
 export const metadata: Metadata = {
   title: "Kenangan Kita",
@@ -11,7 +12,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
-        <QueryProvider>{children}</QueryProvider>
+        <QueryProvider>
+          <ConditionalHeader />
+          {children}
+        </QueryProvider>
       </body>
     </html>
   );

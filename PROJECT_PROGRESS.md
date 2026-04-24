@@ -1,11 +1,11 @@
 # Kenangan Kita MVP Progress Tracker
 
-Last updated: 2026-04-22 (Phase 4 complete)
+Last updated: 2026-04-25 (Phase 5 complete, Phase 6 in scope)
 Owner: Engineering
 
 ## Overall Status
 
-- Current phase: Phase 4 (Admin controls)
+- Current phase: Phase 6 (QR Generation + Share Flow)
 - Project health: In progress
 - Architecture direction: Monorepo (Turbo + pnpm), shared logic in packages, Supabase backend
 
@@ -14,13 +14,15 @@ Owner: Engineering
 - [x] Architecture proposal finalized
 - [x] Monorepo scaffold complete
 - [x] Supabase schema and migrations complete
-- [ ] Event creation flow (admin) complete
-- [ ] Public event access via `event_code` complete
+- [x] Event creation flow (admin) complete
+- [x] Public event access via `event_code` complete
 - [ ] QR generation and scan flow complete
+- [x] Admin auth gate complete (Google SSO + email/password)
 - [x] Web camera capture complete
 - [x] Upload + compression complete
 - [x] Gallery complete
 - [x] Admin controls complete
+- [ ] Upload limits complete
 
 ## Phase Breakdown
 
@@ -55,12 +57,88 @@ Owner: Engineering
 - [x] Delete photo action
 - [x] Toggle gallery visibility
 
+### Phase 5 - Admin Auth Gate (Google SSO + Email/Password)
+
+- [x] Add `/admin/login` page with Google OAuth entry
+- [x] Add email/password sign-in on login page
+- [x] Add OAuth callback handler (`/auth/callback`)
+- [x] Protect `/admin/*` routes via middleware
+- [x] Enforce admin role check via `admin_profiles`
+- [x] Fix redirect host under reverse proxy (ngrok x-forwarded-host)
+- [x] Persistent header with user avatar and sign-out on all authenticated pages
+- [x] Show authenticated email + sign-out option on denied screen
+
+### Phase 6 - QR Generation + Share Flow
+
+- [ ] Generate QR for guest link on event creation success
+- [ ] Add actions: copy link, download QR, open guest page
+- [ ] Show QR block on event admin dashboard
+- [ ] Add print-friendly QR card layout
+
+### Phase 7 - Upload Limits (Admin Controlled)
+
+- [ ] Add event-level config (`upload_limit_enabled`, `max_uploads_per_session`, `max_uploads_total`)
+- [ ] Track guest sessions and upload counts
+- [ ] Enforce limits during upload finalization
+- [ ] Add admin controls and usage counters
+
+### Phase 8 - Event Modes (Preset Setup)
+
+- [ ] Add event mode presets (`wedding`, `party`, `open_house`, `custom`)
+- [ ] Define preset defaults for reveal mode, upload limits, and gallery visibility
+- [ ] Add preset selector in event creation flow
+- [ ] Allow admin override after preset is applied
+
+### Phase 9 - Smart Upload Resilience
+
+- [ ] Add offline queue for pending uploads on web
+- [ ] Add automatic retry with backoff for failed uploads
+- [ ] Add upload status indicators (`queued`, `retrying`, `failed`, `uploaded`)
+- [ ] Add manual retry action for failed uploads
+
+### Phase 10 - Live Slideshow Mode
+
+- [ ] Add public/slideshow route optimized for TV display
+- [ ] Add autoplay with interval controls and pause/resume
+- [ ] Add event filtering and "latest photos first" mode
+- [ ] Add safe refresh/reconnect behavior for long-running display sessions
+
+### Phase 11 - Moderation Enhancements
+
+- [ ] Add bulk select on admin gallery
+- [ ] Add bulk delete / bulk hide actions
+- [ ] Introduce `hidden` moderation state separate from delete
+- [ ] Add lightweight reported photo queue for review
+
+### Phase 12 - Download / Export
+
+- [ ] Add event export action in admin dashboard
+- [ ] Generate ZIP package by event
+- [ ] Support filename structure options (date/name)
+- [ ] Add export job status and downloadable link
+
+### Phase 13 - Guest Engagement
+
+- [ ] Add optional reactions (e.g. ❤️) without login
+- [ ] Add "Thanks" completion screen with CTA to gallery
+- [ ] Add simple engagement counters per photo
+- [ ] Add admin toggle to enable/disable engagement features
+
 ## Immediate Next Tasks
 
-1. Validate full admin flow (create event -> dashboard -> toggle -> delete).
-2. Add QR code generation and deep link on admin event creation.
-3. Tighten RLS/storage policies for production-safe guest uploads.
-4. Add optional admin auth gate for dashboard routes.
+1. Seed `admin_profiles` with initial admin user IDs (for new email/password accounts).
+2. Build Phase 6 QR generation and share flow.
+3. Build Phase 7 upload limits and enforcement path.
+4. Execute enhancement phases in order: Phase 8 -> Phase 13.
+
+## Product Enhancements Backlog (Mapped to Phases)
+
+1. Event modes presets (Phase 8).
+2. Offline upload queue + retry (Phase 9).
+3. Live slideshow mode (Phase 10).
+4. Moderation workflow upgrades (Phase 11).
+5. Export/ZIP capability (Phase 12).
+6. Guest engagement features (Phase 13).
 
 ## Risks / Notes
 
@@ -70,4 +148,6 @@ Owner: Engineering
 - Camera UX refinement applied: prevent re-upload spam, provide next actions after success, and tune stream constraints for smoother preview.
 - Gallery phase implemented: paginated photo loading, mobile-first grid, and reveal-mode gate based on event settings/date.
 - Admin phase implemented: per-event dashboard, gallery visibility toggle, and photo soft-delete moderation flow.
+- Phase 5 implemented and verified: Google SSO + email/password login, middleware auth gate, admin_profiles role enforcement, reverse-proxy-safe redirects, persistent header with avatar.
+- Enhancement roadmap formalized into Phases 8-13 for incremental delivery.
 

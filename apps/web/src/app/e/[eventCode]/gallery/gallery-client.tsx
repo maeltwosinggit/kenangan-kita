@@ -55,6 +55,8 @@ export function GalleryClient({ eventCode }: Props) {
     );
   }
 
+  if (!query.data) return null;
+
   const firstPage = query.data.pages[0];
   if (!firstPage.galleryOpen) {
     return (
@@ -64,7 +66,7 @@ export function GalleryClient({ eventCode }: Props) {
     );
   }
 
-  const items = query.data.pages.flatMap((page) => page.items);
+  const items = query.data!.pages.flatMap((page) => page.items);
   if (items.length === 0) {
     return <p className="mt-4 text-sm text-slate-600">No photos yet. Be the first to upload!</p>;
   }
