@@ -1,5 +1,6 @@
 import "./globals.css";
 import type { Metadata } from "next";
+import { Analytics } from "@vercel/analytics/next";
 import { QueryProvider } from "@/providers/query-provider";
 import ConditionalHeader from "@/components/conditional-header";
 
@@ -19,6 +20,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <ConditionalHeader />
           {children}
         </QueryProvider>
+        <Analytics />
       </body>
     </html>
   );
