@@ -51,14 +51,18 @@ export function CameraCaptureClient({ eventCode }: Props) {
 
     const camera = new WebCameraAdapter(video, canvas);
     setAdapter(camera);
+
+    // 'playing' fires when the browser is actually rendering frames.
+    // 'timeupdate' is a fallback — fires repeatedly as the live stream advances.
+    const onReady = () => setIsCameraReady(true);
+    video.addEventListener("playing", onReady);
+    video.addEventListener("timeupdate", onReady);
+
     camera.start().catch((err) => {
-      // Don't show minor play interruption errors if camera is working
-      if (err instanceof Error && 
-          (err.message.includes('interrupted') || 
+      if (err instanceof Error &&
+          (err.message.includes('interrupted') ||
            err.message.includes('aborted') ||
            err.message.includes('play()'))) {
-        // Camera is likely working, just had a play interruption
-        console.warn('Camera play interrupted:', err.message);
         return;
       }
       setError(err instanceof Error ? err.message : "Camera permission required");
@@ -74,6 +78,8 @@ export function CameraCaptureClient({ eventCode }: Props) {
 
     return () => {
       camera.stop();
+      video.removeEventListener("playing", onReady);
+      video.removeEventListener("timeupdate", onReady);
       document.removeEventListener('visibilitychange', onVisibilityChange);
     };
   }, []);
@@ -88,6 +94,7 @@ export function CameraCaptureClient({ eventCode }: Props) {
     if (!adapter || flipPhase !== "idle") return;
     const next = facingMode === "environment" ? "user" : "environment";
     setFlipPhase("out");
+    setIsCameraReady(false);
     await new Promise((r) => setTimeout(r, 180));
     try {
       await adapter.switchCamera(next);
