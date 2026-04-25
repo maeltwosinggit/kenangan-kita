@@ -1,19 +1,12 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-// Paths that never require authentication
-function isPublicPath(pathname: string): boolean {
-  return (
-    pathname === "/admin/login" ||
-    pathname.startsWith("/e/") ||
-    pathname.startsWith("/auth/")
-  );
-}
-
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (isPublicPath(pathname)) {
+  const isAdminPath = pathname.startsWith("/admin");
+  const isAdminLoginPath = pathname === "/admin/login";
+  if (!isAdminPath || isAdminLoginPath || pathname.startsWith("/auth/")) {
     return NextResponse.next({ request });
   }
 
@@ -54,32 +47,28 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // Authenticated — check admin role for /admin/* paths
-  if (pathname.startsWith("/admin")) {
-    let isAdmin = false;
-    try {
-      const { data: profile } = await supabase
-        .from("admin_profiles")
-        .select("role")
-        .eq("user_id", user.id)
-        .maybeSingle();
-      isAdmin = profile?.role === "admin";
-    } catch {
-      // Profile check failed — deny access
-    }
+  let isAdmin = false;
+  try {
+    const { data: profile } = await supabase
+      .from("admin_profiles")
+      .select("role")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    isAdmin = profile?.role === "admin";
+  } catch {
+    // Profile check failed — deny access
+  }
 
-    if (!isAdmin) {
-      const deniedUrl = new URL("/admin/login", request.url);
-      deniedUrl.searchParams.set("denied", "1");
-      return NextResponse.redirect(deniedUrl);
-    }
+  if (!isAdmin) {
+    const deniedUrl = new URL("/admin/login", request.url);
+    deniedUrl.searchParams.set("denied", "1");
+    return NextResponse.redirect(deniedUrl);
   }
 
   return response;
 }
 
 export const config = {
-  // Run on all paths except Next.js internals and static assets
-  matcher: ["/((?!_next/static|_next/image|favicon\\.ico).*)"]
+  matcher: ["/admin/:path*"]
 };
 

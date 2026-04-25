@@ -1,19 +1,11 @@
-import { redirect } from "next/navigation";
+"use client";
 
-type Props = { searchParams: Promise<Record<string, string>> };
+import Image from "next/image";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { useSearchParams, useRouter } from "next/navigation";
+import { useState, Suspense } from "react";
 
-export default async function AdminLoginRedirect({ searchParams }: Props) {
-  const params = await searchParams;
-  const qs = new URLSearchParams(params).toString();
-  redirect(qs ? `/login?${qs}` : "/login");
-}
-
-// ---- original file content kept below for reference only ----
-// This route now redirects to /login. Do not add logic here.
-
-const _unused = "";
-
-function AdminLoginContent() {
+function LoginContent() {
   const params = useSearchParams();
   const router = useRouter();
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -21,18 +13,7 @@ function AdminLoginContent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
-  const denied = params.get("denied") === "1";
-  const nextPath = params.get("next") || "/admin/events";
-
-  useEffect(() => {
-    if (denied) {
-      const supabase = getSupabaseBrowserClient();
-      supabase.auth.getUser().then(({ data }) => {
-        setUserEmail(data.user?.email ?? null);
-      });
-    }
-  }, [denied]);
+  const nextPath = params.get("next") || "/";
 
   const onGoogleSignIn = async () => {
     setGoogleLoading(true);
@@ -52,7 +33,7 @@ function AdminLoginContent() {
     setEmailLoading(true);
     setError(null);
     const supabase = getSupabaseBrowserClient();
-    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
     if (signInError) {
       setError(signInError.message);
       setEmailLoading(false);
@@ -60,13 +41,6 @@ function AdminLoginContent() {
     }
     router.push(nextPath);
     router.refresh();
-  };
-
-  const onSignOut = async () => {
-    const supabase = getSupabaseBrowserClient();
-    await supabase.auth.signOut();
-    setUserEmail(null);
-    window.location.reload();
   };
 
   const anyLoading = googleLoading || emailLoading;
@@ -84,22 +58,8 @@ function AdminLoginContent() {
       />
 
       <section className="w-full rounded-xl border border-slate-200 bg-white p-5">
-        <h1 className="text-lg font-semibold">Admin Login</h1>
-        <p className="mt-1 text-sm text-slate-500">Sign in to access admin pages.</p>
-
-        {denied && (
-          <div className="mt-3 rounded border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
-            <p>Your account is not authorized as admin.</p>
-            {userEmail && <p className="mt-0.5 font-medium">{userEmail}</p>}
-            <button
-              type="button"
-              onClick={onSignOut}
-              className="mt-2 text-xs underline underline-offset-2"
-            >
-              Sign out and try another account
-            </button>
-          </div>
-        )}
+        <h1 className="text-lg font-semibold">Sign In</h1>
+        <p className="mt-1 text-sm text-slate-500">Sign in to your Kenangan Kita account.</p>
 
         {error && (
           <p className="mt-3 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
@@ -163,11 +123,10 @@ function AdminLoginContent() {
   );
 }
 
-export default function AdminLoginPage() {
+export default function LoginPage() {
   return (
     <Suspense>
-      <AdminLoginContent />
+      <LoginContent />
     </Suspense>
   );
 }
-

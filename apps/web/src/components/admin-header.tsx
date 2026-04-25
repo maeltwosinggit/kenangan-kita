@@ -12,7 +12,7 @@ export default function AdminHeader({ user }: { user: User }) {
   const onSignOut = async () => {
     const supabase = getSupabaseBrowserClient();
     await supabase.auth.signOut();
-    router.push("/admin/login");
+    router.push("/login");
     router.refresh();
   };
 

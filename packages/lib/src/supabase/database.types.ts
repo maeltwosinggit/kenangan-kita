@@ -91,19 +91,22 @@ export type Database = {
         Row: {
           user_id: string;
           display_name: string | null;
-          role: "admin";
+          role: "admin" | "user";
+          email: string | null;
           created_at: string;
         };
         Insert: {
           user_id: string;
           display_name?: string | null;
-          role?: "admin";
+          role?: "admin" | "user";
+          email?: string | null;
           created_at?: string;
         };
         Update: {
           user_id?: string;
           display_name?: string | null;
-          role?: "admin";
+          role?: "admin" | "user";
+          email?: string | null;
           created_at?: string;
         };
         Relationships: [];

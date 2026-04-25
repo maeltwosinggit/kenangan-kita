@@ -19,12 +19,20 @@ export default async function AdminEventsPage() {
     <main className="mx-auto min-h-screen max-w-md px-4 py-8">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-xl font-semibold">Admin Events</h1>
-        <Link
-          href="/admin/events/new"
-          className="rounded bg-slate-900 px-3 py-2 text-xs font-medium text-white"
-        >
-          New Event
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/admin/users"
+            className="rounded border border-slate-300 px-3 py-2 text-xs font-medium text-slate-800"
+          >
+            Users
+          </Link>
+          <Link
+            href="/admin/events/new"
+            className="rounded bg-slate-900 px-3 py-2 text-xs font-medium text-white"
+          >
+            New Event
+          </Link>
+        </div>
       </div>
 
       {eventsWithThumbnails.length === 0 ? (

@@ -10,7 +10,7 @@ export default async function ConditionalHeader() {
   const isPublic =
     pathname.startsWith("/e/") ||
     pathname.startsWith("/auth/") ||
-    pathname === "/admin/login";
+    pathname === "/login";
 
   if (isPublic) return null;
 

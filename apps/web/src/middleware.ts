@@ -18,7 +18,7 @@ function makeRedirect(request: NextRequest, pathname: string, search = ""): URL 
 // Paths that never require authentication
 function isPublicPath(pathname: string): boolean {
   return (
-    pathname === "/admin/login" ||
+    pathname === "/login" ||
     pathname.startsWith("/e/") ||
     pathname.startsWith("/auth/")
   );
@@ -37,7 +37,7 @@ export async function middleware(request: NextRequest) {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    return NextResponse.redirect(makeRedirect(request, "/admin/login"));
+    return NextResponse.redirect(makeRedirect(request, "/login"));
   }
 
   let response = NextResponse.next({ request });
@@ -61,12 +61,12 @@ export async function middleware(request: NextRequest) {
     user = data.user;
   } catch {
     // Auth check failed — redirect to login
-    return NextResponse.redirect(makeRedirect(request, "/admin/login"));
+    return NextResponse.redirect(makeRedirect(request, "/login"));
   }
 
   if (!user) {
     return NextResponse.redirect(
-      makeRedirect(request, "/admin/login", `?next=${encodeURIComponent(pathname)}`)
+      makeRedirect(request, "/login", `?next=${encodeURIComponent(pathname)}`)
     );
   }
 
@@ -85,7 +85,8 @@ export async function middleware(request: NextRequest) {
     }
 
     if (!isAdmin) {
-      return NextResponse.redirect(makeRedirect(request, "/admin/login", "?denied=1"));
+      // Not an admin — send to root, not a denied screen
+      return NextResponse.redirect(makeRedirect(request, "/"));
     }
   }
 

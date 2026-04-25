@@ -1,11 +1,11 @@
 # Kenangan Kita MVP Progress Tracker
 
-Last updated: 2026-04-25 (Phase 5 complete, Phase 6 in scope)
+Last updated: 2026-04-26 (Phase 5 RBAC extension complete)
 Owner: Engineering
 
 ## Overall Status
 
-- Current phase: Phase 6 (QR Generation + Share Flow)
+- Current phase: Phase 5 (RBAC management complete, Phase 6 next)
 - Project health: In progress
 - Architecture direction: Monorepo (Turbo + pnpm), shared logic in packages, Supabase backend
 
@@ -18,10 +18,12 @@ Owner: Engineering
 - [x] Public event access via `event_code` complete
 - [ ] QR generation and scan flow complete
 - [x] Admin auth gate complete (Google SSO + email/password)
+- [x] User RBAC management complete
 - [x] Web camera capture complete
 - [x] Upload + compression complete
 - [x] Gallery complete
 - [x] Admin controls complete
+- [x] Vercel Analytics complete
 - [ ] Upload limits complete
 
 ## Phase Breakdown
@@ -40,6 +42,10 @@ Owner: Engineering
 
 - [x] Camera abstraction in shared lib
 - [x] Web camera implementation (`getUserMedia`)
+- [x] Camera flip (front/back) with animation
+- [x] Flash support (screen flash for front, hardware torch for back)
+- [x] Auto-name for logged-in users; required nickname for guests
+- [x] Camera startup fix (black screen / first-permission-grant / incognito)
 - [x] Image preview and retake flow
 - [x] Client-side compression
 - [x] Upload to Supabase Storage
@@ -50,6 +56,8 @@ Owner: Engineering
 - [x] Public gallery route per event
 - [x] Lazy-loading image grid
 - [x] Reveal mode handling (instant vs after event)
+- [x] Photo overlay (uploader name + timestamp)
+- [x] Back-to-camera navigation
 
 ### Phase 4 - Admin
 
@@ -67,6 +75,9 @@ Owner: Engineering
 - [x] Fix redirect host under reverse proxy (ngrok x-forwarded-host)
 - [x] Persistent header with user avatar and sign-out on all authenticated pages
 - [x] Show authenticated email + sign-out option on denied screen
+- [x] Auto-provision first-time Google sign-ins with default `user` role
+- [x] Admin can view user list and toggle role (`admin` / `user`)
+- [x] RBAC policies expanded for admin-managed role updates
 
 ### Phase 6 - QR Generation + Share Flow
 
@@ -126,10 +137,10 @@ Owner: Engineering
 
 ## Immediate Next Tasks
 
-1. Seed `admin_profiles` with initial admin user IDs (for new email/password accounts).
-2. Build Phase 6 QR generation and share flow.
-3. Build Phase 7 upload limits and enforcement path.
-4. Execute enhancement phases in order: Phase 8 -> Phase 13.
+1. Seed one super-admin account in `admin_profiles` (`role = admin`) for production bootstrap.
+2. Validate RBAC flow end-to-end: first login => `user`, promote/demote via `/admin/users`.
+3. Build Phase 6 QR generation and share flow.
+4. Build Phase 7 upload limits and enforcement path.
 
 ## Product Enhancements Backlog (Mapped to Phases)
 
@@ -149,5 +160,9 @@ Owner: Engineering
 - Gallery phase implemented: paginated photo loading, mobile-first grid, and reveal-mode gate based on event settings/date.
 - Admin phase implemented: per-event dashboard, gallery visibility toggle, and photo soft-delete moderation flow.
 - Phase 5 implemented and verified: Google SSO + email/password login, middleware auth gate, admin_profiles role enforcement, reverse-proxy-safe redirects, persistent header with avatar.
+- Camera UX hardened: flip animation (scaleX), flash (screen overlay for front / torch for back), auto-name from auth session, required guest nickname, black screen / incognito / first-permission-grant startup fix.
+- Gallery UX improved: photo overlay with uploader name + timestamp, back-to-camera link.
+- Vercel Analytics added (`@vercel/analytics/next`) to root layout — live on next deploy.
 - Enhancement roadmap formalized into Phases 8-13 for incremental delivery.
+- RBAC management delivered before Phase 6: default `user` provisioning on first login + admin role management screen.
 
