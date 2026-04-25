@@ -75,20 +75,27 @@ export function GalleryClient({ eventCode }: Props) {
     <section className="mt-4">
       <div className="grid grid-cols-2 gap-2">
         {items.map((item) => (
-          <article key={item.id} className="overflow-hidden rounded-lg bg-slate-200">
+          <article key={item.id} className="relative overflow-hidden rounded-lg bg-slate-200">
             {item.imageUrl ? (
-              <img
-                src={item.imageUrl}
-                alt={`Event photo ${item.id}`}
-                className="h-44 w-full object-cover"
-                loading="lazy"
-                decoding="async"
-              />
+              <>
+                <img
+                  src={item.imageUrl}
+                  alt={`Event photo ${item.id}`}
+                  className="h-44 w-full object-cover"
+                  loading="lazy"
+                  decoding="async"
+                />
+                <div className="absolute bottom-0 left-0 right-0 flex items-end justify-between bg-gradient-to-t from-black/60 to-transparent px-2 py-1.5">
+                  <span className="truncate text-xs font-medium text-white drop-shadow">
+                    {item.nickname ?? ""}
+                  </span>
+                  <span className="ml-2 shrink-0 text-xs text-white/80 drop-shadow">
+                    {new Date(item.captured_at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit", hour12: true })}
+                  </span>
+                </div>
+              </>
             ) : (
               <div className="flex h-44 items-center justify-center text-xs text-slate-500">Image unavailable</div>
-            )}
-            {item.nickname && (
-              <div className="truncate bg-white px-2 py-1 text-xs text-slate-700">{item.nickname}</div>
             )}
           </article>
         ))}

@@ -4,6 +4,7 @@ import type { User } from "@supabase/supabase-js";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
 
 export default function AdminHeader({ user }: { user: User }) {
   const router = useRouter();
@@ -23,8 +24,17 @@ export default function AdminHeader({ user }: { user: User }) {
 
   return (
     <header className="sticky top-0 z-10 border-b border-slate-200 bg-white">
-      <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3">
-        <span className="font-semibold text-slate-900">Kenangan Kita</span>
+      <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-2">
+        <Link href="/">
+          <Image
+            src="/logo.png"
+            alt="Kenangan Kita"
+            width={80}
+            height={40}
+            unoptimized
+            className="object-contain"
+          />
+        </Link>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             {avatarUrl ? (

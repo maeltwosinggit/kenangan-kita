@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
@@ -63,10 +64,20 @@ export default function AdminLoginPage() {
   const anyLoading = googleLoading || emailLoading;
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md items-center px-4 py-8">
+    <main className="mx-auto flex min-h-screen max-w-md flex-col items-center px-4 py-12">
+      <Image
+        src="/logo.png"
+        alt="Kenangan Kita"
+        width={140}
+        height={140}
+        priority
+        unoptimized
+        className="mb-4"
+      />
+
       <section className="w-full rounded-xl border border-slate-200 bg-white p-5">
-        <h1 className="text-xl font-semibold">Admin Login</h1>
-        <p className="mt-2 text-sm text-slate-600">Sign in to access admin pages.</p>
+        <h1 className="text-lg font-semibold">Admin Login</h1>
+        <p className="mt-1 text-sm text-slate-500">Sign in to access admin pages.</p>
 
         {denied && (
           <div className="mt-3 rounded border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">

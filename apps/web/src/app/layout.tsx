@@ -5,7 +5,10 @@ import ConditionalHeader from "@/components/conditional-header";
 
 export const metadata: Metadata = {
   title: "Kenangan Kita",
-  description: "Digital disposable camera for events"
+  description: "Digital disposable camera for events",
+  icons: {
+    icon: "/logo.png",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

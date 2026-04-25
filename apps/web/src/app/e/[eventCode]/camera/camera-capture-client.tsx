@@ -1,6 +1,7 @@
 "use client";
 
 import { compressImage, uploadEventPhoto, WebCameraAdapter, type CapturedPhoto } from "@kenangan/lib";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -14,6 +15,8 @@ export function CameraCaptureClient({ eventCode }: Props) {
   const [adapter, setAdapter] = useState<WebCameraAdapter | null>(null);
   const [captured, setCaptured] = useState<CapturedPhoto | null>(null);
   const [nickname, setNickname] = useState("");
+  const [nicknameError, setNicknameError] = useState(false);
+  const [loggedInName, setLoggedInName] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
@@ -21,6 +24,20 @@ export function CameraCaptureClient({ eventCode }: Props) {
 
   const canCapture = useMemo(() => !!adapter && !captured && !loading && !done, [adapter, captured, loading, done]);
   const canUpload = useMemo(() => !!captured && !loading && !done, [captured, loading, done]);
+
+  // Fetch logged-in user's display name once on mount
+  useEffect(() => {
+    getSupabaseBrowserClient()
+      .auth.getUser()
+      .then(({ data }) => {
+        const name =
+          data.user?.user_metadata?.full_name ??
+          data.user?.user_metadata?.name ??
+          null;
+        setLoggedInName(name);
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -75,13 +92,18 @@ export function CameraCaptureClient({ eventCode }: Props) {
     if (uploadedPreviewUrl) URL.revokeObjectURL(uploadedPreviewUrl);
     setUploadedPreviewUrl(null);
     onRetake();
-    setNickname("");
+    if (!loggedInName) setNickname("");
   };
 
   const onUpload = async () => {
     if (!captured || done || loading) return;
+    if (!loggedInName && !nickname.trim()) {
+      setNicknameError(true);
+      return;
+    }
     setLoading(true);
     setError(null);
+    const nameToUse = (loggedInName ?? nickname.trim()) || undefined;
     try {
       const compressed = await compressImage(captured.blob, {
         maxWidth: 1600,
@@ -92,14 +114,14 @@ export function CameraCaptureClient({ eventCode }: Props) {
       await uploadEventPhoto({
         eventCode,
         file: compressed.blob,
-        nickname: nickname.trim() || undefined,
+        nickname: nameToUse,
         width: compressed.width,
         height: compressed.height
       });
       setUploadedPreviewUrl(captured.previewUrl); // save before revoking
       setDone(true);
       setCaptured(null);
-      setNickname("");
+      if (!loggedInName) setNickname("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed");
     } finally {
@@ -150,13 +172,32 @@ export function CameraCaptureClient({ eventCode }: Props) {
       <canvas ref={canvasRef} className="hidden" />
 
       {!done && (
-        <input
-          className="w-full rounded border border-slate-300 px-3 py-2 text-sm"
-          placeholder="Nickname (optional)"
-          value={nickname}
-          onChange={(e) => setNickname(e.target.value)}
-          disabled={loading}
-        />
+        <div className="flex flex-col gap-1">
+          {!loggedInName && (
+            <p className="text-xs text-slate-400 italic">Sign your memory — so we'll always know who made it 🤍</p>
+          )}
+          {loggedInName ? (
+            <div className="w-full rounded border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-600">
+              {loggedInName}
+            </div>
+          ) : (
+            <>
+              <input
+                className={[
+                  "w-full rounded border px-3 py-2 text-sm",
+                  nicknameError ? "border-red-400 bg-red-50" : "border-slate-300"
+                ].join(" ")}
+                placeholder="Your name *"
+                value={nickname}
+                onChange={(e) => { setNickname(e.target.value); setNicknameError(false); }}
+                disabled={loading}
+              />
+              {nicknameError && (
+                <p className="text-xs text-red-500">Please enter your name before uploading.</p>
+              )}
+            </>
+          )}
+        </div>
       )}
 
       {!captured && !done ? (
