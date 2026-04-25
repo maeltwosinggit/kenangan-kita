@@ -3,9 +3,9 @@
 import Image from "next/image";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useSearchParams, useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 
-export default function AdminLoginPage() {
+function AdminLoginContent() {
   const params = useSearchParams();
   const router = useRouter();
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -152,6 +152,14 @@ export default function AdminLoginPage() {
         </button>
       </section>
     </main>
+  );
+}
+
+export default function AdminLoginPage() {
+  return (
+    <Suspense>
+      <AdminLoginContent />
+    </Suspense>
   );
 }
 

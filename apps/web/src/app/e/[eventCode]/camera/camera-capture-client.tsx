@@ -17,12 +17,17 @@ export function CameraCaptureClient({ eventCode }: Props) {
   const [nickname, setNickname] = useState("");
   const [nicknameError, setNicknameError] = useState(false);
   const [loggedInName, setLoggedInName] = useState<string | null>(null);
+  const [facingMode, setFacingMode] = useState<"environment" | "user">("environment");
+  const [flipPhase, setFlipPhase] = useState<"idle" | "out" | "in">("idle");
+  const [flashOn, setFlashOn] = useState(false);
+  const [flashActive, setFlashActive] = useState(false);
+  const [isCameraReady, setIsCameraReady] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
   const [uploadedPreviewUrl, setUploadedPreviewUrl] = useState<string | null>(null);
 
-  const canCapture = useMemo(() => !!adapter && !captured && !loading && !done, [adapter, captured, loading, done]);
+  const canCapture = useMemo(() => !!adapter && isCameraReady && !captured && !loading && !done, [adapter, isCameraReady, captured, loading, done]);
   const canUpload = useMemo(() => !!captured && !loading && !done, [captured, loading, done]);
 
   // Fetch logged-in user's display name once on mount
@@ -59,8 +64,17 @@ export function CameraCaptureClient({ eventCode }: Props) {
       setError(err instanceof Error ? err.message : "Camera permission required");
     });
 
+    // Resume video on tab switch / phone unlock
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        video.play().catch(() => {});
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
     return () => {
       camera.stop();
+      document.removeEventListener('visibilitychange', onVisibilityChange);
     };
   }, []);
 
@@ -70,13 +84,52 @@ export function CameraCaptureClient({ eventCode }: Props) {
     };
   }, [captured]);
 
+  const onFlip = async () => {
+    if (!adapter || flipPhase !== "idle") return;
+    const next = facingMode === "environment" ? "user" : "environment";
+    setFlipPhase("out");
+    await new Promise((r) => setTimeout(r, 180));
+    try {
+      await adapter.switchCamera(next);
+    } catch {
+      // device may have only one camera — silently ignore
+    }
+    setFacingMode(next);
+    setFlipPhase("in");
+    await new Promise((r) => setTimeout(r, 180));
+    setFlipPhase("idle");
+  };
+
   const onCapture = async () => {
     if (!adapter) return;
     setError(null);
+    const isBackCamera = facingMode === "environment";
     try {
+      if (flashOn) {
+        if (isBackCamera) {
+          // Back camera: hardware torch only — enable, wait for LED to fully brighten
+          await adapter.setTorch(true);
+          await new Promise((r) => setTimeout(r, 150));
+        } else {
+          // Front camera: white screen overlay
+          setFlashActive(true);
+          await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
+          await new Promise((r) => setTimeout(r, 200));
+        }
+      }
       const photo = await adapter.capture();
+      if (flashOn) {
+        if (isBackCamera) {
+          await adapter.setTorch(false);
+        } else {
+          await new Promise((r) => setTimeout(r, 150));
+          setFlashActive(false);
+        }
+      }
       setCaptured(photo);
     } catch (err) {
+      setFlashActive(false);
+      if (flashOn && isBackCamera) await adapter.setTorch(false).catch(() => {});
       setError(err instanceof Error ? err.message : "Failed to capture photo");
     }
   };
@@ -158,17 +211,55 @@ export function CameraCaptureClient({ eventCode }: Props) {
         <img src={captured.previewUrl} alt="Captured preview" className="w-full flex-1 rounded-lg object-cover" style={{ minHeight: 0 }} />
       ) : null}
       {/* Always keep video in DOM so the adapter's reference stays valid */}
-      <video
-        ref={videoRef}
-        className={[
-          "w-full flex-1 rounded-lg bg-black object-cover",
-          captured || done ? "hidden" : ""
-        ].join(" ").trim()}
-        style={{ willChange: "transform", minHeight: 0 }}
-        playsInline
-        muted
-        autoPlay
-      />
+      <div className={["relative w-full flex-1", captured || done ? "hidden" : ""].join(" ").trim()}>
+        <video
+          ref={videoRef}
+          className="w-full rounded-lg bg-black object-cover"
+          style={{
+            willChange: "transform",
+            minHeight: 0,
+            transform: flipPhase === "out" ? "scaleX(0)" : "scaleX(1)",
+            transition: flipPhase !== "idle" ? "transform 0.18s ease-in-out" : undefined,
+            height: "100%"
+          }}
+          playsInline
+          muted
+          autoPlay
+        />
+        {/* Screen flash overlay */}
+        {flashActive && (
+          <div className="pointer-events-none absolute inset-0 rounded-lg bg-white" style={{ opacity: 1 }} />
+        )}
+        {/* Flash toggle — top-left */}
+        <button
+          type="button"
+          onClick={() => setFlashOn((v) => !v)}
+          aria-label={flashOn ? "Turn flash off" : "Turn flash on"}
+          className={[
+            "absolute left-3 top-3 flex h-10 w-10 items-center justify-center rounded-full backdrop-blur-sm",
+            flashOn ? "bg-yellow-400 text-slate-900" : "bg-black/40 text-white"
+          ].join(" ")}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill={flashOn ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+          </svg>
+        </button>
+        {/* Flip camera — top-right */}
+        <button
+          type="button"
+          onClick={onFlip}
+          disabled={flipPhase !== "idle"}
+          aria-label="Flip camera"
+          className="absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm disabled:opacity-40"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+            <path d="M20 7h-9" />
+            <path d="M14 17H5" />
+            <polyline points="17 4 20 7 17 10" />
+            <polyline points="7 14 4 17 7 20" />
+          </svg>
+        </button>
+      </div>
       <canvas ref={canvasRef} className="hidden" />
 
       {!done && (
@@ -207,7 +298,7 @@ export function CameraCaptureClient({ eventCode }: Props) {
           disabled={!canCapture}
           type="button"
         >
-          {!adapter ? "Initializing Camera..." : canCapture ? "Take Photo" : "Camera Loading..."}
+          {!adapter ? "Initializing Camera..." : !isCameraReady ? "Starting Camera..." : "Take Photo"}
         </button>
       ) : captured ? (
         <div className="grid grid-cols-2 gap-2">

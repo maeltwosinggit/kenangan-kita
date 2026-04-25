@@ -12,14 +12,12 @@ export class WebCameraAdapter implements CameraAdapter {
 
   async start() {
     try {
-      // Check if camera API is available
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         throw new Error("Camera API not available. Please use HTTPS or localhost.");
       }
 
-      // Request good resolution for quality captures but don't force frameRate —
-      // let the device run at its native rate (30 or 60fps). The browser will
-      // pick the closest supported resolution >= the ideal values.
+      // NOTE: Do NOT include advanced/torch in getUserMedia — it causes silent
+      // constraint failures on many devices. Torch is applied after stream start.
       this.stream = await navigator.mediaDevices.getUserMedia({
         audio: false,
         video: {
@@ -28,49 +26,10 @@ export class WebCameraAdapter implements CameraAdapter {
           height: { min: 960, ideal: 1280 }
         }
       });
-      
-      this.video.srcObject = this.stream;
-      this.video.setAttribute('playsinline', 'true'); // Critical for iOS Safari
-      this.video.setAttribute('autoplay', 'true');
-      this.video.setAttribute('muted', 'true');
-      
-      // Handle video play promise properly to avoid interruption errors
-      try {
-        const playPromise = this.video.play();
-        if (playPromise !== undefined) {
-          await playPromise;
-        }
-      } catch (playError) {
-        // Ignore play interruption errors if video is already playing
-        if (playError instanceof Error && 
-            !playError.message.includes('interrupted') && 
-            !playError.message.includes('aborted')) {
-          throw playError;
-        }
-        // Video is likely already playing, continue
-      }
-      
-      // Wait for video to be ready with dimensions
-      return new Promise<void>((resolve, reject) => {
-        let attempts = 0;
-        const maxAttempts = 100; // 10 seconds max
-        
-        const checkReady = () => {
-          attempts++;
-          if (this.video.videoWidth > 0 && this.video.videoHeight > 0) {
-            resolve();
-          } else if (attempts >= maxAttempts) {
-            reject(new Error("Camera timeout - please refresh and allow camera permission"));
-          } else {
-            setTimeout(checkReady, 100);
-          }
-        };
-        
-        checkReady();
-      });
-      
+
+      await this._attachAndPlay();
+
     } catch (err) {
-      // Enhanced error messages for mobile debugging
       if (err instanceof Error) {
         if (err.name === "NotAllowedError") {
           throw new Error("Camera permission denied. Please allow camera access and refresh.");
@@ -86,6 +45,40 @@ export class WebCameraAdapter implements CameraAdapter {
       }
       throw new Error("Failed to access camera");
     }
+  }
+
+  /**
+   * Attach the current stream to the video element and start a background
+   * play() retry loop. Resolves immediately — the caller should poll
+   * videoWidth > 0 to know when frames are actually flowing.
+   *
+   * We never wait for play() to succeed here because on mobile (especially
+   * incognito / after permission dialog) the browser silently rejects play()
+   * until the page is in a true foreground context. Retrying in the background
+   * means the video will start rendering as soon as the browser allows it,
+   * without any timeout errors shown to the user.
+   */
+  private _attachAndPlay(): Promise<void> {
+    const video = this.video;
+
+    video.srcObject = this.stream;
+    video.setAttribute("playsinline", "true");
+    video.setAttribute("autoplay", "true");
+    video.setAttribute("muted", "true");
+    video.muted = true;
+
+    const retry = () => {
+      // Stop retrying if the stream has been stopped or video is playing fine
+      if (!this.stream) return;
+      if (video.videoWidth > 0 && !video.paused) return;
+      video.play().catch(() => {});
+      setTimeout(retry, 300);
+    };
+
+    video.play().catch(() => {});
+    setTimeout(retry, 300);
+
+    return Promise.resolve();
   }
 
   async capture(): Promise<CapturedPhoto> {
@@ -126,6 +119,44 @@ export class WebCameraAdapter implements CameraAdapter {
       this.stream = null;
     }
     this.video.srcObject = null;
+  }
+
+  async switchCamera(facingMode: "environment" | "user") {
+    if (this.stream) {
+      this.stream.getTracks().forEach((track) => track.stop());
+      this.stream = null;
+    }
+
+    this.stream = await navigator.mediaDevices.getUserMedia({
+      audio: false,
+      video: {
+        facingMode: { ideal: facingMode },
+        width: { min: 720, ideal: 1280 },
+        height: { min: 960, ideal: 1280 }
+      }
+    });
+
+    await this._attachAndPlay();
+  }
+
+  /** Enable or disable the hardware torch. Returns false if not supported. */
+  async setTorch(on: boolean): Promise<boolean> {
+    if (!this.stream) return false;
+    const track = this.stream.getVideoTracks()[0];
+    if (!track) return false;
+    // Check device capabilities before attempting — avoids silent failures
+    if (typeof track.getCapabilities === "function") {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const caps = track.getCapabilities() as any;
+      if (!caps.torch) return false;
+    }
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await track.applyConstraints({ advanced: [{ torch: on } as any] });
+      return true;
+    } catch {
+      return false;
+    }
   }
 }
 
