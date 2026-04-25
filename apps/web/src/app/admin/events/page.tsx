@@ -17,6 +17,15 @@ export default async function AdminEventsPage() {
 
   return (
     <main className="mx-auto min-h-screen max-w-md px-4 py-8">
+      <div className="mt-8 pt-4 border-t border-slate-200">
+        <Link
+          href="/"
+          className="text-sm text-slate-600 hover:text-slate-900"
+        >
+          ← Back to Home
+        </Link>
+      </div>
+      
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-xl font-semibold">Admin Events</h1>
         <div className="flex items-center gap-2">
@@ -92,14 +101,7 @@ export default async function AdminEventsPage() {
         </div>
       )}
 
-      <div className="mt-8 pt-4 border-t border-slate-200">
-        <Link
-          href="/"
-          className="text-sm text-slate-600 hover:text-slate-900"
-        >
-          ← Back to Home
-        </Link>
-      </div>
+      
     </main>
   );
 }
