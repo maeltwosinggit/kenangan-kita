@@ -45,10 +45,10 @@ export async function GET(request: NextRequest) {
         role = inserted?.role ?? "user";
       }
 
-      // Non-admins go to root; admins go to the requested next path
+      // Non-admins go to dashboard; admins go to the requested next path
       const host = request.headers.get("x-forwarded-host") ?? request.nextUrl.host;
       const proto = request.headers.get("x-forwarded-proto") ?? request.nextUrl.protocol.replace(":", "");
-      const destination = role === "admin" ? next : "/";
+      const destination = role === "admin" ? next : "/dashboard";
       return NextResponse.redirect(`${proto}://${host}${destination}`);
     }
   }

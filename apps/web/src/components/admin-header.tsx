@@ -1,25 +1,28 @@
 "use client";
 
-import type { User } from "@supabase/supabase-js";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 
-export default function AdminHeader({ user }: { user: User }) {
+interface UserInfo {
+  id: string;
+  email?: string;
+  name?: string;
+  avatarUrl?: string;
+}
+
+export default function AdminHeader({ userInfo }: { userInfo: UserInfo }) {
   const router = useRouter();
 
   const onSignOut = async () => {
     const supabase = getSupabaseBrowserClient();
     await supabase.auth.signOut();
-    router.push("/login");
+    router.push("/");
     router.refresh();
   };
 
-  const avatarUrl = user.user_metadata?.avatar_url as string | undefined;
-  const name = (user.user_metadata?.full_name ?? user.user_metadata?.name) as string | undefined;
-  const email = user.email;
-  const displayName = name ?? email ?? "Admin";
+  const displayName = userInfo.name ?? userInfo.email ?? "Admin";
   const initial = displayName[0].toUpperCase();
 
   return (
@@ -37,9 +40,9 @@ export default function AdminHeader({ user }: { user: User }) {
         </Link>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
-            {avatarUrl ? (
+            {userInfo.avatarUrl ? (
               <Image
-                src={avatarUrl}
+                src={userInfo.avatarUrl}
                 alt={displayName}
                 width={32}
                 height={32}

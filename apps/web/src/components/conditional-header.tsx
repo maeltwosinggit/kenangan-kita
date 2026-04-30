@@ -1,4 +1,3 @@
-import { getSupabaseServerClient } from "@/lib/supabase/server";
 import AdminHeader from "@/components/admin-header";
 import { headers } from "next/headers";
 
@@ -6,23 +5,26 @@ export default async function ConditionalHeader() {
   const headersList = await headers();
   const pathname = headersList.get("x-pathname") ?? "";
 
-  // Don't show header on guest/auth/login pages
+  // Don't show header on landing, guest, auth, or login pages
   const isPublic =
+    pathname === "/" ||
     pathname.startsWith("/e/") ||
     pathname.startsWith("/auth/") ||
     pathname === "/login";
 
   if (isPublic) return null;
 
-  let user = null;
-  try {
-    const supabase = await getSupabaseServerClient();
-    const { data } = await supabase.auth.getUser();
-    user = data.user;
-  } catch {
-    // not authenticated
-  }
+  // Middleware sets these headers after validating the JWT with getUser().
+  // Reading them here is safe and requires no additional Supabase calls.
+  const userId = headersList.get("x-user-id");
+  if (!userId) return null;
 
-  if (!user) return null;
-  return <AdminHeader user={user} />;
+  const userInfo = {
+    id: userId,
+    email: headersList.get("x-user-email") ?? undefined,
+    name: headersList.get("x-user-name") || undefined,
+    avatarUrl: headersList.get("x-user-avatar") || undefined,
+  };
+
+  return <AdminHeader userInfo={userInfo} />;
 }

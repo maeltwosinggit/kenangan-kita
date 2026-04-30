@@ -13,7 +13,7 @@ function LoginContent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const nextPath = params.get("next") || "/";
+  const nextPath = params.get("next") || "/dashboard";
 
   const onGoogleSignIn = async () => {
     setGoogleLoading(true);

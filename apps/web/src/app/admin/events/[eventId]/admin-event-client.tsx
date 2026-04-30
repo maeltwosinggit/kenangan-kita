@@ -1,8 +1,10 @@
 "use client";
 
-import { listEventPhotosForAdmin, setEventGalleryVisibility, softDeletePhoto, type EventRow } from "@kenangan/lib";
+import { listEventPhotosForAdmin, setEventGalleryVisibility, softDeletePhoto, deleteEvent, type EventRow } from "@kenangan/lib";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 
 type Props = {
   event: EventRow;
@@ -12,8 +14,10 @@ const PAGE_SIZE = 24;
 
 export function AdminEventClient({ event }: Props) {
   const queryClient = useQueryClient();
+  const router = useRouter();
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const [eventState, setEventState] = useState(event);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const photosQuery = useInfiniteQuery({
     queryKey: ["admin-photos", event.id],
@@ -43,6 +47,15 @@ export function AdminEventClient({ event }: Props) {
     onSuccess: () => {
       void photosQuery.refetch();
     }
+  });
+
+  const deleteEventMutation = useMutation({
+    mutationFn: () => deleteEvent(getSupabaseBrowserClient(), eventState.id),
+    onSuccess: () => {
+      queryClient.removeQueries({ queryKey: ["admin-photos", eventState.id] });
+      router.push("/admin/events");
+      router.refresh();
+    },
   });
 
   useEffect(() => {
@@ -149,6 +162,51 @@ export function AdminEventClient({ event }: Props) {
           <p className="mt-2 text-xs text-slate-600">No photos uploaded yet.</p>
         )}
         <div ref={sentinelRef} className="h-6" />
+      </div>
+
+      <div className="rounded border border-red-200 bg-red-50 p-4">
+        <h2 className="text-sm font-semibold text-red-800">Danger Zone</h2>
+        <p className="mt-1 text-xs text-red-700">
+          Permanently delete this event and all its photos. This cannot be undone.
+        </p>
+        {deleteEventMutation.isError && (
+          <p className="mt-2 rounded border border-red-300 bg-white px-2 py-1 text-xs text-red-700">
+            Failed to delete event. Please try again.
+          </p>
+        )}
+        {!showDeleteConfirm ? (
+          <button
+            type="button"
+            className="mt-3 rounded border border-red-400 px-3 py-2 text-xs font-medium text-red-700 hover:bg-red-100 transition-colors"
+            onClick={() => setShowDeleteConfirm(true)}
+          >
+            Delete Event
+          </button>
+        ) : (
+          <div className="mt-3 space-y-2">
+            <p className="text-xs font-medium text-red-800">
+              Are you sure? This will delete &ldquo;{eventState.name}&rdquo; and all its photos.
+            </p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                className="rounded bg-red-700 px-3 py-2 text-xs font-medium text-white hover:bg-red-800 disabled:opacity-50 transition-colors"
+                disabled={deleteEventMutation.isPending}
+                onClick={() => deleteEventMutation.mutate()}
+              >
+                {deleteEventMutation.isPending ? "Deleting..." : "Yes, delete"}
+              </button>
+              <button
+                type="button"
+                className="rounded border border-slate-300 px-3 py-2 text-xs text-slate-600 hover:bg-slate-50 transition-colors"
+                disabled={deleteEventMutation.isPending}
+                onClick={() => setShowDeleteConfirm(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </section>
   );

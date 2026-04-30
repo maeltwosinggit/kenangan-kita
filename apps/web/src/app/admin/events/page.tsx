@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { listAllEvents, getLatestEventPhoto } from "@kenangan/lib";
 import AdminEventsClient from "./admin-events-client";
+import Breadcrumb from "@/components/breadcrumb";
 
 export default async function AdminEventsPage() {
   const events = await listAllEvents();
@@ -14,12 +15,10 @@ export default async function AdminEventsPage() {
 
   return (
     <main className="mx-auto min-h-screen max-w-md px-4 py-8">
-      <div className="mt-8 border-t border-slate-200 pt-4">
-        <Link href="/" className="text-sm text-slate-600 hover:text-slate-900">
-          ← Back to Home
-        </Link>
-      </div>
-
+      <Breadcrumb crumbs={[
+        { label: "Dashboard", href: "/dashboard" },
+        { label: "Events" },
+      ]} />
       <AdminEventsClient events={eventsWithThumbnails} />
     </main>
   );

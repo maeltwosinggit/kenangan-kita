@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { getSupabaseClient } from "../supabase/client";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 const createEventInputSchema = z.object({
   name: z.string().min(2),
@@ -85,5 +86,29 @@ export async function listAllEvents() {
 
   if (error) throw error;
   return (data as EventRow[]) ?? [];
+}
+
+export async function deleteEvent(supabase: SupabaseClient, eventId: string) {
+
+  // Collect all storage paths before the row (and its photos) are deleted.
+  const { data: photos, error: photosError } = await supabase
+    .from("photos")
+    .select("storage_path")
+    .eq("event_id", eventId);
+
+  if (photosError) throw photosError;
+
+  // Delete storage objects in one batch call (max 1000 per call is fine for events).
+  if (photos && photos.length > 0) {
+    const paths = photos.map((p: { storage_path: string }) => p.storage_path);
+    const { error: storageError } = await supabase.storage
+      .from("event-photos")
+      .remove(paths);
+    if (storageError) throw storageError;
+  }
+
+  // Delete the event row — photos cascade via FK.
+  const { error } = await supabase.from("events").delete().eq("id", eventId);
+  if (error) throw error;
 }
 

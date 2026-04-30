@@ -3,6 +3,7 @@
 import { createEvent } from "@kenangan/lib";
 import Link from "next/link";
 import { useState } from "react";
+import Breadcrumb from "@/components/breadcrumb";
 
 export default function NewEventPage() {
   const [name, setName] = useState("");
@@ -100,6 +101,11 @@ export default function NewEventPage() {
 
   return (
     <main className="mx-auto min-h-screen max-w-md px-4 py-8">
+      <Breadcrumb crumbs={[
+        { label: "Dashboard", href: "/dashboard" },
+        { label: "Events", href: "/admin/events" },
+        { label: "New Event" },
+      ]} />
       <h1 className="text-xl font-semibold">Create Event</h1>
       <form className="mt-4 space-y-3" onSubmit={onSubmit}>
         <input

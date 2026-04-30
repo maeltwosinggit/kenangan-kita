@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { getEventById } from "@kenangan/lib";
 import { AdminEventClient } from "./admin-event-client";
 import { GuestLinkSection } from "./guest-link-section";
+import Breadcrumb from "@/components/breadcrumb";
 
 export default async function AdminEventPage({
   params
@@ -27,14 +28,11 @@ export default async function AdminEventPage({
 
   return (
     <main className="mx-auto min-h-screen max-w-md px-4 py-8">
-      <div className="mb-4">
-        <Link
-          href="/admin/events"
-          className="text-sm text-slate-600 hover:text-slate-900"
-        >
-          ← Back to Events
-        </Link>
-      </div>
+      <Breadcrumb crumbs={[
+        { label: "Dashboard", href: "/dashboard" },
+        { label: "Events", href: "/admin/events" },
+        { label: event.name },
+      ]} />
       <h1 className="text-xl font-semibold">{event.name}</h1>
       <p className="mt-1 text-sm text-slate-600">Admin dashboard</p>
       <GuestLinkSection eventCode={event.event_code} fullUrl={guestUrl} />

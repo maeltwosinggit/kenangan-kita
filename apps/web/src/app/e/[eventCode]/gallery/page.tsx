@@ -1,5 +1,5 @@
 import { getEventByCode } from "@kenangan/lib";
-import Link from "next/link";
+import Breadcrumb from "@/components/breadcrumb";
 import { GalleryClient } from "./gallery-client";
 
 export default async function GalleryPage({
@@ -21,12 +21,10 @@ export default async function GalleryPage({
 
   return (
     <main className="mx-auto min-h-screen max-w-md px-4 py-8">
-      <Link
-        href={`/e/${eventCode}/camera`}
-        className="mb-4 inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-800"
-      >
-        ← Back to Camera
-      </Link>
+      <Breadcrumb crumbs={[
+        { label: event.name, href: `/e/${eventCode}/camera` },
+        { label: "Gallery" },
+      ]} />
       <h1 className="text-xl font-semibold">{event.name} Gallery</h1>
       <p className="mt-2 text-sm text-slate-600">Memories shared by guests.</p>
       <GalleryClient eventCode={eventCode} />
