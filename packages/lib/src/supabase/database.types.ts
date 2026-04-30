@@ -44,6 +44,7 @@ export type Database = {
           storage_path: string;
           captured_at: string;
           nickname: string | null;
+          uploader_id: string | null;
           mime_type: string;
           width: number | null;
           height: number | null;
@@ -57,6 +58,7 @@ export type Database = {
           storage_path: string;
           captured_at?: string;
           nickname?: string | null;
+          uploader_id?: string | null;
           mime_type?: string;
           width?: number | null;
           height?: number | null;
@@ -70,6 +72,7 @@ export type Database = {
           storage_path?: string;
           captured_at?: string;
           nickname?: string | null;
+          uploader_id?: string | null;
           mime_type?: string;
           width?: number | null;
           height?: number | null;
