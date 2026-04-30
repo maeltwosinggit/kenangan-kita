@@ -1,6 +1,6 @@
-import Link from "next/link";
 import Image from "next/image";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
+import HomeButtons from "@/components/home-buttons";
 
 async function getIsAdmin(): Promise<boolean> {
   try {
@@ -34,22 +34,7 @@ export default async function HomePage() {
       />
       <p className="mt-1 text-sm text-slate-500">Scan QR, take photo, upload in seconds.</p>
 
-      <div className="mt-8 w-full space-y-3">
-        {isAdmin && (
-          <Link
-            className="block rounded-lg bg-slate-900 px-4 py-3 text-center text-sm font-medium text-white"
-            href="/admin/events"
-          >
-            Admin Dashboard
-          </Link>
-        )}
-        <Link
-          className="block rounded-lg border border-slate-300 px-4 py-3 text-center text-sm font-medium"
-          href="/admin/events/new"
-        >
-          Create Event
-        </Link>
-      </div>
+      <HomeButtons isAdmin={isAdmin} />
     </main>
   );
 }

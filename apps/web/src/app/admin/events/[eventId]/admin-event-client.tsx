@@ -116,7 +116,22 @@ export function AdminEventClient({ event }: Props) {
                   <div className="flex h-36 items-center justify-center text-xs text-slate-500">No preview</div>
                 )}
                 <div className="space-y-1 px-2 py-2">
-                  {item.nickname && <p className="truncate text-xs text-slate-700">{item.nickname}</p>}
+                  <p className="truncate text-xs text-slate-700">
+                    <span className="font-medium">By:</span>{" "}
+                    {item.nickname ?? <span className="italic text-slate-400">Anonymous</span>}
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    {new Date(item.captured_at).toLocaleDateString(undefined, {
+                      year: "numeric",
+                      month: "short",
+                      day: "numeric",
+                    })}
+                    {" · "}
+                    {new Date(item.captured_at).toLocaleTimeString(undefined, {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </p>
                   <button
                     type="button"
                     className="w-full rounded border border-red-200 px-2 py-1 text-xs font-medium text-red-700 disabled:opacity-50"

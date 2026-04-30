@@ -71,35 +71,59 @@ export function GalleryClient({ eventCode }: Props) {
     return <p className="mt-4 text-sm text-slate-600">No photos yet. Be the first to upload!</p>;
   }
 
+  // Group items by local date string
+  const groups: { label: string; items: typeof items }[] = [];
+  for (const item of items) {
+    const label = new Date(item.captured_at).toLocaleDateString([], {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+    const last = groups[groups.length - 1];
+    if (last && last.label === label) {
+      last.items.push(item);
+    } else {
+      groups.push({ label, items: [item] });
+    }
+  }
+
   return (
-    <section className="mt-4">
-      <div className="grid grid-cols-2 gap-2">
-        {items.map((item) => (
-          <article key={item.id} className="relative overflow-hidden rounded-lg bg-slate-200">
-            {item.imageUrl ? (
-              <>
-                <img
-                  src={item.imageUrl}
-                  alt={`Event photo ${item.id}`}
-                  className="h-44 w-full object-cover"
-                  loading="lazy"
-                  decoding="async"
-                />
-                <div className="absolute bottom-0 left-0 right-0 flex items-end justify-between bg-gradient-to-t from-black/60 to-transparent px-2 py-1.5">
-                  <span className="truncate text-xs font-medium text-white drop-shadow">
-                    {item.nickname ?? ""}
-                  </span>
-                  <span className="ml-2 shrink-0 text-xs text-white/80 drop-shadow">
-                    {new Date(item.captured_at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit", hour12: true })}
-                  </span>
-                </div>
-              </>
-            ) : (
-              <div className="flex h-44 items-center justify-center text-xs text-slate-500">Image unavailable</div>
-            )}
-          </article>
-        ))}
-      </div>
+    <section className="mt-4 space-y-6">
+      {groups.map((group) => (
+        <div key={group.label}>
+          <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+            {group.label}
+          </h2>
+          <div className="grid grid-cols-2 gap-2">
+            {group.items.map((item) => (
+              <article key={item.id} className="relative overflow-hidden rounded-lg bg-slate-200">
+                {item.imageUrl ? (
+                  <>
+                    <img
+                      src={item.imageUrl}
+                      alt={`Event photo ${item.id}`}
+                      className="h-44 w-full object-cover"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                    <div className="absolute bottom-0 left-0 right-0 flex items-end justify-between bg-gradient-to-t from-black/60 to-transparent px-2 py-1.5">
+                      <span className="truncate text-xs font-medium text-white drop-shadow">
+                        {item.nickname ?? ""}
+                      </span>
+                      <span className="ml-2 shrink-0 text-xs text-white/80 drop-shadow">
+                        {new Date(item.captured_at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit", hour12: true })}
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex h-44 items-center justify-center text-xs text-slate-500">Image unavailable</div>
+                )}
+              </article>
+            ))}
+          </div>
+        </div>
+      ))}
 
       <div ref={sentinelRef} className="h-6" />
       {query.isFetchingNextPage && <p className="text-center text-xs text-slate-500">Loading more...</p>}

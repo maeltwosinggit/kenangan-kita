@@ -100,7 +100,7 @@ Owner: Engineering
 - [ ] Add preset selector in event creation flow
 - [ ] Allow admin override after preset is applied
 
-### Phase 9 - Smart Upload Resilience
+### Phase 9 - Smart Upload Resilience [best to implement this at mobile apps, skip for web dev]
 
 - [ ] Add offline queue for pending uploads on web
 - [ ] Add automatic retry with backoff for failed uploads
