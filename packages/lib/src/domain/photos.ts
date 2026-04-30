@@ -5,6 +5,7 @@ type UploadPhotoInput = {
   eventCode: string;
   file: Blob;
   nickname?: string;
+  uploaderId?: string;
   capturedAt?: string;
   width?: number;
   height?: number;
@@ -39,6 +40,7 @@ export async function uploadEventPhoto(input: UploadPhotoInput) {
     storage_path: storagePath,
     captured_at: capturedAt,
     nickname: input.nickname ?? null,
+    uploader_id: input.uploaderId ?? null,
     mime_type: "image/jpeg",
     size_bytes: input.file.size,
     width: input.width ?? null,
@@ -147,6 +149,38 @@ export async function listEventPhotosByCode(input: ListEventPhotosInput) {
     hasMore: rows.length === pageSize,
     page
   };
+}
+
+/**
+ * Returns a short-lived signed URL for the most recently uploaded photo by a
+ * specific user in a given event, or null if none exists.
+ */
+export async function getLatestUserPhotoUrl(
+  eventCode: string,
+  userId: string
+): Promise<string | null> {
+  const supabase = getSupabaseClient();
+  const event = await getEventByCode(eventCode);
+  if (!event) return null;
+
+  const { data, error } = await supabase
+    .from("photos")
+    .select("storage_path")
+    .eq("event_id", event.id)
+    .eq("uploader_id", userId)
+    .eq("is_deleted", false)
+    .order("captured_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error || !data) return null;
+
+  const { data: signed, error: signedError } = await supabase.storage
+    .from("event-photos")
+    .createSignedUrl(data.storage_path, 60 * 60);
+
+  if (signedError || !signed?.signedUrl) return null;
+  return signed.signedUrl;
 }
 
 type ListAdminPhotosInput = {

@@ -2,15 +2,18 @@
 
 import { createEvent } from "@kenangan/lib";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
-import Breadcrumb from "@/components/breadcrumb";
 
 export default function NewEventPage() {
+  const router = useRouter();
   const [name, setName] = useState("");
   const [eventDate, setEventDate] = useState("");
   const [createdCode, setCreatedCode] = useState<string | null>(null);
   const [createdEventId, setCreatedEventId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [adminLoading, setAdminLoading] = useState(false);
+  const [resetting, setResetting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -69,26 +72,45 @@ export default function NewEventPage() {
           {/* Actions */}
           <div className="flex w-full flex-col gap-2">
             {createdEventId && (
-              <Link
-                href={`/admin/events/${createdEventId}`}
-                className="block w-full rounded bg-slate-900 px-4 py-2.5 text-center text-sm font-medium text-white"
+              <button
+                type="button"
+                disabled={adminLoading}
+                onClick={() => {
+                  setAdminLoading(true);
+                  router.push(`/admin/events/${createdEventId}`);
+                }}
+                className="flex w-full items-center justify-center gap-2 rounded bg-slate-900 px-4 py-2.5 text-center text-sm font-medium text-white disabled:opacity-60"
               >
-                Open Admin Dashboard
-              </Link>
+                {adminLoading ? (
+                  <>
+                    <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    Opening…
+                  </>
+                ) : (
+                  "Open Admin Dashboard"
+                )}
+              </button>
             )}
-            <Link
+            <a
               href={`/e/${createdCode}`}
+              target="_blank"
+              rel="noopener noreferrer"
               className="block w-full rounded border border-slate-300 px-4 py-2.5 text-center text-sm font-medium hover:bg-slate-50"
             >
-              Open Event Page →
-            </Link>
+              Open Event Page ↗
+            </a>
             <button
               onClick={() => {
-                setCreatedCode(null);
-                setCreatedEventId(null);
-                setCopied(false);
+                setResetting(true);
+                setTimeout(() => {
+                  setCreatedCode(null);
+                  setCreatedEventId(null);
+                  setCopied(false);
+                  setResetting(false);
+                }, 150);
               }}
-              className="w-full rounded px-4 py-2.5 text-sm text-slate-500 hover:text-slate-800"
+              disabled={resetting}
+              className="w-full rounded px-4 py-2.5 text-sm text-slate-500 hover:text-slate-800 disabled:opacity-50"
               type="button"
             >
               Create Another Event
@@ -101,11 +123,6 @@ export default function NewEventPage() {
 
   return (
     <main className="mx-auto min-h-screen max-w-md px-4 py-8">
-      <Breadcrumb crumbs={[
-        { label: "Dashboard", href: "/dashboard" },
-        { label: "Events", href: "/admin/events" },
-        { label: "New Event" },
-      ]} />
       <h1 className="text-xl font-semibold">Create Event</h1>
       <form className="mt-4 space-y-3" onSubmit={onSubmit}>
         <input

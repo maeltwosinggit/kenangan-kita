@@ -127,14 +127,28 @@ export class WebCameraAdapter implements CameraAdapter {
       this.stream = null;
     }
 
-    this.stream = await navigator.mediaDevices.getUserMedia({
-      audio: false,
-      video: {
-        facingMode: { ideal: facingMode },
-        width: { min: 720, ideal: 1280 },
-        height: { min: 960, ideal: 1280 }
-      }
-    });
+    // Use `exact` to force the facing mode — `ideal` is only a hint and browsers
+    // (especially Safari/iOS) often ignore it when the previous camera is still
+    // preferred. Fall back to `ideal` for devices with a single camera.
+    try {
+      this.stream = await navigator.mediaDevices.getUserMedia({
+        audio: false,
+        video: {
+          facingMode: { exact: facingMode },
+          width: { min: 720, ideal: 1280 },
+          height: { min: 960, ideal: 1280 }
+        }
+      });
+    } catch {
+      this.stream = await navigator.mediaDevices.getUserMedia({
+        audio: false,
+        video: {
+          facingMode: { ideal: facingMode },
+          width: { min: 720, ideal: 1280 },
+          height: { min: 960, ideal: 1280 }
+        }
+      });
+    }
 
     await this._attachAndPlay();
   }

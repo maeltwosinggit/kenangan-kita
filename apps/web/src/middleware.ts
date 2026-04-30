@@ -15,14 +15,15 @@ function makeRedirect(request: NextRequest, pathname: string, search = ""): URL 
   return url;
 }
 
-// Paths that never require authentication
+// Paths that never require authentication.
+// /e/[code]/camera requires login — guests must sign in before capturing.
 function isPublicPath(pathname: string): boolean {
-  return (
-    pathname === "/" ||
-    pathname === "/login" ||
-    pathname.startsWith("/e/") ||
-    pathname.startsWith("/auth/")
-  );
+  if (pathname === "/" || pathname === "/login" || pathname.startsWith("/auth/")) return true;
+  if (!pathname.startsWith("/e/")) return false;
+  // Camera sub-path requires auth; landing and gallery are public
+  const segments = pathname.split("/"); // ['', 'e', code, ...rest]
+  const rest = segments[3]; // undefined | 'camera' | 'gallery'
+  return rest !== "camera";
 }
 
 export async function middleware(request: NextRequest) {

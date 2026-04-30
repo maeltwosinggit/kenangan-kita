@@ -45,10 +45,18 @@ export async function GET(request: NextRequest) {
         role = inserted?.role ?? "user";
       }
 
-      // Non-admins go to dashboard; admins go to the requested next path
+      // Admins go to requested next path; guests go to next if it's a safe
+      // event path (e.g. /e/xxx/camera after OAuth redirect), else /dashboard.
       const host = request.headers.get("x-forwarded-host") ?? request.nextUrl.host;
       const proto = request.headers.get("x-forwarded-proto") ?? request.nextUrl.protocol.replace(":", "");
-      const destination = role === "admin" ? next : "/dashboard";
+      let destination: string;
+      if (role === "admin") {
+        destination = next;
+      } else if (next.startsWith("/e/")) {
+        destination = next;
+      } else {
+        destination = "/dashboard";
+      }
       return NextResponse.redirect(`${proto}://${host}${destination}`);
     }
   }
