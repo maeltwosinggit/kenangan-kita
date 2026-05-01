@@ -1,10 +1,21 @@
 import Link from "next/link";
 import { listAllEvents, getLatestEventPhoto } from "@kenangan/lib";
+import { listUserProfiles } from "@kenangan/lib";
 import AdminEventsClient from "./admin-events-client";
 import Breadcrumb from "@/components/breadcrumb";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 export default async function AdminEventsPage() {
-  const events = await listAllEvents();
+  const supabase = await getSupabaseServerClient();
+  const [events, users] = await Promise.all([
+    listAllEvents(),
+    listUserProfiles(supabase),
+  ]);
+
+  const creatorMap: Record<string, string> = {};
+  for (const u of users) {
+    creatorMap[u.user_id] = u.display_name ?? u.email ?? u.user_id.slice(0, 8);
+  }
 
   const eventsWithThumbnails = await Promise.all(
     events.map(async (event) => {
@@ -16,10 +27,10 @@ export default async function AdminEventsPage() {
   return (
     <main className="mx-auto min-h-screen max-w-md px-4 py-8">
       <Breadcrumb crumbs={[
-        { label: "Dashboard", href: "/dashboard" },
+        { label: "Admin", href: "/admin" },
         { label: "Events" },
       ]} />
-      <AdminEventsClient events={eventsWithThumbnails} />
+      <AdminEventsClient events={eventsWithThumbnails} creatorMap={creatorMap} />
     </main>
   );
 }

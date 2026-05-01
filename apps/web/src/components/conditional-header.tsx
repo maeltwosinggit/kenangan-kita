@@ -5,12 +5,15 @@ export default async function ConditionalHeader() {
   const headersList = await headers();
   const pathname = headersList.get("x-pathname") ?? "";
 
-  // Don't show header on landing, guest, auth, or login pages
+  // Don't show header on landing, guest, auth, login, admin overview or dashboard (have own headers)
   const isPublic =
     pathname === "/" ||
     pathname.startsWith("/e/") ||
     pathname.startsWith("/auth/") ||
-    pathname === "/login";
+    pathname === "/login" ||
+    pathname === "/admin" ||
+    pathname === "/dashboard" ||
+    pathname === "/events/new";
 
   if (isPublic) return null;
 

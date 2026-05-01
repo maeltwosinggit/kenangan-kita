@@ -11,7 +11,7 @@ export default function HomeButtons({ isAdmin }: Props) {
 
   const navigate = (to: "dashboard" | "create") => {
     setLoading(to);
-    router.push(to === "dashboard" ? "/admin/events" : "/admin/events/new");
+    router.push(to === "dashboard" ? "/admin" : "/events/new");
   };
 
   return (

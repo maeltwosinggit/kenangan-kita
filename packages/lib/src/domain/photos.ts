@@ -65,6 +65,7 @@ export type EventPhoto = {
   storage_path: string;
   captured_at: string;
   nickname: string | null;
+  uploader_id: string | null;
   width: number | null;
   height: number | null;
 };
@@ -107,7 +108,7 @@ export async function listEventPhotosByCode(input: ListEventPhotosInput) {
 
   const { data, error } = await supabase
     .from("photos")
-    .select("id,storage_path,captured_at,nickname,width,height")
+    .select("id,storage_path,captured_at,nickname,uploader_id,width,height")
     .eq("event_id", event.id)
     .eq("is_deleted", false)
     .order("captured_at", { ascending: false })

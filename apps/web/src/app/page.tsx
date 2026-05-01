@@ -1,17 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
-import { SignInNavButton, HeroCTAButtons } from "@/components/landing-buttons";
+import { HeroCTAButtons } from "@/components/landing-buttons";
+import LandingNav from "@/components/landing-nav";
 
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Nav */}
-      <nav className="mx-auto flex max-w-4xl items-center justify-between px-6 py-4">
-        <Link href="/">
-          <Image src="/logo.png" alt="Kenangan Kita" width={80} height={40} unoptimized className="object-contain" />
-        </Link>
-        <SignInNavButton />
-      </nav>
+      <LandingNav />
 
       {/* Hero */}
       <section className="mx-auto max-w-2xl px-6 py-20 text-center">

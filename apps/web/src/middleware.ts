@@ -30,9 +30,11 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (isPublicPath(pathname)) {
-    const response = NextResponse.next({ request });
-    response.headers.set("x-pathname", pathname);
-    return response;
+    // Set x-pathname on request headers so server components (ConditionalHeader)
+    // can read it via headers() and correctly skip rendering.
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set("x-pathname", pathname);
+    return NextResponse.next({ request: { headers: requestHeaders } });
   }
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;

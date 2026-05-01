@@ -29,7 +29,7 @@ export default async function AdminEventPage({
   return (
     <main className="mx-auto min-h-screen max-w-md px-4 py-8">
       <Breadcrumb crumbs={[
-        { label: "Dashboard", href: "/dashboard" },
+        { label: "Admin", href: "/admin" },
         { label: "Events", href: "/admin/events" },
         { label: event.name },
       ]} />

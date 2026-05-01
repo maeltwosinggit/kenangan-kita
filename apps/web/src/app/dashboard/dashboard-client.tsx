@@ -1,0 +1,257 @@
+"use client";
+
+import Image from "next/image";
+import Link from "next/link";
+import { useState } from "react";
+import type { DashboardData, RecentPhoto } from "@/lib/data/dashboard";
+import { EventCard } from "./_components/event-card";
+import UserMenu from "@/components/user-menu";
+import CreateEventForm from "@/app/events/new/create-event-client";
+
+type Props = DashboardData & {
+  firstName: string;
+  displayName: string;
+  avatarUrl: string | null;
+};
+
+type Tab = "dashboard" | "create" | "events";
+
+function PhotoStrip({ photos }: { photos: RecentPhoto[] }) {
+  return (
+    <section className="space-y-4">
+      <h2 className="text-sm font-bold uppercase tracking-tight text-slate-900">My Recent Photos</h2>
+      <div className="flex snap-x gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {photos.map((photo) => (
+          <div key={photo.id} className="relative h-48 w-36 flex-shrink-0 snap-start overflow-hidden rounded-xl">
+            {photo.imageUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={photo.imageUrl} alt={photo.eventName ?? "Photo"} className="h-full w-full object-cover" />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center bg-slate-200">
+                <svg className="h-8 w-8 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="2" />
+                  <circle cx="8.5" cy="8.5" r="1.5" />
+                  <polyline points="21 15 16 10 5 21" />
+                </svg>
+              </div>
+            )}
+            <div className="absolute inset-x-0 bottom-0 flex h-16 items-end bg-gradient-to-t from-black/80 to-transparent p-2">
+              <span className="text-[10px] font-medium text-white/90">{photo.eventName ?? ""}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+export default function DashboardClient({
+  firstName,
+  displayName,
+  avatarUrl,
+  isAdmin,
+  photosTaken,
+  eventsAttended,
+  recentPhotos,
+  participatedEvents,
+  createdEvents,
+}: Props) {
+  const [tab, setTab] = useState<Tab>("dashboard");
+
+  return (
+    <div className="relative min-h-screen bg-slate-50">
+      {/* Header */}
+      <header className="sticky top-0 z-40 border-b border-slate-200 bg-white">
+        <div className="mx-auto flex h-16 max-w-[448px] items-center justify-between px-4">
+          <Link href="/dashboard">
+            <Image src="/logo.png" alt="Kenangan Kita" width={80} height={40} unoptimized className="object-contain" />
+          </Link>
+          <UserMenu avatarUrl={avatarUrl} displayName={displayName} />
+        </div>
+      </header>
+
+      {/* Dashboard tab */}
+      {tab === "dashboard" && (
+        <main className="mx-auto max-w-[448px] space-y-8 px-4 pb-28 pt-6">
+          <section className="space-y-1">
+            <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">Hello, {firstName}</h1>
+            <p className="text-sm text-slate-500">Welcome back to your memory hub.</p>
+            {isAdmin && (
+              <div className="pt-2">
+                <Link
+                  href="/admin"
+                  className="inline-flex items-center gap-1 rounded-lg border border-amber-500/20 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-100"
+                >
+                  <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                  </svg>
+                  Admin Access Enabled
+                  <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="9 18 15 12 9 6" />
+                  </svg>
+                </Link>
+              </div>
+            )}
+          </section>
+
+          <section className="grid grid-cols-2 gap-4">
+            {[
+              { value: photosTaken, label: "Photos Taken" },
+              { value: eventsAttended, label: "Events Attended" },
+            ].map(({ value, label }) => (
+              <div key={label} className="flex flex-col items-center rounded-xl border border-slate-200 bg-white p-4 text-center">
+                <span className="text-3xl font-black text-slate-900">{value.toString().padStart(2, "0")}</span>
+                <span className="mt-1 text-[10px] font-bold uppercase tracking-widest text-slate-500">{label}</span>
+              </div>
+            ))}
+          </section>
+
+          {recentPhotos.length > 0 && <PhotoStrip photos={recentPhotos} />}
+
+          {participatedEvents.length > 0 && (
+            <section className="space-y-4">
+              <h2 className="text-sm font-bold uppercase tracking-tight text-slate-900">My Events</h2>
+              <div className="space-y-3">
+                {participatedEvents.map((event) => (
+                  <EventCard key={event.id} event={event} />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {participatedEvents.length === 0 && recentPhotos.length === 0 && (
+            <section className="rounded-xl border border-slate-200 bg-white px-4 py-10 text-center">
+              <p className="text-sm text-slate-500">No photos yet. Scan a QR code at an event to get started.</p>
+            </section>
+          )}
+        </main>
+      )}
+
+      {/* Events tab */}
+      {tab === "events" && (
+        <main className="mx-auto max-w-[448px] space-y-6 px-4 pb-28 pt-6">
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">My Events</h1>
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={() => setTab("create")}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-2 text-xs font-bold uppercase tracking-widest text-white transition-transform active:scale-[0.98]"
+              >
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                New
+              </button>
+            )}
+          </div>
+
+          {createdEvents.length === 0 ? (
+            <div className="rounded-xl border border-slate-200 bg-white px-4 py-10 text-center">
+              <p className="text-sm text-slate-500">You haven&apos;t created any events yet.</p>
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={() => setTab("create")}
+                  className="mt-3 inline-block text-sm font-medium text-slate-700 underline underline-offset-2"
+                >
+                  Create your first event
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {createdEvents.map((event) => (
+                <EventCard key={event.id} event={event} isCreated />
+              ))}
+            </div>
+          )}
+        </main>
+      )}
+
+      {/* Create tab */}
+      {tab === "create" && (
+        <main className="mx-auto max-w-[448px] pb-28">
+          <div className="px-4 pt-6">
+            <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">Create Event</h1>
+            <p className="mt-1 text-sm text-slate-500">Set up a new event and share the link with guests.</p>
+          </div>
+          <CreateEventForm />
+        </main>
+      )}
+
+      {/* Bottom Nav */}
+      <nav className="fixed inset-x-0 bottom-0 z-50 mx-auto flex h-20 max-w-[448px] items-center justify-around border-t border-slate-200 bg-white/90 px-6 backdrop-blur-md">
+        <NavButton active={tab === "dashboard"} onClick={() => setTab("dashboard")} label="Dashboard">
+          {tab === "dashboard" ? (
+            <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
+              <rect x="3" y="3" width="8" height="8" rx="1" /><rect x="13" y="3" width="8" height="8" rx="1" />
+              <rect x="3" y="13" width="8" height="8" rx="1" /><rect x="13" y="13" width="8" height="8" rx="1" />
+            </svg>
+          ) : (
+            <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="8" height="8" rx="1" /><rect x="13" y="3" width="8" height="8" rx="1" />
+              <rect x="3" y="13" width="8" height="8" rx="1" /><rect x="13" y="13" width="8" height="8" rx="1" />
+            </svg>
+          )}
+        </NavButton>
+
+        {/* Create button — prominent pill in the middle */}
+        <button
+          type="button"
+          onClick={() => setTab("create")}
+          aria-label="Create event"
+          className={[
+            "flex h-12 w-12 items-center justify-center rounded-full shadow-md transition-transform active:scale-95",
+            tab === "create" ? "bg-slate-900 text-white" : "bg-slate-900 text-white",
+          ].join(" ")}
+        >
+          <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+        </button>
+
+        <NavButton active={tab === "events"} onClick={() => setTab("events")} label="Events">
+          {tab === "events" ? (
+            <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" fill="currentColor" opacity="0.15" />
+              <rect x="3" y="4" width="18" height="18" rx="2" />
+              <line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
+            </svg>
+          ) : (
+            <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" />
+              <line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
+            </svg>
+          )}
+        </NavButton>
+      </nav>
+    </div>
+  );
+}
+
+function NavButton({
+  active,
+  onClick,
+  label,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={["flex flex-col items-center justify-center transition-colors", active ? "text-slate-900" : "text-slate-400 hover:text-slate-700"].join(" ")}
+    >
+      {children}
+      <span className="mt-1 text-[10px] font-bold uppercase tracking-widest">{label}</span>
+    </button>
+  );
+}
+

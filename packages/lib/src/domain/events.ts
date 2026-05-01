@@ -4,7 +4,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 const createEventInputSchema = z.object({
   name: z.string().min(2),
-  eventDate: z.string().min(8)
+  eventDate: z.string().min(8),
+  coverImagePath: z.string().optional(),
 });
 
 export type EventRow = {
@@ -14,6 +15,8 @@ export type EventRow = {
   event_code: string;
   reveal_mode: "instant" | "after_event";
   gallery_visible: boolean;
+  created_by: string | null;
+  cover_image_path: string | null;
 };
 
 function randomEventCode(length = 6) {
@@ -21,19 +24,26 @@ function randomEventCode(length = 6) {
   return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
 }
 
-export async function createEvent(input: z.infer<typeof createEventInputSchema>) {
+export async function createEvent(
+  input: z.infer<typeof createEventInputSchema>,
+  supabaseClient?: SupabaseClient
+) {
   const parsed = createEventInputSchema.parse(input);
-  const supabase = getSupabaseClient();
+  const supabase = supabaseClient ?? getSupabaseClient();
   const event_code = randomEventCode();
+
+  const { data: { user } } = await supabase.auth.getUser();
 
   const { data, error } = await supabase
     .from("events")
     .insert({
       name: parsed.name,
       event_date: parsed.eventDate,
-      event_code
+      event_code,
+      created_by: user?.id ?? null,
+      cover_image_path: parsed.coverImagePath ?? null,
     })
-    .select("id,name,event_date,event_code,reveal_mode,gallery_visible")
+    .select("id,name,event_date,event_code,reveal_mode,gallery_visible,created_by,cover_image_path")
     .single();
 
   if (error) throw error;
@@ -44,7 +54,7 @@ export async function getEventByCode(eventCode: string) {
   const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from("events")
-    .select("id,name,event_date,event_code,reveal_mode,gallery_visible")
+    .select("id,name,event_date,event_code,reveal_mode,gallery_visible,cover_image_path")
     .eq("event_code", eventCode)
     .maybeSingle();
 
@@ -81,7 +91,19 @@ export async function listAllEvents() {
   const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from("events")
-    .select("id,name,event_date,event_code,reveal_mode,gallery_visible")
+    .select("id,name,event_date,event_code,reveal_mode,gallery_visible,created_by")
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+  return (data as EventRow[]) ?? [];
+}
+
+export async function listEventsByCreator(userId: string) {
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase
+    .from("events")
+    .select("id,name,event_date,event_code,reveal_mode,gallery_visible,created_by")
+    .eq("created_by", userId)
     .order("created_at", { ascending: false });
 
   if (error) throw error;
