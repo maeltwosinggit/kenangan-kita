@@ -272,6 +272,14 @@ export function GalleryClient({ eventCode, currentUserId }: Props) {
         from { transform: translateX(-110%); opacity: 0.4; }
         to   { transform: translateX(0);     opacity: 1;   }
       }
+      @keyframes kk-exit-left {
+        from { transform: translateX(var(--exit-x, 0px)); opacity: var(--exit-op, 1); }
+        to   { transform: translateX(-115%); opacity: 0; }
+      }
+      @keyframes kk-exit-right {
+        from { transform: translateX(var(--exit-x, 0px)); opacity: var(--exit-op, 1); }
+        to   { transform: translateX(115%); opacity: 0; }
+      }
     `}</style>
     {/* Lightbox overlay */}
     {selected && (
@@ -376,18 +384,12 @@ export function GalleryClient({ eventCode, currentUserId }: Props) {
           {outgoing && (
             <div
               key={`out-${outgoing.item.id}`}
-              ref={(el) => {
-                if (!el) return;
-                // Start from the exact drag position, then animate to off-screen
-                el.style.transform = `translateX(${outgoing.startX}px)`;
-                el.style.opacity = String(Math.max(0.35, 1 - Math.abs(outgoing.startX) / 320));
-                requestAnimationFrame(() => {
-                  el.style.transition = "transform 0.26s ease-out, opacity 0.22s ease-out";
-                  el.style.transform = `translateX(${outgoing.dir === "left" ? "-115%" : "115%"})`;
-                  el.style.opacity = "0";
-                });
-              }}
-              onTransitionEnd={() => setOutgoing(null)}
+              style={{
+                "--exit-x": `${outgoing.startX}px`,
+                "--exit-op": String(Math.max(0.35, 1 - Math.abs(outgoing.startX) / 320)),
+                animation: `${outgoing.dir === "left" ? "kk-exit-left" : "kk-exit-right"} 0.26s ease-out forwards`,
+              } as React.CSSProperties}
+              onAnimationEnd={() => setOutgoing(null)}
               className="absolute inset-0 flex items-center justify-center px-10 pointer-events-none"
               aria-hidden
             >
