@@ -16,18 +16,92 @@ type PhotoItem = { id: string; imageUrl: string; nickname: string | null; upload
 export function GalleryClient({ eventCode, currentUserId }: Props) {
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const [selected, setSelected] = useState<PhotoItem | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState<number>(-1);
   const [isVisible, setIsVisible] = useState(false);
+  const [slideDir, setSlideDir] = useState<"left" | "right" | null>(null);
+  // outgoing: the photo that is animating OUT simultaneously with the new one animating in
+  const [outgoing, setOutgoing] = useState<{ item: PhotoItem; startX: number; dir: "left" | "right" } | null>(null);
+  const touchStartX = useRef<number | null>(null);
+  const touchCurrentX = useRef<number>(0);
+  const isDragging = useRef(false);
+  const imageContainerRef = useRef<HTMLDivElement | null>(null);
 
-  const openPhoto = (item: PhotoItem) => {
+  // flat ordered list, updated whenever query data changes
+  const allItems = useRef<PhotoItem[]>([]);
+
+  const openPhoto = (item: PhotoItem, index: number) => {
+    setSlideDir(null);
+    setOutgoing(null);
     setSelected(item);
-    // allow one frame for the element to mount before transitioning in
+    setSelectedIndex(index);
     requestAnimationFrame(() => requestAnimationFrame(() => setIsVisible(true)));
   };
 
   const closePhoto = () => {
     setIsVisible(false);
+    setOutgoing(null);
     setTimeout(() => setSelected(null), 300);
   };
+
+  // goTo: sets both outgoing (exit) and selected (enter) simultaneously — no black gap
+  const goTo = (index: number, dir: "left" | "right", startX = 0) => {
+    const items = allItems.current;
+    if (index < 0 || index >= items.length) return;
+    setOutgoing({ item: selected!, startX, dir });
+    setSlideDir(dir);
+    setSelected(items[index]);
+    setSelectedIndex(index);
+  };
+
+  const goPrev = () => goTo(selectedIndex - 1, "right");
+  const goNext = () => goTo(selectedIndex + 1, "left");
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging.current || touchStartX.current === null) return;
+    const dx = e.touches[0].clientX - touchStartX.current;
+    touchCurrentX.current = dx;
+    const c = imageContainerRef.current;
+    if (!c) return;
+    c.style.transform = `translateX(${dx}px)`;
+    c.style.opacity = String(Math.max(0.35, 1 - Math.abs(dx) / 320));
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!isDragging.current || touchStartX.current === null) return;
+    isDragging.current = false;
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    touchStartX.current = null;
+    if (Math.abs(dx) > 60) {
+      // Commit: pass current drag offset as startX so outgoing div begins exactly where finger left it
+      const startX = touchCurrentX.current;
+      touchCurrentX.current = 0;
+      if (dx < 0) goTo(selectedIndex + 1, "left", startX);
+      else goTo(selectedIndex - 1, "right", startX);
+    } else {
+      // Cancel: bounce back
+      touchCurrentX.current = 0;
+      const c = imageContainerRef.current;
+      if (!c) return;
+      c.style.transition = "transform 0.28s cubic-bezier(0.34,1.56,0.64,1), opacity 0.25s ease";
+      c.style.transform = "translateX(0)";
+      c.style.opacity = "1";
+      const ref = c;
+      setTimeout(() => { ref.style.transition = ""; }, 280);
+    }
+  };
+
+  // Keyboard navigation
+  useEffect(() => {
+    if (!selected) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft") goPrev();
+      else if (e.key === "ArrowRight") goNext();
+      else if (e.key === "Escape") closePhoto();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected, selectedIndex]);
 
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [lightboxMenuOpen, setLightboxMenuOpen] = useState(false);
@@ -143,6 +217,7 @@ export function GalleryClient({ eventCode, currentUserId }: Props) {
   }
 
   const items = query.data!.pages.flatMap((page) => page.items);
+  allItems.current = items;
   if (items.length === 0) {
     return (
       <div className="flex flex-col items-center gap-5 py-16 text-center">
@@ -180,6 +255,16 @@ export function GalleryClient({ eventCode, currentUserId }: Props) {
 
   return (
     <>
+    <style>{`
+      @keyframes kk-slide-in-right {
+        from { transform: translateX(110%); opacity: 0.4; }
+        to   { transform: translateX(0);    opacity: 1;   }
+      }
+      @keyframes kk-slide-in-left {
+        from { transform: translateX(-110%); opacity: 0.4; }
+        to   { transform: translateX(0);     opacity: 1;   }
+      }
+    `}</style>
     {/* Lightbox overlay */}
     {selected && (
       <div
@@ -265,16 +350,99 @@ export function GalleryClient({ eventCode, currentUserId }: Props) {
           </div>
         </div>
         {/* Image */}
-        <div className="flex flex-1 items-center justify-center overflow-hidden px-2 pb-6">
-          <img
-            src={selected.imageUrl}
-            alt={`Photo by ${selected.nickname ?? "guest"}`}
-            className={[
-              "max-h-full max-w-full rounded-lg object-contain transition-all duration-300",
-              isVisible ? "scale-100 opacity-100" : "scale-90 opacity-0",
-            ].join(" ")}
+        <div
+          className="relative flex flex-1 overflow-hidden pb-6"
+          onTouchStart={(e) => {
+            if (outgoing) return; // ignore new gesture during transition
+            touchStartX.current = e.touches[0].clientX;
+            touchCurrentX.current = 0;
+            isDragging.current = true;
+            const c = imageContainerRef.current;
+            if (c) c.style.transition = "";
+          }}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onClick={closePhoto}
+        >
+          {/* Outgoing photo — exits simultaneously with incoming entering */}
+          {outgoing && (
+            <div
+              key={`out-${outgoing.item.id}`}
+              ref={(el) => {
+                if (!el) return;
+                // Start from the exact drag position, then animate to off-screen
+                el.style.transform = `translateX(${outgoing.startX}px)`;
+                el.style.opacity = String(Math.max(0.35, 1 - Math.abs(outgoing.startX) / 320));
+                requestAnimationFrame(() => {
+                  el.style.transition = "transform 0.26s ease-out, opacity 0.22s ease-out";
+                  el.style.transform = `translateX(${outgoing.dir === "left" ? "-115%" : "115%"})`;
+                  el.style.opacity = "0";
+                });
+              }}
+              onTransitionEnd={() => setOutgoing(null)}
+              className="absolute inset-0 flex items-center justify-center px-10 pointer-events-none"
+              aria-hidden
+            >
+              <img
+                src={outgoing.item.imageUrl}
+                className="max-h-full max-w-full rounded-lg object-contain"
+                alt=""
+              />
+            </div>
+          )}
+          {/* Incoming photo — slides in from opposite side */}
+          <div
+            key={selected.id}
+            ref={imageContainerRef}
+            style={slideDir ? {
+              animation: `kk-slide-in-${slideDir === "left" ? "right" : "left"} 0.26s ease-out`,
+            } : undefined}
+            onAnimationEnd={() => setSlideDir(null)}
+            className="absolute inset-0 flex items-center justify-center px-10"
             onClick={(e) => e.stopPropagation()}
-          />
+          >
+            <img
+              src={selected.imageUrl}
+              alt={`Photo by ${selected.nickname ?? "guest"}`}
+              className={[
+                "max-h-full max-w-full rounded-lg object-contain transition-all duration-300",
+                isVisible ? "scale-100 opacity-100" : "scale-90 opacity-0",
+              ].join(" ")}
+            />
+          </div>
+          {/* Preload adjacent images to eliminate load delay */}
+          {allItems.current[selectedIndex - 1] && (
+            <img key={`pre-${allItems.current[selectedIndex - 1].id}`} src={allItems.current[selectedIndex - 1].imageUrl} className="hidden" aria-hidden alt="" />
+          )}
+          {allItems.current[selectedIndex + 1] && (
+            <img key={`pre-${allItems.current[selectedIndex + 1].id}`} src={allItems.current[selectedIndex + 1].imageUrl} className="hidden" aria-hidden alt="" />
+          )}
+          {/* Prev arrow */}
+          {selectedIndex > 0 && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); goPrev(); }}
+              aria-label="Previous photo"
+              className="absolute left-2 top-1/2 z-10 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm hover:bg-black/60 active:scale-90"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+            </button>
+          )}
+          {/* Next arrow */}
+          {selectedIndex < allItems.current.length - 1 && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); goNext(); }}
+              aria-label="Next photo"
+              className="absolute right-2 top-1/2 z-10 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm hover:bg-black/60 active:scale-90"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </button>
+          )}
         </div>
       </div>
     )}
@@ -294,7 +462,7 @@ export function GalleryClient({ eventCode, currentUserId }: Props) {
                       <button
                         type="button"
                         className="block w-full text-left focus:outline-none"
-                        onClick={() => openPhoto(item)}
+                        onClick={() => openPhoto(item, allItems.current.findIndex((i) => i.id === item.id))}
                         aria-label={`View photo by ${item.nickname ?? "guest"}`}
                       >
                         <img
