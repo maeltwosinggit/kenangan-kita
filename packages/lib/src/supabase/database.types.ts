@@ -10,6 +10,7 @@ export type Database = {
           reveal_mode: "instant" | "after_event";
           gallery_visible: boolean;
           created_by: string | null;
+          cover_image_path: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -21,6 +22,7 @@ export type Database = {
           reveal_mode?: "instant" | "after_event";
           gallery_visible?: boolean;
           created_by?: string | null;
+          cover_image_path?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -32,6 +34,7 @@ export type Database = {
           reveal_mode?: "instant" | "after_event";
           gallery_visible?: boolean;
           created_by?: string | null;
+          cover_image_path?: string | null;
           created_at?: string;
           updated_at?: string;
         };
