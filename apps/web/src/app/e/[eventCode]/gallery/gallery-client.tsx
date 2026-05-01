@@ -66,27 +66,35 @@ export function GalleryClient({ eventCode, currentUserId }: Props) {
     c.style.opacity = String(Math.max(0.35, 1 - Math.abs(dx) / 320));
   };
 
+  const bounceBack = () => {
+    touchCurrentX.current = 0;
+    const c = imageContainerRef.current;
+    if (!c) return;
+    c.style.transition = "transform 0.28s cubic-bezier(0.34,1.56,0.64,1), opacity 0.25s ease";
+    c.style.transform = "translateX(0)";
+    c.style.opacity = "1";
+    const ref = c;
+    setTimeout(() => { ref.style.transition = ""; }, 280);
+  };
+
   const handleTouchEnd = (e: React.TouchEvent) => {
     if (!isDragging.current || touchStartX.current === null) return;
     isDragging.current = false;
     const dx = e.changedTouches[0].clientX - touchStartX.current;
     touchStartX.current = null;
     if (Math.abs(dx) > 60) {
-      // Commit: pass current drag offset as startX so outgoing div begins exactly where finger left it
+      const nextIndex = dx < 0 ? selectedIndex + 1 : selectedIndex - 1;
+      const items = allItems.current;
+      // Boundary guard: bounce back if no photo in that direction
+      if (nextIndex < 0 || nextIndex >= items.length) {
+        bounceBack();
+        return;
+      }
       const startX = touchCurrentX.current;
       touchCurrentX.current = 0;
-      if (dx < 0) goTo(selectedIndex + 1, "left", startX);
-      else goTo(selectedIndex - 1, "right", startX);
+      goTo(nextIndex, dx < 0 ? "left" : "right", startX);
     } else {
-      // Cancel: bounce back
-      touchCurrentX.current = 0;
-      const c = imageContainerRef.current;
-      if (!c) return;
-      c.style.transition = "transform 0.28s cubic-bezier(0.34,1.56,0.64,1), opacity 0.25s ease";
-      c.style.transform = "translateX(0)";
-      c.style.opacity = "1";
-      const ref = c;
-      setTimeout(() => { ref.style.transition = ""; }, 280);
+      bounceBack();
     }
   };
 
@@ -399,11 +407,11 @@ export function GalleryClient({ eventCode, currentUserId }: Props) {
             } : undefined}
             onAnimationEnd={() => setSlideDir(null)}
             className="absolute inset-0 flex items-center justify-center px-10"
-            onClick={(e) => e.stopPropagation()}
           >
             <img
               src={selected.imageUrl}
               alt={`Photo by ${selected.nickname ?? "guest"}`}
+              onClick={(e) => e.stopPropagation()}
               className={[
                 "max-h-full max-w-full rounded-lg object-contain transition-all duration-300",
                 isVisible ? "scale-100 opacity-100" : "scale-90 opacity-0",
