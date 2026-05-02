@@ -6,7 +6,7 @@ export type CapturedPhoto = {
 
 export interface CameraAdapter {
   start(): Promise<void>;
-  capture(): Promise<CapturedPhoto>;
+  capture(mirror?: boolean): Promise<CapturedPhoto>;
   stop(): void;
 }
 

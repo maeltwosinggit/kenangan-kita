@@ -81,7 +81,7 @@ export class WebCameraAdapter implements CameraAdapter {
     return Promise.resolve();
   }
 
-  async capture(): Promise<CapturedPhoto> {
+  async capture(mirror?: boolean): Promise<CapturedPhoto> {
     const width = this.video.videoWidth;
     const height = this.video.videoHeight;
     if (!width || !height) {
@@ -95,7 +95,14 @@ export class WebCameraAdapter implements CameraAdapter {
       throw new Error("Canvas context is unavailable");
     }
 
+    ctx.save();
+    if (mirror) {
+      ctx.translate(width, 0);
+      ctx.scale(-1, 1);
+    }
     ctx.drawImage(this.video, 0, 0, width, height);
+    ctx.restore();
+    
     const blob = await new Promise<Blob>((resolve, reject) => {
       this.canvas.toBlob((nextBlob) => {
         if (!nextBlob) {

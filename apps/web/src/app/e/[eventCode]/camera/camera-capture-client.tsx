@@ -135,7 +135,7 @@ export function CameraCaptureClient({ eventCode }: Props) {
           await new Promise((r) => setTimeout(r, 200));
         }
       }
-      const photo = await adapter.capture();
+      const photo = await adapter.capture(!isBackCamera);
       if (flashOn) {
         if (isBackCamera) {
           await adapter.setTorch(false);
