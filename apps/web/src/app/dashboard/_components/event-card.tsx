@@ -4,6 +4,7 @@ import type { ParticipatedEvent, CreatedEvent } from "@/lib/data/dashboard";
 type EventCardProps = {
   event: ParticipatedEvent | CreatedEvent;
   isCreated?: boolean;
+  onManage?: () => void;
 };
 
 const CameraIcon = () => (
@@ -34,7 +35,7 @@ const btnBase = "flex flex-1 items-center justify-center gap-2 rounded-lg py-2 t
 const btnPrimary = `${btnBase} bg-slate-900 text-white`;
 const btnOutline = `${btnBase} border border-slate-200 text-slate-900`;
 
-export function EventCard({ event, isCreated = false }: EventCardProps) {
+export function EventCard({ event, isCreated = false, onManage }: EventCardProps) {
   return (
     <div className={["space-y-4 rounded-xl border border-slate-200 bg-white p-4", !event.isOpen ? "opacity-75" : ""].join(" ")}>
       {/* Header row */}
@@ -92,9 +93,9 @@ export function EventCard({ event, isCreated = false }: EventCardProps) {
           <GalleryIcon /> {event.isOpen ? "Gallery" : "View Archive"}
         </Link>
         {isCreated && (
-          <Link href={`/admin/events/${event.id}`} className={btnOutline}>
+          <button type="button" onClick={onManage} className={btnOutline}>
             <ManageIcon /> Manage
-          </Link>
+          </button>
         )}
       </div>
     </div>

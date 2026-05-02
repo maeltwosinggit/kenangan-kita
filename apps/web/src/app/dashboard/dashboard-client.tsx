@@ -3,10 +3,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
-import type { DashboardData, RecentPhoto } from "@/lib/data/dashboard";
+import type { DashboardData, RecentPhoto, CreatedEvent } from "@/lib/data/dashboard";
 import { EventCard } from "./_components/event-card";
 import UserMenu from "@/components/user-menu";
 import CreateEventForm from "@/app/events/new/create-event-client";
+import { ManageEventSheet } from "./_components/manage-event-sheet";
 
 type Props = DashboardData & {
   firstName: string;
@@ -57,6 +58,7 @@ export default function DashboardClient({
   createdEvents,
 }: Props) {
   const [tab, setTab] = useState<Tab>("dashboard");
+  const [managingEvent, setManagingEvent] = useState<CreatedEvent | null>(null);
 
   return (
     <div className="relative min-h-screen bg-slate-50">
@@ -163,7 +165,12 @@ export default function DashboardClient({
           ) : (
             <div className="space-y-3">
               {createdEvents.map((event) => (
-                <EventCard key={event.id} event={event} isCreated />
+                <EventCard
+                  key={event.id}
+                  event={event}
+                  isCreated
+                  onManage={() => setManagingEvent(event)}
+                />
               ))}
             </div>
           )}
@@ -182,6 +189,14 @@ export default function DashboardClient({
       )}
 
       {/* Bottom Nav */}
+      {managingEvent !== null && (
+        <ManageEventSheet
+          event={managingEvent}
+          isOpen={true}
+          onClose={() => setManagingEvent(null)}
+          onDeleted={() => { window.location.reload(); }}
+        />
+      )}
       <nav className="fixed inset-x-0 bottom-0 z-50 mx-auto flex h-20 max-w-[448px] items-center justify-around border-t border-slate-200 bg-white/90 px-6 backdrop-blur-md">
         <NavButton active={tab === "dashboard"} onClick={() => setTab("dashboard")} label="Dashboard">
           {tab === "dashboard" ? (
