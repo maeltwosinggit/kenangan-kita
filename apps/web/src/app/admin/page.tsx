@@ -3,7 +3,6 @@ import Image from "next/image";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { listAllEvents, getLatestEventPhoto, isEventGalleryOpen } from "@kenangan/lib";
 import AdminBottomNav from "./_components/admin-bottom-nav";
-import UserMenu from "@/components/user-menu";
 
 function timeAgo(iso: string): string {
   const secs = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
@@ -101,31 +100,6 @@ export default async function AdminPage() {
 
   return (
     <div className="relative min-h-screen bg-slate-50">
-      {/* Sticky top header */}
-      <header className="sticky top-0 z-50 border-b border-slate-200 bg-white">
-        <div className="mx-auto flex h-16 max-w-[448px] items-center justify-between px-4">
-          <Link href="/admin">
-            <Image
-              src="/logo.png"
-              alt="Kenangan Kita"
-              width={80}
-              height={40}
-              unoptimized
-              className="object-contain"
-            />
-          </Link>
-          <div className="flex items-center gap-2">
-            <Link
-              href="/dashboard"
-              className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50"
-            >
-              Dashboard
-            </Link>
-            <UserMenu avatarUrl={avatarUrl} displayName={displayName} />
-          </div>
-        </div>
-      </header>
-
       {/* Scrollable content */}
       <main className="mx-auto max-w-[448px] px-4 pb-28 pt-6">
 

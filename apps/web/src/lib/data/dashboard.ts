@@ -14,6 +14,7 @@ export type ParticipatedEvent = {
   event_date: string;
   event_code: string;
   isOpen: boolean;
+  coverImageUrl: string | null;
 };
 
 export type CreatedEvent = {
@@ -22,6 +23,7 @@ export type CreatedEvent = {
   event_date: string;
   event_code: string;
   isOpen: boolean;
+  coverImageUrl: string | null;
 };
 
 export type DashboardData = {
@@ -85,7 +87,7 @@ export async function getDashboardData(userId: string, supabase: SupabaseClient<
   if (distinctEventIds.length > 0) {
     const { data: eventRows } = await supabase
       .from("events")
-      .select("id, name, event_date, event_code, reveal_mode, gallery_visible")
+      .select("id, name, event_date, event_code, reveal_mode, gallery_visible, cover_image_path")
       .in("id", distinctEventIds)
       .order("event_date", { ascending: false });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -95,6 +97,9 @@ export async function getDashboardData(userId: string, supabase: SupabaseClient<
       event_date: e.event_date,
       event_code: e.event_code,
       isOpen: isEventGalleryOpen(e),
+      coverImageUrl: e.cover_image_path
+        ? supabase.storage.from("event-covers").getPublicUrl(e.cover_image_path).data.publicUrl
+        : null,
     }));
   }
 
@@ -104,6 +109,9 @@ export async function getDashboardData(userId: string, supabase: SupabaseClient<
     event_date: e.event_date,
     event_code: e.event_code,
     isOpen: isEventGalleryOpen(e),
+    coverImageUrl: e.cover_image_path
+      ? supabase.storage.from("event-covers").getPublicUrl(e.cover_image_path).data.publicUrl
+      : null,
   }));
 
   return {

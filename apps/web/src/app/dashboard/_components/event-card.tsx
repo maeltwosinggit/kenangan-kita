@@ -38,31 +38,47 @@ export function EventCard({ event, isCreated = false }: EventCardProps) {
   return (
     <div className={["space-y-4 rounded-xl border border-slate-200 bg-white p-4", !event.isOpen ? "opacity-75" : ""].join(" ")}>
       {/* Header row */}
-      <div className="flex items-start justify-between">
-        <div className="min-w-0 flex-1 pr-3">
-          <h3 className="truncate font-semibold leading-tight text-slate-900">{event.name}</h3>
-          <p className="mt-1 text-xs font-medium text-slate-500">
-            {new Date(event.event_date).toLocaleDateString("en-US", {
-              month: "long",
-              day: "numeric",
-              year: "numeric",
-            })}
-          </p>
-          {isCreated && (
-            <p className="mt-0.5 text-[10px] uppercase tracking-widest text-slate-400">
-              Code: {event.event_code}
-            </p>
-          )}
+      <div className="flex items-start gap-3">
+        {event.coverImageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={event.coverImageUrl} alt={event.name} className="h-16 w-16 shrink-0 rounded-lg object-cover border border-slate-200" />
+        ) : (
+          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-400">
+            <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" />
+              <circle cx="8.5" cy="8.5" r="1.5" />
+              <polyline points="21 15 16 10 5 21" />
+            </svg>
+          </div>
+        )}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between">
+            <div className="min-w-0 pr-3">
+              <h3 className="truncate font-semibold leading-tight text-slate-900">{event.name}</h3>
+              <p className="mt-1 text-xs font-medium text-slate-500">
+                {new Date(event.event_date).toLocaleDateString("en-US", {
+                  month: "long",
+                  day: "numeric",
+                  year: "numeric",
+                })}
+              </p>
+              {isCreated && (
+                <p className="mt-0.5 text-[10px] uppercase tracking-widest text-slate-400">
+                  Code: {event.event_code}
+                </p>
+              )}
+            </div>
+            <span
+              className={
+                event.isOpen
+                  ? "shrink-0 rounded bg-green-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-green-700"
+                  : "shrink-0 rounded bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-slate-500"
+              }
+            >
+              {event.isOpen ? "Active" : "Closed"}
+            </span>
+          </div>
         </div>
-        <span
-          className={
-            event.isOpen
-              ? "shrink-0 rounded bg-green-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-green-700"
-              : "shrink-0 rounded bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-slate-500"
-          }
-        >
-          {event.isOpen ? "Active" : "Closed"}
-        </span>
       </div>
 
       {/* Action buttons */}

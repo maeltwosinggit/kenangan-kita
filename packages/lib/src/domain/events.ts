@@ -91,7 +91,7 @@ export async function listAllEvents() {
   const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from("events")
-    .select("id,name,event_date,event_code,reveal_mode,gallery_visible,created_by")
+    .select("id,name,event_date,event_code,reveal_mode,gallery_visible,created_by,cover_image_path")
     .order("created_at", { ascending: false });
 
   if (error) throw error;
@@ -102,7 +102,7 @@ export async function listEventsByCreator(userId: string) {
   const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from("events")
-    .select("id,name,event_date,event_code,reveal_mode,gallery_visible,created_by")
+    .select("id,name,event_date,event_code,reveal_mode,gallery_visible,created_by,cover_image_path")
     .eq("created_by", userId)
     .order("created_at", { ascending: false });
 

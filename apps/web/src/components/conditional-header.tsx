@@ -11,7 +11,6 @@ export default async function ConditionalHeader() {
     pathname.startsWith("/e/") ||
     pathname.startsWith("/auth/") ||
     pathname === "/login" ||
-    pathname === "/admin" ||
     pathname === "/dashboard" ||
     pathname === "/events/new" ||
     pathname.endsWith("/print");
