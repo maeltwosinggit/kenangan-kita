@@ -208,7 +208,7 @@ export default function AdminClient({
                           </span>
                         </div>
                         <p className="mt-1 text-xs text-slate-500">
-                          {new Date(event.event_date).toLocaleDateString([], {
+                          {new Date(event.event_date).toLocaleDateString("en-US", {
                             month: "short",
                             day: "numeric",
                             year: "numeric",

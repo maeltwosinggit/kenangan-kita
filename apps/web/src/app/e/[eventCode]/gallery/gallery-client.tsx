@@ -247,7 +247,7 @@ export function GalleryClient({ eventCode, currentUserId }: Props) {
   // Group items by local date string
   const groups: { label: string; items: typeof items }[] = [];
   for (const item of items) {
-    const label = new Date(item.captured_at).toLocaleDateString([], {
+    const label = new Date(item.captured_at).toLocaleDateString("en-US", {
       weekday: "long",
       year: "numeric",
       month: "long",
@@ -301,7 +301,7 @@ export function GalleryClient({ eventCode, currentUserId }: Props) {
           <div className="flex flex-col">
             <span className="text-sm font-medium text-white">{selected.nickname ?? ""}</span>
             <span className="text-xs text-white/60">
-              {new Date(selected.captured_at).toLocaleString([], {
+              {new Date(selected.captured_at).toLocaleString("en-US", {
                 dateStyle: "medium",
                 timeStyle: "short",
               })}
