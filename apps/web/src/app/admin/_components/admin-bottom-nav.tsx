@@ -6,23 +6,20 @@ import { usePathname } from "next/navigation";
 function NavItem({
   href,
   label,
-  exact = false,
+  isActive,
+  onClick,
   activeIcon,
   inactiveIcon,
 }: {
   href: string;
   label: string;
-  exact?: boolean;
+  isActive: boolean;
+  onClick?: () => void;
   activeIcon: React.ReactNode;
   inactiveIcon: React.ReactNode;
 }) {
-  const pathname = usePathname();
-  const isActive = exact
-    ? pathname === href
-    : pathname === href || pathname.startsWith(href + "/");
-
-  return (
-    <Link href={href} className="flex flex-col items-center">
+  const content = (
+    <>
       <div
         className={[
           "rounded-full p-3 transition-colors duration-150",
@@ -39,6 +36,20 @@ function NavItem({
       >
         {label}
       </span>
+    </>
+  );
+
+  if (onClick) {
+    return (
+      <button type="button" onClick={onClick} className="flex flex-col items-center">
+        {content}
+      </button>
+    );
+  }
+
+  return (
+    <Link href={href} className="flex flex-col items-center">
+      {content}
     </Link>
   );
 }
@@ -125,31 +136,51 @@ const BarChartOutline = () => (
   </svg>
 );
 
-export default function AdminBottomNav() {
+export default function AdminBottomNav({
+  activeTab,
+  onTabChange,
+}: {
+  activeTab?: "overview" | "events" | "users" | "analytics";
+  onTabChange?: (tab: "overview" | "events" | "users" | "analytics") => void;
+}) {
+  const pathname = usePathname();
+
+  const getIsActive = (tabName: string, pathPrefix: string) => {
+    if (activeTab) return activeTab === tabName;
+    return pathname === pathPrefix || pathname.startsWith(pathPrefix + "/");
+  };
+
   return (
     <nav className="fixed inset-x-0 bottom-0 z-50 mx-auto flex h-20 max-w-[448px] items-center justify-around border-t border-slate-200 bg-white px-6">
       <NavItem
         href="/admin"
         label="Overview"
-        exact
+        isActive={activeTab ? activeTab === "overview" : pathname === "/admin"}
+        onClick={onTabChange ? () => onTabChange("overview") : undefined}
         activeIcon={<GridFilled />}
         inactiveIcon={<GridOutline />}
       />
       <NavItem
-        href="/admin/events"
+        href="/admin?tab=events"
         label="Events"
+        isActive={getIsActive("events", "/admin/events")}
+        onClick={onTabChange ? () => onTabChange("events") : undefined}
         activeIcon={<CalendarFilled />}
         inactiveIcon={<CalendarOutline />}
       />
       <NavItem
-        href="/admin/users"
+        href="/admin?tab=users"
         label="Users"
+        isActive={getIsActive("users", "/admin/users")}
+        onClick={onTabChange ? () => onTabChange("users") : undefined}
         activeIcon={<UsersFilled />}
         inactiveIcon={<UsersOutline />}
       />
       <NavItem
-        href="/admin/analytics"
+        href="/admin?tab=analytics"
         label="Analytics"
+        isActive={getIsActive("analytics", "/admin/analytics")}
+        onClick={onTabChange ? () => onTabChange("analytics") : undefined}
         activeIcon={<BarChartFilled />}
         inactiveIcon={<BarChartOutline />}
       />
