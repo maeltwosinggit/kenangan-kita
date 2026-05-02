@@ -13,7 +13,8 @@ export default async function ConditionalHeader() {
     pathname === "/login" ||
     pathname === "/admin" ||
     pathname === "/dashboard" ||
-    pathname === "/events/new";
+    pathname === "/events/new" ||
+    pathname.endsWith("/print");
 
   if (isPublic) return null;
 

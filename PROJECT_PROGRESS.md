@@ -1,11 +1,11 @@
 # Kenangan Kita MVP Progress Tracker
 
-Last updated: 2026-04-26 (Phase 5 RBAC extension complete)
+Last updated: 2026-05-02 (Phase 5.1 UX hardening + dashboard self-service complete)
 Owner: Engineering
 
 ## Overall Status
 
-- Current phase: Phase 5 (RBAC management complete, Phase 6 next)
+- Current phase: Phase 6 (QR generation and share flow complete, Phase 7 next)
 - Project health: In progress
 - Architecture direction: Monorepo (Turbo + pnpm), shared logic in packages, Supabase backend
 
@@ -16,7 +16,7 @@ Owner: Engineering
 - [x] Supabase schema and migrations complete
 - [x] Event creation flow (admin) complete
 - [x] Public event access via `event_code` complete
-- [ ] QR generation and scan flow complete
+- [x] QR generation and scan flow complete
 - [x] Admin auth gate complete (Google SSO + email/password)
 - [x] User RBAC management complete
 - [x] Web camera capture complete
@@ -24,6 +24,9 @@ Owner: Engineering
 - [x] Gallery complete
 - [x] Admin controls complete
 - [x] Vercel Analytics complete
+- [x] User dashboard (self-service) complete
+- [x] Event cover photo support complete
+- [x] QR generation and scan flow complete
 - [ ] Upload limits complete
 
 ## Phase Breakdown
@@ -79,12 +82,51 @@ Owner: Engineering
 - [x] Admin can view user list and toggle role (`admin` / `user`)
 - [x] RBAC policies expanded for admin-managed role updates
 
+### Phase 5.1 - UX Hardening + User Dashboard (Self-Service)
+
+#### Dashboard
+- [x] User dashboard (`/dashboard`) with tab navigation: Dashboard | Create | Events
+- [x] Dashboard data extraction into shared `lib/data/dashboard.ts` (types + fetch function)
+- [x] `EventCard` component extracted — shows active/closed badge, camera/gallery/manage actions
+- [x] Events tab shows events created by the logged-in user (via `listEventsByCreator`)
+- [x] Create tab renders `CreateEventForm` inline (no navigation required)
+- [x] `+` circular pill button in bottom nav for quick event creation
+
+#### Event Creation
+- [x] Standalone `/events/new` page accessible to all authenticated users (not admin-only)
+- [x] Cover photo support: camera capture + gallery picker, upload to `event-covers` bucket
+- [x] `createEvent()` now correctly stores `created_by` using SSR-aware browser client
+- [x] `event-covers` public Supabase bucket + RLS policies (migration `0012`)
+- [x] `events.cover_image_path` schema column added (migration `0012`)
+
+#### Event Guest Tracking
+- [x] `events.created_by` column defaults to `auth.uid()` (migration `0010`)
+- [x] `event_guests` table — auto-populated via trigger on photo upload (migration `0010`)
+- [x] Backfill `event_guests` from existing photos (migration `0010`)
+- [x] Backfill `created_by` from `admin_profiles` for legacy events (migration `0011`)
+
+#### Shared UI Components
+- [x] Shared `UserMenu` component — clickable avatar dropdown with sign-out, used by `/admin` and `/dashboard`
+- [x] Auth-aware `LandingNav` server component — shows Dashboard link + UserMenu when logged in, Sign In when not
+- [x] Middleware fixed: `x-pathname` now forwarded on request headers for public paths (was response-only, breaking `ConditionalHeader`)
+
+#### Admin Improvements
+- [x] Admin event list shows "Created by" field (resolved from user profiles)
+- [x] Admin header has "Dashboard" link back to `/dashboard`
+- [x] `/admin/events/new` redirects to `/events/new` (unified creation flow)
+
+#### Guest Event Pages (`/e/[eventCode]`)
+- [x] Cover photo displayed on event landing page (from `event-covers` public bucket)
+- [x] Footer logo replacing plain text on event landing + gallery pages
+- [x] Gallery page redesigned: sticky header with back nav + Live/Closed badge, cover banner, Add Photo button
+- [x] Gallery empty state upgraded: icon + bold heading + subtext (replaced plain `<p>`)
+
 ### Phase 6 - QR Generation + Share Flow
 
-- [ ] Generate QR for guest link on event creation success
-- [ ] Add actions: copy link, download QR, open guest page
-- [ ] Show QR block on event admin dashboard
-- [ ] Add print-friendly QR card layout
+- [x] Generate QR for guest link on event creation success
+- [x] Add actions: copy link, download QR, open guest page
+- [x] Show QR block on event admin dashboard
+- [x] Add print-friendly QR card layout
 
 ### Phase 7 - Upload Limits (Admin Controlled)
 
@@ -139,8 +181,7 @@ Owner: Engineering
 
 1. Seed one super-admin account in `admin_profiles` (`role = admin`) for production bootstrap.
 2. Validate RBAC flow end-to-end: first login => `user`, promote/demote via `/admin/users`.
-3. Build Phase 6 QR generation and share flow.
-4. Build Phase 7 upload limits and enforcement path.
+3. Build Phase 7 upload limits and enforcement path.
 
 ## Product Enhancements Backlog (Mapped to Phases)
 
@@ -161,6 +202,8 @@ Owner: Engineering
 - Admin phase implemented: per-event dashboard, gallery visibility toggle, and photo soft-delete moderation flow.
 - Phase 5 implemented and verified: Google SSO + email/password login, middleware auth gate, admin_profiles role enforcement, reverse-proxy-safe redirects, persistent header with avatar.
 - Camera UX hardened: flip animation (scaleX), flash (screen overlay for front / torch for back), auto-name from auth session, required guest nickname, black screen / incognito / first-permission-grant startup fix.
+- Phase 5.1 completed: user dashboard (self-service create + events), event cover photo, shared UserMenu, auth-aware landing nav, middleware x-pathname fix, admin event list creator info, gallery page redesign.
+- `createEvent()` now uses SSR-aware browser client — `created_by` is reliably persisted; legacy data backfilled via migrations 0010/0011.
 - Gallery UX improved: photo overlay with uploader name + timestamp, back-to-camera link.
 - Vercel Analytics added (`@vercel/analytics/next`) to root layout — live on next deploy.
 - Enhancement roadmap formalized into Phases 8-13 for incremental delivery.

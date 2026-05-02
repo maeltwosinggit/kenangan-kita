@@ -35,7 +35,7 @@ export default async function AdminEventPage({
       ]} />
       <h1 className="text-xl font-semibold">{event.name}</h1>
       <p className="mt-1 text-sm text-slate-600">Admin dashboard</p>
-      <GuestLinkSection eventCode={event.event_code} fullUrl={guestUrl} />
+      <GuestLinkSection eventId={event.id} eventCode={event.event_code} fullUrl={guestUrl} />
       <AdminEventClient event={event} />
     </main>
   );

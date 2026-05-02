@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { createEvent } from "@kenangan/lib";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { QRCodeDisplay } from "@/components/qr-code-display";
 
 const MAX_FILE_BYTES = 10 * 1024 * 1024; // 10 MB
 
@@ -96,6 +97,8 @@ export default function CreateEventForm({
           <p className="mt-1 text-sm text-slate-500">Share this link with your guests</p>
         </div>
 
+        <QRCodeDisplay url={guestUrl} size={180} />
+
         <div className="w-full rounded-xl border border-slate-200 bg-slate-50 p-4">
           <p className="break-all font-mono text-sm text-slate-700">{guestUrl}</p>
           <button
@@ -113,10 +116,18 @@ export default function CreateEventForm({
 
         <div className="flex w-full flex-col gap-2">
           <a
+            href={`/admin/events/${result.eventId}/print`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-center text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            Print QR Card 🖨️
+          </a>
+          <a
             href={`/e/${result.eventCode}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="block w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-center text-sm font-medium hover:bg-slate-50"
+            className="block w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-center text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
             Open Event Page ↗
           </a>
