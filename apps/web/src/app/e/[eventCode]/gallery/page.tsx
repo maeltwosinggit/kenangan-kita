@@ -26,74 +26,148 @@ export default async function GalleryPage({
   const currentUserId = user?.id ?? null;
   const galleryOpen = isEventGalleryOpen(event);
 
-  // Get cover public URL if set
-  let coverUrl: string | null = null;
+  // Fetch stats; only fetch latest photo if no cover is set
+  const [{ count: photoCount }, { data: nicknameRows }, { data: latestPhoto }] =
+    await Promise.all([
+      supabase
+        .from("photos")
+        .select("*", { count: "exact", head: true })
+        .eq("event_id", event.id)
+        .eq("is_deleted", false),
+      supabase
+        .from("photos")
+        .select("nickname")
+        .eq("event_id", event.id)
+        .eq("is_deleted", false)
+        .not("nickname", "is", null),
+      event.cover_image_path
+        ? Promise.resolve({ data: null })
+        : supabase
+            .from("photos")
+            .select("storage_path")
+            .eq("event_id", event.id)
+            .eq("is_deleted", false)
+            .order("captured_at", { ascending: false })
+            .limit(1)
+            .maybeSingle(),
+    ]);
+
+  const guestCount = new Set(nicknameRows?.map((r) => r.nickname)).size;
+
+  // Hero: use the event's designated cover photo first; fall back to latest uploaded photo.
+  let heroUrl: string | null = null;
   if (event.cover_image_path) {
-    const { data } = supabase.storage.from("event-covers").getPublicUrl(event.cover_image_path);
-    coverUrl = data.publicUrl ?? null;
+    const { data } = supabase.storage
+      .from("event-covers")
+      .getPublicUrl(event.cover_image_path);
+    heroUrl = data.publicUrl ?? null;
+  } else if (latestPhoto) {
+    const { data } = await supabase.storage
+      .from("event-photos")
+      .createSignedUrl(latestPhoto.storage_path, 60 * 60);
+    heroUrl = data?.signedUrl ?? null;
   }
 
-  const formattedDate = new Date(event.event_date).toLocaleDateString("en-US", {
-    month: "long",
+  const eventDay = new Date(event.event_date).toLocaleDateString("en-US", {
+    month: "short",
     day: "numeric",
-    year: "numeric",
   });
+  const eventYear = new Date(event.event_date).getFullYear();
 
   return (
-    <div className="relative min-h-screen bg-slate-50">
-      {/* Header */}
-      <header className="sticky top-0 z-40 border-b border-slate-200 bg-white">
-        <div className="mx-auto flex h-16 max-w-[448px] items-center gap-3 px-4">
-          <Link
-            href={`/e/${eventCode}`}
-            className="flex h-9 w-9 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100"
-            aria-label="Back to event"
-          >
-            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="15 18 9 12 15 6" />
-            </svg>
-          </Link>
-          <div className="flex min-w-0 flex-1 flex-col">
-            <span className="truncate text-sm font-bold text-slate-900">{event.name}</span>
-            <span className="text-[11px] text-slate-400">{formattedDate}</span>
-          </div>
-          <span className={[
-            "shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide",
-            galleryOpen ? "bg-green-50 text-green-700" : "bg-slate-100 text-slate-500",
-          ].join(" ")}>
-            {galleryOpen ? "Live" : "Closed"}
-          </span>
-        </div>
+    <div className="relative mx-auto min-h-screen max-w-[448px] overflow-x-hidden bg-white pb-24">
+
+      {/* Floating transparent header — centered within the 448px column */}
+      <header className="fixed left-1/2 top-0 z-50 flex h-16 w-full max-w-[448px] -translate-x-1/2 items-center justify-between px-4">
+        <Link
+          href={`/e/${eventCode}`}
+          aria-label="Back"
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-black/25 text-white backdrop-blur-md transition-transform active:scale-95"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+        </Link>
+        <h1 className="text-base font-bold tracking-tight text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]">
+          {event.name}
+        </h1>
+        <Link
+          href={`/e/${eventCode}/camera`}
+          aria-label="Open camera"
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-black/25 text-white backdrop-blur-md transition-transform active:scale-95"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+            <circle cx="12" cy="13" r="4" />
+          </svg>
+        </Link>
       </header>
 
-      {/* Event banner */}
-      {coverUrl && (
-        <div className="relative mx-auto max-w-[448px] overflow-hidden" style={{ height: 160 }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={coverUrl} alt={event.name} className="h-full w-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-        </div>
-      )}
+      {/* Hero section — 530px tall, cover photo with glassmorphism overlay */}
+      <section className="relative h-[530px] w-full overflow-hidden">
+        {heroUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={heroUrl} alt={event.name} className="h-full w-full object-cover" />
+        ) : (
+          <div className="h-full w-full bg-gradient-to-br from-slate-700 to-slate-950" />
+        )}
 
-      {/* Content */}
-      <main className="mx-auto max-w-[448px] px-4 pb-10 pt-5">
-        <div className="mb-4 flex items-center justify-between">
-          <h1 className="text-lg font-extrabold tracking-tight text-slate-900">Gallery</h1>
-          <Link
-            href={`/e/${eventCode}/camera`}
-            className="flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-2 text-xs font-bold uppercase tracking-widest text-white transition-transform active:scale-[0.98]"
-          >
-            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-              <circle cx="12" cy="13" r="4" />
-            </svg>
-            Add Photo
-          </Link>
+        {/* Glassmorphism metadata card */}
+        <div
+          className="absolute bottom-6 left-4 right-4 rounded-xl border border-white/20 p-5"
+          style={{ backdropFilter: "blur(12px)", background: "rgba(255,255,255,0.15)" }}
+        >
+          <div className="flex flex-col gap-1">
+            {/* Status badge */}
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-black uppercase tracking-widest text-white/70">
+                {galleryOpen ? "Event Live" : "Event Ended"}
+              </span>
+              {galleryOpen && (
+                <span className="h-2 w-2 animate-pulse rounded-full bg-red-500" />
+              )}
+            </div>
+
+            {/* Stats row */}
+            <div className="mt-2 flex flex-wrap items-baseline gap-x-6 gap-y-2">
+              <div className="flex flex-col">
+                <span className="text-[32px] font-black leading-none tracking-tighter text-white">
+                  {guestCount}
+                </span>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-white/80">
+                  Guests
+                </span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[32px] font-black leading-none tracking-tighter text-white">
+                  {photoCount ?? 0}
+                </span>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-white/80">
+                  Photos
+                </span>
+              </div>
+              <div className="ml-auto flex flex-col items-end">
+                <span className="text-[22px] font-black leading-none tracking-tighter text-white">
+                  {eventDay}
+                </span>
+                <span className="text-[13px] font-black leading-none tracking-tighter text-white/60">
+                  {eventYear}
+                </span>
+                <span className="mt-0.5 text-[10px] font-bold uppercase tracking-widest text-white/80">
+                  Date
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
+      </section>
+
+      {/* Gallery grid */}
+      <section className="bg-white px-2 pt-3">
         <GalleryClient eventCode={eventCode} currentUserId={currentUserId} />
-      </main>
+      </section>
 
-      {/* Footer logo */}
+      {/* Footer */}
       <footer className="pb-8 pt-4 text-center">
         <Link href="/">
           <Image src="/logo.png" alt="Kenangan Kita" width={80} height={40} unoptimized className="mx-auto object-contain opacity-40" />
