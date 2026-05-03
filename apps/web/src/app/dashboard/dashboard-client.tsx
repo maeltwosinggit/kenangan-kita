@@ -198,14 +198,12 @@ export default function DashboardClient({
       )}
 
       {/* Bottom Nav */}
-      {managingEvent !== null && (
-        <ManageEventSheet
-          event={managingEvent}
-          isOpen={true}
-          onClose={() => setManagingEvent(null)}
-          onDeleted={() => { window.location.reload(); }}
-        />
-      )}
+      <ManageEventSheet
+        event={managingEvent}
+        isOpen={managingEvent !== null}
+        onClose={() => setManagingEvent(null)}
+        onDeleted={() => { window.location.reload(); }}
+      />
       <nav className="fixed inset-x-0 bottom-0 z-50 mx-auto flex h-20 max-w-[448px] items-center justify-around border-t border-slate-200 bg-white/90 px-6 backdrop-blur-md">
         <NavButton active={tab === "dashboard"} onClick={() => setTab("dashboard")} label="Dashboard">
           {tab === "dashboard" ? (

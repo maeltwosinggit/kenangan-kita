@@ -24,6 +24,7 @@ export type CreatedEvent = {
   event_code: string;
   isOpen: boolean;
   coverImageUrl: string | null;
+  reveal_mode: "instant" | "after_event";
 };
 
 export type DashboardData = {
@@ -112,6 +113,7 @@ export async function getDashboardData(userId: string, supabase: SupabaseClient<
     coverImageUrl: e.cover_image_path
       ? supabase.storage.from("event-covers").getPublicUrl(e.cover_image_path).data.publicUrl
       : null,
+    reveal_mode: e.reveal_mode,
   }));
 
   return {

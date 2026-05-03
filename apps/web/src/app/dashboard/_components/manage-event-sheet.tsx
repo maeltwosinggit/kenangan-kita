@@ -11,9 +11,11 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { CreatedEvent } from "@/lib/data/dashboard";
 import { QRCodeDisplay } from "@/components/qr-code-display";
+import { EditEventForm } from "@/components/edit-event-form";
+import { EventGuestsList } from "@/components/event-guests-list";
 
 type Props = {
-  event: CreatedEvent;
+  event: CreatedEvent | null;
   isOpen: boolean;
   onClose: () => void;
   onDeleted: (eventId: string) => void;
@@ -39,14 +41,35 @@ function Spinner() {
   );
 }
 
-type Section = "overview" | "photos" | "danger";
+type Section = "overview" | "edit" | "guests" | "photos" | "danger";
 
-export function ManageEventSheet({ event, isOpen, onClose, onDeleted }: Props) {
+export function ManageEventSheet({ event: incomingEvent, isOpen, onClose, onDeleted }: Props) {
   const supabase = getSupabaseBrowserClient();
   const queryClient = useQueryClient();
-  const guestUrl = useEventUrl(event.event_code);
+  
+  // Keep a local copy of event so it can animate out when incomingEvent becomes null
+  const [event, setEvent] = useState(incomingEvent);
+  useEffect(() => {
+    if (incomingEvent) setEvent(incomingEvent);
+  }, [incomingEvent]);
+
+  // Track closing state for exit animation
+  const [isClosing, setIsClosing] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen && event) {
+      setIsClosing(true);
+      const timer = setTimeout(() => {
+        setIsClosing(false);
+        setEvent(null);
+      }, 300); // match exit animation duration
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, event]);
+
+  const guestUrl = useEventUrl(event?.event_code ?? "");
   const [copied, setCopied] = useState(false);
-  const [galleryVisible, setGalleryVisible] = useState(event.isOpen);
+  const [galleryVisible, setGalleryVisible] = useState(event?.isOpen ?? false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [activeSection, setActiveSection] = useState<Section>("overview");
   const sentinelRef = useRef<HTMLDivElement | null>(null);
@@ -63,20 +86,20 @@ export function ManageEventSheet({ event, isOpen, onClose, onDeleted }: Props) {
 
   // Reset state when sheet opens for a different event
   useEffect(() => {
-    if (isOpen) {
-      setGalleryVisible(event.isOpen);
+    if (isOpen && incomingEvent) {
+      setGalleryVisible(incomingEvent.isOpen);
       setShowDeleteConfirm(false);
       setActiveSection("overview");
     }
-  }, [isOpen, event.id, event.isOpen]);
+  }, [isOpen, incomingEvent?.id, incomingEvent?.isOpen]);
 
   const photosQuery = useInfiniteQuery({
-    queryKey: ["creator-photos", event.id],
+    queryKey: ["creator-photos", event?.id],
     queryFn: ({ pageParam = 0 }) =>
-      listEventPhotosForAdmin({ eventId: event.id, page: pageParam as number, pageSize: PAGE_SIZE }),
+      listEventPhotosForAdmin({ eventId: event!.id, page: pageParam as number, pageSize: PAGE_SIZE }),
     getNextPageParam: (last) => (last.hasMore ? last.page + 1 : undefined),
     initialPageParam: 0,
-    enabled: isOpen && activeSection === "photos",
+    enabled: !!event && isOpen && activeSection === "photos",
   });
 
   useEffect(() => {
@@ -94,7 +117,7 @@ export function ManageEventSheet({ event, isOpen, onClose, onDeleted }: Props) {
   const photos = photosQuery.data?.pages.flatMap((p) => p.items) ?? [];
 
   const visibilityMutation = useMutation({
-    mutationFn: (next: boolean) => setEventGalleryVisibility(event.id, next),
+    mutationFn: (next: boolean) => setEventGalleryVisibility(event!.id, next),
     onSuccess: (updated) => {
       setGalleryVisible(updated.gallery_visible);
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
@@ -107,10 +130,10 @@ export function ManageEventSheet({ event, isOpen, onClose, onDeleted }: Props) {
   });
 
   const deleteEventMutation = useMutation({
-    mutationFn: () => deleteEvent(supabase, event.id),
+    mutationFn: () => deleteEvent(supabase, event!.id),
     onSuccess: () => {
       onClose();
-      onDeleted(event.id);
+      onDeleted(event!.id);
     },
   });
 
@@ -122,14 +145,15 @@ export function ManageEventSheet({ event, isOpen, onClose, onDeleted }: Props) {
     } catch {}
   };
 
-  if (!isOpen) return null;
+  if (!isOpen && !isClosing) return null;
+  if (!event) return null;
 
   const sectionBtn = (s: Section, label: string) => (
     <button
       type="button"
       onClick={() => setActiveSection(s)}
       className={[
-        "rounded-lg px-3 py-1.5 text-xs font-bold uppercase tracking-widest transition-colors",
+        "shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold uppercase tracking-widest transition-colors",
         activeSection === s
           ? "bg-slate-900 text-white"
           : "bg-slate-100 text-slate-600 hover:bg-slate-200",
@@ -143,7 +167,9 @@ export function ManageEventSheet({ event, isOpen, onClose, onDeleted }: Props) {
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm"
+        className={`fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm ${
+          isClosing ? "animate-sheet-fade-out" : "animate-sheet-fade-in"
+        }`}
         onClick={onClose}
         aria-hidden="true"
       />
@@ -153,7 +179,9 @@ export function ManageEventSheet({ event, isOpen, onClose, onDeleted }: Props) {
         role="dialog"
         aria-modal="true"
         aria-label={`Manage ${event.name}`}
-        className="fixed inset-x-0 bottom-0 z-50 mx-auto max-w-[448px] rounded-t-2xl bg-white shadow-2xl"
+        className={`fixed inset-x-0 bottom-0 z-[60] mx-auto max-w-[448px] rounded-t-2xl bg-white shadow-2xl ${
+          isClosing ? "animate-sheet-slide-down" : "animate-sheet-slide-up"
+        }`}
         style={{ maxHeight: "90dvh", display: "flex", flexDirection: "column" }}
       >
         {/* Drag handle + header */}
@@ -193,8 +221,10 @@ export function ManageEventSheet({ event, isOpen, onClose, onDeleted }: Props) {
           </div>
 
           {/* Section tabs */}
-          <div className="mt-3 flex gap-2">
+          <div className="mt-3 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {sectionBtn("overview", "Overview")}
+            {sectionBtn("edit", "Edit")}
+            {sectionBtn("guests", "Guests")}
             {sectionBtn("photos", "Photos")}
             {sectionBtn("danger", "Danger")}
           </div>
@@ -296,6 +326,22 @@ export function ManageEventSheet({ event, isOpen, onClose, onDeleted }: Props) {
                 </div>
               </section>
             </>
+          )}
+
+          {/* ── EDIT EVENT ── */}
+          {activeSection === "edit" && (
+            <section className="rounded-xl border border-slate-200 bg-white p-4">
+              <h3 className="mb-4 text-xs font-bold uppercase tracking-widest text-slate-500">Edit Details</h3>
+              <EditEventForm event={event} />
+            </section>
+          )}
+
+          {/* ── GUESTS ── */}
+          {activeSection === "guests" && (
+            <section>
+              <h3 className="mb-4 text-xs font-bold uppercase tracking-widest text-slate-500">Guest Contributions</h3>
+              <EventGuestsList eventId={event.id} />
+            </section>
           )}
 
           {/* ── PHOTOS ── */}

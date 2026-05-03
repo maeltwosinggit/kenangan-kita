@@ -5,6 +5,8 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { EditEventForm } from "@/components/edit-event-form";
+import { EventGuestsList } from "@/components/event-guests-list";
 
 type Props = {
   event: EventRow;
@@ -18,6 +20,7 @@ export function AdminEventClient({ event }: Props) {
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const [eventState, setEventState] = useState(event);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [activeSection, setActiveSection] = useState<"overview" | "edit" | "guests" | "photos" | "danger">("overview");
 
   const photosQuery = useInfiniteQuery({
     queryKey: ["admin-photos", event.id],
@@ -78,8 +81,32 @@ export function AdminEventClient({ event }: Props) {
 
   const items = useMemo(() => photosQuery.data?.pages.flatMap((page) => page.items) ?? [], [photosQuery.data]);
 
+  const sectionBtn = (s: typeof activeSection, label: string) => (
+    <button
+      type="button"
+      onClick={() => setActiveSection(s)}
+      className={[
+        "shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold uppercase tracking-widest transition-colors",
+        activeSection === s
+          ? "bg-slate-900 text-white"
+          : "bg-slate-100 text-slate-600 hover:bg-slate-200",
+      ].join(" ")}
+    >
+      {label}
+    </button>
+  );
+
   return (
     <section className="mt-5 space-y-4">
+      <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {sectionBtn("overview", "Overview")}
+        {sectionBtn("edit", "Edit")}
+        {sectionBtn("guests", "Guests")}
+        {sectionBtn("photos", "Photos")}
+        {sectionBtn("danger", "Danger")}
+      </div>
+
+      {activeSection === "overview" && (
       <div className="rounded border border-slate-200 bg-white p-4">
         <h2 className="text-sm font-semibold">Gallery Visibility</h2>
         <p className="mt-1 text-xs text-slate-600">
@@ -109,7 +136,26 @@ export function AdminEventClient({ event }: Props) {
               : "Show Gallery"}
         </button>
       </div>
+      )}
 
+      {activeSection === "edit" && (
+        <div className="rounded border border-slate-200 bg-white p-4">
+          <h2 className="mb-4 text-sm font-semibold">Edit Event Details</h2>
+          <EditEventForm event={eventState} onSuccess={() => {
+            // refresh page to update header if name changed
+            router.refresh();
+          }} />
+        </div>
+      )}
+
+      {activeSection === "guests" && (
+        <div>
+          <h2 className="mb-4 text-sm font-semibold">Guest Contributions</h2>
+          <EventGuestsList eventId={eventState.id} />
+        </div>
+      )}
+
+      {activeSection === "photos" && (
       <div>
         <h2 className="text-sm font-semibold">Photos</h2>
         {photosQuery.isLoading && <p className="mt-2 text-xs text-slate-600">Loading photos...</p>}
@@ -163,7 +209,9 @@ export function AdminEventClient({ event }: Props) {
         )}
         <div ref={sentinelRef} className="h-6" />
       </div>
+      )}
 
+      {activeSection === "danger" && (
       <div className="rounded border border-red-200 bg-red-50 p-4">
         <h2 className="text-sm font-semibold text-red-800">Danger Zone</h2>
         <p className="mt-1 text-xs text-red-700">
@@ -208,6 +256,7 @@ export function AdminEventClient({ event }: Props) {
           </div>
         )}
       </div>
+      )}
     </section>
   );
 }

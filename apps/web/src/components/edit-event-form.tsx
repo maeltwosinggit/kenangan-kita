@@ -1,0 +1,98 @@
+"use client";
+
+import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { updateEvent } from "@kenangan/lib";
+
+type Props = {
+  event: {
+    id: string;
+    name: string;
+    event_date: string;
+    reveal_mode: "instant" | "after_event";
+  };
+  onSuccess?: () => void;
+};
+
+export function EditEventForm({ event, onSuccess }: Props) {
+  const queryClient = useQueryClient();
+  const [name, setName] = useState(event.name);
+  const [eventDate, setEventDate] = useState(event.event_date);
+  const [revealMode, setRevealMode] = useState(event.reveal_mode);
+
+  const mutation = useMutation({
+    mutationFn: () => updateEvent({ id: event.id, name, eventDate, revealMode }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-event", event.id] });
+      onSuccess?.();
+    },
+  });
+
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        mutation.mutate();
+      }}
+      className="space-y-4"
+    >
+      <div>
+        <label className="mb-1 block text-xs font-bold uppercase tracking-widest text-slate-500">
+          Event Name
+        </label>
+        <input
+          type="text"
+          required
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900"
+        />
+      </div>
+      <div>
+        <label className="mb-1 block text-xs font-bold uppercase tracking-widest text-slate-500">
+          Event Date
+        </label>
+        <input
+          type="date"
+          required
+          value={eventDate}
+          onChange={(e) => setEventDate(e.target.value)}
+          className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900"
+        />
+      </div>
+      <div>
+        <label className="mb-1 block text-xs font-bold uppercase tracking-widest text-slate-500">
+          Photo Reveal Mode
+        </label>
+        <select
+          value={revealMode}
+          onChange={(e) => setRevealMode(e.target.value as "instant" | "after_event")}
+          className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900"
+        >
+          <option value="instant">Instant (Photos visible immediately)</option>
+          <option value="after_event">After Event (Photos hidden until event ends)</option>
+        </select>
+      </div>
+
+      {mutation.isError && (
+        <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700">
+          Failed to update event details. Please try again.
+        </div>
+      )}
+      {mutation.isSuccess && (
+        <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-xs text-green-700">
+          Event details updated successfully!
+        </div>
+      )}
+
+      <button
+        type="submit"
+        disabled={mutation.isPending}
+        className="flex w-full items-center justify-center rounded-lg bg-slate-900 py-2.5 text-xs font-bold uppercase tracking-widest text-white transition-colors hover:bg-slate-800 disabled:opacity-60"
+      >
+        {mutation.isPending ? "Saving..." : "Save Changes"}
+      </button>
+    </form>
+  );
+}

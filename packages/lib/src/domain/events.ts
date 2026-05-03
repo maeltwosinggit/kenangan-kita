@@ -8,6 +8,13 @@ const createEventInputSchema = z.object({
   coverImagePath: z.string().optional(),
 });
 
+const updateEventInputSchema = z.object({
+  id: z.string(),
+  name: z.string().min(2),
+  eventDate: z.string().min(8),
+  revealMode: z.enum(["instant", "after_event"]),
+});
+
 export type EventRow = {
   id: string;
   name: string;
@@ -60,6 +67,24 @@ export async function getEventByCode(eventCode: string) {
 
   if (error) throw error;
   return (data as EventRow | null) ?? null;
+}
+
+export async function updateEvent(input: z.infer<typeof updateEventInputSchema>) {
+  const parsed = updateEventInputSchema.parse(input);
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase
+    .from("events")
+    .update({
+      name: parsed.name,
+      event_date: parsed.eventDate,
+      reveal_mode: parsed.revealMode,
+    })
+    .eq("id", parsed.id)
+    .select("id,name,event_date,event_code,reveal_mode,gallery_visible,cover_image_path")
+    .single();
+
+  if (error) throw error;
+  return data as EventRow;
 }
 
 export async function getEventById(eventId: string) {

@@ -265,3 +265,24 @@ export async function getLatestEventPhoto(eventId: string) {
   return signedData?.signedUrl ?? null;
 }
 
+export async function getEventGuestsContributions(eventId: string) {
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase
+    .from("photos")
+    .select("nickname")
+    .eq("event_id", eventId)
+    .eq("is_deleted", false);
+
+  if (error) throw error;
+
+  const contributions = new Map<string, number>();
+  for (const row of data) {
+    const name = row.nickname?.trim() || "Anonymous";
+    contributions.set(name, (contributions.get(name) ?? 0) + 1);
+  }
+
+  return Array.from(contributions.entries())
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count);
+}
+
