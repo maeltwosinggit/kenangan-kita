@@ -264,7 +264,7 @@ export default async function EventLandingPage({
           <span className="text-[10px] font-medium uppercase tracking-wide">Camera</span>
         </Link>
         <Link
-          href="/login"
+          href={user ? "/dashboard" : "/login"}
           aria-label="Profile"
           className="flex flex-col items-center gap-1 p-2 text-slate-400 transition-colors hover:text-slate-700 active:scale-95"
         >
