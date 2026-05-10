@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { getEventByCode, getLatestEventPhoto, isEventGalleryOpen } from "@kenangan/lib";
+import UserMenu from "@/components/user-menu";
 
 /* ── Icons (inline SVG, no extra deps) ── */
 function CameraIcon({ filled = false }: { filled?: boolean }) {
@@ -100,17 +101,28 @@ export default async function EventLandingPage({
     );
   }
 
+  const supabaseClient = (await import("@/lib/supabase/server")).getSupabaseServerClient;
+  const sb = await supabaseClient();
+
   // Use the dedicated cover image if set; fall back to the latest guest photo
   let coverUrl: string | null = null;
   if (event.cover_image_path) {
-    const supabase = (await import("@/lib/supabase/server")).getSupabaseServerClient;
-    const sb = await supabase();
     const { data } = sb.storage
       .from("event-covers")
       .getPublicUrl(event.cover_image_path);
     coverUrl = data.publicUrl ?? null;
   } else {
     coverUrl = await getLatestEventPhoto(event.id);
+  }
+
+  // Fetch user for global header
+  const { data: { user } } = await sb.auth.getUser();
+  let displayName: string | null = null;
+  let avatarUrl: string | null = null;
+
+  if (user) {
+    displayName = (user.user_metadata?.full_name ?? user.user_metadata?.name ?? user.email ?? "Guest") as string;
+    avatarUrl = (user.user_metadata?.avatar_url ?? null) as string | null;
   }
 
   const galleryOpen = isEventGalleryOpen(event);
@@ -122,21 +134,30 @@ export default async function EventLandingPage({
 
   return (
     <div className="relative bg-white text-slate-900 antialiased">
-      {/* ── Fixed top header ── */}
+      {/* ── Global Header ── */}
       <header className="fixed inset-x-0 top-0 z-50 mx-auto flex h-16 max-w-[448px] items-center justify-between border-b border-slate-200 bg-white px-4">
-        <h1 className="text-base font-extrabold uppercase tracking-tight text-slate-900 truncate max-w-[260px]">
-          {event.name}
-        </h1>
-        <span
-          className={[
-            "shrink-0 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide",
-            galleryOpen
-              ? "bg-green-50 text-green-700"
-              : "bg-slate-100 text-slate-500",
-          ].join(" ")}
-        >
-          {galleryOpen ? "Open" : "Closed"}
-        </span>
+        <Link href="/dashboard">
+          <Image src="/logo.png" alt="Kenangan Kita" width={80} height={40} unoptimized className="object-contain" />
+        </Link>
+        <div className="flex items-center gap-3">
+          <span
+            className={[
+              "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide",
+              galleryOpen
+                ? "bg-green-50 text-green-700"
+                : "bg-slate-100 text-slate-500",
+            ].join(" ")}
+          >
+            {galleryOpen ? "Live" : "Closed"}
+          </span>
+          {user && displayName ? (
+            <UserMenu avatarUrl={avatarUrl} displayName={displayName} />
+          ) : (
+            <Link href="/login" className="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-900 transition-colors hover:bg-slate-200">
+              Sign In
+            </Link>
+          )}
+        </div>
       </header>
 
       {/* ── Scrollable main ── */}

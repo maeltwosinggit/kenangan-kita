@@ -60,8 +60,15 @@ export default function DashboardClient({
   const [tab, setTab] = useState<Tab>("dashboard");
   const [managingEvent, setManagingEvent] = useState<CreatedEvent | null>(null);
 
+  const getTabIndex = (t: Tab) => {
+    if (t === "dashboard") return 0;
+    if (t === "create") return 1;
+    if (t === "events") return 2;
+    return 0;
+  };
+
   return (
-    <div className="relative min-h-screen bg-slate-50">
+    <div className="relative min-h-screen bg-slate-50 overflow-x-hidden">
       {/* Header */}
       <header className="sticky top-0 z-40 border-b border-slate-200 bg-white">
         <div className="mx-auto flex h-16 max-w-[448px] items-center justify-between px-4">
@@ -72,130 +79,136 @@ export default function DashboardClient({
         </div>
       </header>
 
-      {/* Dashboard tab */}
-      {tab === "dashboard" && (
-        <main className="mx-auto max-w-[448px] space-y-8 px-4 pb-28 pt-6">
-          <section className="space-y-1">
-            <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">Hello, {firstName}</h1>
-            <p className="text-sm text-slate-500">Welcome back to your memory hub.</p>
-            {isAdmin && (
-              <div className="pt-2">
-                <Link
-                  href="/admin"
-                  className="inline-flex items-center gap-1 rounded-lg border border-amber-500/20 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-100"
-                >
-                  <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                  </svg>
-                  Admin Access Enabled
-                  <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="9 18 15 12 9 6" />
-                  </svg>
-                </Link>
-              </div>
+      {/* Swipeable Tabs Container */}
+      <div 
+        className="flex w-full transition-transform duration-300 ease-in-out"
+        style={{ transform: `translateX(-${getTabIndex(tab) * 100}%)` }}
+      >
+        {/* Dashboard tab */}
+        <div className="w-full shrink-0">
+          <main className="mx-auto max-w-[448px] space-y-8 px-4 pb-28 pt-6">
+            <section className="space-y-1">
+              <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">Hello, {firstName}</h1>
+              <p className="text-sm text-slate-500">Welcome back to your memory hub.</p>
+              {isAdmin && (
+                <div className="pt-2">
+                  <Link
+                    href="/admin"
+                    className="inline-flex items-center gap-1 rounded-lg border border-amber-500/20 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-100"
+                  >
+                    <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                    </svg>
+                    Admin Access Enabled
+                    <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="9 18 15 12 9 6" />
+                    </svg>
+                  </Link>
+                </div>
+              )}
+            </section>
+
+            <section className="grid grid-cols-2 gap-4">
+              {[
+                { value: photosTaken, label: "Photos Taken" },
+                { value: eventsAttended, label: "Events Attended" },
+              ].map(({ value, label }) => (
+                <div key={label} className="flex flex-col items-center rounded-xl border border-slate-200 bg-white p-4 text-center">
+                  <span className="text-3xl font-black text-slate-900">{value.toString().padStart(2, "0")}</span>
+                  <span className="mt-1 text-[10px] font-bold uppercase tracking-widest text-slate-500">{label}</span>
+                </div>
+              ))}
+            </section>
+
+            {recentPhotos.length > 0 && <PhotoStrip photos={recentPhotos} />}
+
+            {participatedEvents.length > 0 && (
+              <section className="space-y-4">
+                <h2 className="text-sm font-bold uppercase tracking-tight text-slate-900">My Events</h2>
+                <div className="space-y-3">
+                  {participatedEvents.map((event) => (
+                    <EventCard key={event.id} event={event} />
+                  ))}
+                </div>
+              </section>
             )}
-          </section>
 
-          <section className="grid grid-cols-2 gap-4">
-            {[
-              { value: photosTaken, label: "Photos Taken" },
-              { value: eventsAttended, label: "Events Attended" },
-            ].map(({ value, label }) => (
-              <div key={label} className="flex flex-col items-center rounded-xl border border-slate-200 bg-white p-4 text-center">
-                <span className="text-3xl font-black text-slate-900">{value.toString().padStart(2, "0")}</span>
-                <span className="mt-1 text-[10px] font-bold uppercase tracking-widest text-slate-500">{label}</span>
-              </div>
-            ))}
-          </section>
+            {participatedEvents.length === 0 && recentPhotos.length === 0 && (
+              <section className="rounded-xl border border-slate-200 bg-white px-4 py-10 text-center">
+                <p className="text-sm text-slate-500">No photos yet. Scan a QR code at an event to get started.</p>
+              </section>
+            )}
+          </main>
+        </div>
 
-          {recentPhotos.length > 0 && <PhotoStrip photos={recentPhotos} />}
-
-          {participatedEvents.length > 0 && (
-            <section className="space-y-4">
-              <h2 className="text-sm font-bold uppercase tracking-tight text-slate-900">My Events</h2>
-              <div className="space-y-3">
-                {participatedEvents.map((event) => (
-                  <EventCard key={event.id} event={event} />
-                ))}
-              </div>
-            </section>
-          )}
-
-          {participatedEvents.length === 0 && recentPhotos.length === 0 && (
-            <section className="rounded-xl border border-slate-200 bg-white px-4 py-10 text-center">
-              <p className="text-sm text-slate-500">No photos yet. Scan a QR code at an event to get started.</p>
-            </section>
-          )}
-        </main>
-      )}
-
-      {/* Events tab */}
-      {tab === "events" && (
-        <main className="mx-auto max-w-[448px] px-4 pb-28 pt-6">
-          {/* Page header */}
-          <div className="mb-8 flex items-end justify-between">
-            <div>
-              <h1 className="text-3xl font-black tracking-tight text-slate-900">My Events</h1>
-              <p className="mt-1 text-sm text-slate-500">Manage your shared memories</p>
+        {/* Create tab */}
+        <div className="w-full shrink-0">
+          <main className="mx-auto max-w-[448px] pb-28">
+            <div className="px-4 pt-6">
+              <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">Create Event</h1>
+              <p className="mt-1 text-sm text-slate-500">Set up a new event and share the link with guests.</p>
             </div>
-            {isAdmin && (
-              <button
-                type="button"
-                onClick={() => setTab("create")}
-                className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-bold uppercase tracking-widest text-white transition-all active:scale-[0.97] hover:bg-slate-800"
-              >
-                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="12" y1="5" x2="12" y2="19" />
-                  <line x1="5" y1="12" x2="19" y2="12" />
-                </svg>
-                New Event
-              </button>
-            )}
-          </div>
+            <CreateEventForm onSuccess={(res) => setTab("events")} />
+          </main>
+        </div>
 
-          {/* Events list */}
-          {createdEvents.length === 0 ? (
-            <div className="rounded-xl border border-slate-200 bg-white px-4 py-12 text-center">
-              <svg className="mx-auto mb-3 h-10 w-10 text-slate-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="4" width="18" height="18" rx="2" />
-                <line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
-              </svg>
-              <p className="text-sm font-medium text-slate-500">No events yet.</p>
+        {/* Events tab */}
+        <div className="w-full shrink-0">
+          <main className="mx-auto max-w-[448px] px-4 pb-28 pt-6">
+            {/* Page header */}
+            <div className="mb-8 flex items-end justify-between">
+              <div>
+                <h1 className="text-3xl font-black tracking-tight text-slate-900">My Events</h1>
+                <p className="mt-1 text-sm text-slate-500">Manage your shared memories</p>
+              </div>
               {isAdmin && (
                 <button
                   type="button"
                   onClick={() => setTab("create")}
-                  className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-4 py-2 text-xs font-bold uppercase tracking-widest text-white"
+                  className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-bold uppercase tracking-widest text-white transition-all active:scale-[0.97] hover:bg-slate-800"
                 >
-                  Create your first event
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                  </svg>
+                  New Event
                 </button>
               )}
             </div>
-          ) : (
-            <div className="space-y-4">
-              {createdEvents.map((event) => (
-                <EventCard
-                  key={event.id}
-                  event={event}
-                  isCreated
-                  onManage={() => setManagingEvent(event)}
-                />
-              ))}
-            </div>
-          )}
-        </main>
-      )}
 
-      {/* Create tab */}
-      {tab === "create" && (
-        <main className="mx-auto max-w-[448px] pb-28">
-          <div className="px-4 pt-6">
-            <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">Create Event</h1>
-            <p className="mt-1 text-sm text-slate-500">Set up a new event and share the link with guests.</p>
-          </div>
-          <CreateEventForm />
-        </main>
-      )}
+            {/* Events list */}
+            {createdEvents.length === 0 ? (
+              <div className="rounded-xl border border-slate-200 bg-white px-4 py-12 text-center">
+                <svg className="mx-auto mb-3 h-10 w-10 text-slate-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="4" width="18" height="18" rx="2" />
+                  <line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
+                <p className="text-sm font-medium text-slate-500">No events yet.</p>
+                {isAdmin && (
+                  <button
+                    type="button"
+                    onClick={() => setTab("create")}
+                    className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-4 py-2 text-xs font-bold uppercase tracking-widest text-white"
+                  >
+                    Create your first event
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {createdEvents.map((event) => (
+                  <EventCard
+                    key={event.id}
+                    event={event}
+                    isCreated
+                    onManage={() => setManagingEvent(event)}
+                  />
+                ))}
+              </div>
+            )}
+          </main>
+        </div>
+      </div>
 
       {/* Bottom Nav */}
       <ManageEventSheet

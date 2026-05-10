@@ -281,6 +281,15 @@ export function GalleryClient({ eventCode, currentUserId }: Props) {
         to   { transform: translateX(115%); opacity: 0; }
       }
     `}</style>
+    <style>{`
+      @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+      .fuji-imprint {
+        font-family: 'Share Tech Mono', 'Courier New', monospace;
+        color: #f97316;
+        text-shadow: 0 0 8px rgba(249,115,22,0.8), 0 0 2px rgba(249,115,22,0.6);
+        letter-spacing: 0.08em;
+      }
+    `}</style>
     {/* Lightbox overlay */}
     {selected && (
       <div
@@ -408,17 +417,79 @@ export function GalleryClient({ eventCode, currentUserId }: Props) {
               animation: `kk-slide-in-${slideDir === "left" ? "right" : "left"} 0.26s ease-out`,
             } : undefined}
             onAnimationEnd={() => setSlideDir(null)}
-            className="absolute inset-0 flex items-center justify-center px-10"
+            className="absolute inset-0 flex items-center justify-center px-4"
           >
-            <img
-              src={selected.imageUrl}
-              alt={`Photo by ${selected.nickname ?? "guest"}`}
-              onClick={(e) => e.stopPropagation()}
+            {/* Image + Fuji overlay wrapper */}
+            <div
               className={[
-                "max-h-full max-w-full rounded-lg object-contain transition-all duration-300",
+                "relative max-h-full max-w-full transition-all duration-300",
                 isVisible ? "scale-100 opacity-100" : "scale-90 opacity-0",
               ].join(" ")}
-            />
+              onClick={(e) => e.stopPropagation()}
+            >
+              <img
+                src={selected.imageUrl}
+                alt={`Photo by ${selected.nickname ?? "guest"}`}
+                className="block max-h-[75dvh] max-w-full rounded-lg object-contain"
+              />
+
+              {/* ── Fujifilm-style overlays ── */}
+
+              {/* Film grain texture */}
+              <div
+                className="pointer-events-none absolute inset-0 rounded-lg"
+                style={{
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E")`,
+                  backgroundSize: "180px 180px",
+                  mixBlendMode: "overlay",
+                  opacity: 0.55,
+                }}
+              />
+
+              {/* Vignette */}
+              <div
+                className="pointer-events-none absolute inset-0 rounded-lg"
+                style={{
+                  background: "radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.45) 100%)",
+                }}
+              />
+
+              {/* Warm tint */}
+              <div
+                className="pointer-events-none absolute inset-0 rounded-lg"
+                style={{ background: "rgba(255,200,100,0.04)" }}
+              />
+
+              {/* ── Orange imprint strip ── */}
+              <div
+                className="pointer-events-none absolute bottom-3 right-3 flex flex-col items-end gap-0.5"
+              >
+                {/* HH:MM timestamp */}
+                <span
+                  className="fuji-imprint text-[15px] font-bold leading-none"
+                >
+                  {new Date(selected.captured_at).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    hour12: false,
+                  })}
+                </span>
+                {/* Date */}
+                <span className="fuji-imprint text-[10px] leading-none opacity-80">
+                  {new Date(selected.captured_at).toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "2-digit",
+                    day: "2-digit",
+                  }).replace(/\//g, ".")}  
+                </span>
+                {/* Uploader name */}
+                {selected.nickname && (
+                  <span className="fuji-imprint text-[10px] leading-none opacity-90 mt-0.5">
+                    {selected.nickname.toUpperCase()}
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
           {/* Preload adjacent images to eliminate load delay */}
           {allItems.current[selectedIndex - 1] && (
