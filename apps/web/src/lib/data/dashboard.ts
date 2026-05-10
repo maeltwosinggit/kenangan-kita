@@ -24,7 +24,12 @@ export type CreatedEvent = {
   event_code: string;
   isOpen: boolean;
   coverImageUrl: string | null;
+  /** Raw storage path in the event-covers bucket (used for deletion on replace) */
+  cover_image_path: string | null;
   reveal_mode: "instant" | "after_event";
+  upload_limit_enabled: boolean;
+  max_uploads_per_user: number | null;
+  max_uploads_total: number | null;
 };
 
 export type DashboardData = {
@@ -113,7 +118,11 @@ export async function getDashboardData(userId: string, supabase: SupabaseClient<
     coverImageUrl: e.cover_image_path
       ? supabase.storage.from("event-covers").getPublicUrl(e.cover_image_path).data.publicUrl
       : null,
+    cover_image_path: e.cover_image_path ?? null,
     reveal_mode: e.reveal_mode,
+    upload_limit_enabled: e.upload_limit_enabled ?? false,
+    max_uploads_per_user: e.max_uploads_per_user ?? null,
+    max_uploads_total:    e.max_uploads_total    ?? null,
   }));
 
   return {

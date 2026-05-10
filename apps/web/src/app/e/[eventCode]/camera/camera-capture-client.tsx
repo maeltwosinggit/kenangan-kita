@@ -1,6 +1,6 @@
 "use client";
 
-import { compressImage, getLatestUserPhotoUrl, uploadEventPhoto, WebCameraAdapter, type CapturedPhoto } from "@kenangan/lib";
+import { compressImage, getLatestUserPhotoUrl, uploadEventPhoto, checkUserUploadLimit, WebCameraAdapter, type CapturedPhoto, type UserUploadLimitStatus } from "@kenangan/lib";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -25,9 +25,21 @@ export function CameraCaptureClient({ eventCode }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [showSaved, setShowSaved] = useState(false);
   const [lastThumbUrl, setLastThumbUrl] = useState<string | null>(null);
+  const [limitStatus, setLimitStatus] = useState<UserUploadLimitStatus | null>(null);
 
-  const canCapture = useMemo(() => !!adapter && isCameraReady && !captured && !loading, [adapter, isCameraReady, captured, loading]);
+  const isLimitReached = !!limitStatus && (limitStatus.isUserLimitReached || limitStatus.isEventLimitReached);
+  const canCapture = useMemo(
+    () => !!adapter && isCameraReady && !captured && !loading && !isLimitReached,
+    [adapter, isCameraReady, captured, loading, isLimitReached]
+  );
   const canUpload = useMemo(() => !!captured && !loading, [captured, loading]);
+
+  // Fetch limit status for this user+event whenever userId resolves
+  const fetchLimitStatus = (uid: string) => {
+    checkUserUploadLimit(eventCode, uid)
+      .then(setLimitStatus)
+      .catch(() => {});
+  };
 
   // Fetch logged-in user's display name and id once on mount
   useEffect(() => {
@@ -39,9 +51,12 @@ export function CameraCaptureClient({ eventCode }: Props) {
           data.user?.user_metadata?.name ??
           null;
         setLoggedInName(name);
-        setUserId(data.user?.id ?? null);
+        const uid = data.user?.id ?? null;
+        setUserId(uid);
+        if (uid) fetchLimitStatus(uid);
       })
       .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -188,6 +203,8 @@ export function CameraCaptureClient({ eventCode }: Props) {
       setCaptured(null);
       setShowSaved(true);
       setTimeout(() => setShowSaved(false), 3000);
+      // Refresh quota after upload
+      if (userId) fetchLimitStatus(userId);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed");
     } finally {
@@ -315,7 +332,49 @@ export function CameraCaptureClient({ eventCode }: Props) {
 
       {/* ── Bottom controls (viewfinder only) ── */}
       {!captured && (
-        <footer className="absolute bottom-0 left-0 right-0 z-50 flex items-center justify-between px-8 pb-12">
+        <footer className="absolute bottom-0 left-0 right-0 z-50 flex flex-col items-center gap-0 px-8 pb-12">
+
+          {/* Quota bar — shown when limits are active */}
+          {limitStatus && limitStatus.userLimit !== null && (
+            <div className="mb-4 w-full">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[10px] uppercase tracking-widest text-white/60">Your quota</span>
+                <span className={[
+                  "text-[11px] font-bold",
+                  limitStatus.isUserLimitReached ? "text-red-400" : "text-white/80",
+                ].join(" ")}>
+                  {limitStatus.uploadCount} / {limitStatus.userLimit}
+                </span>
+              </div>
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/20">
+                <div
+                  className={[
+                    "h-full rounded-full transition-all",
+                    limitStatus.isUserLimitReached
+                      ? "bg-red-400"
+                      : limitStatus.uploadCount / limitStatus.userLimit > 0.8
+                      ? "bg-amber-400"
+                      : "bg-white",
+                  ].join(" ")}
+                  style={{ width: `${Math.min(100, (limitStatus.uploadCount / limitStatus.userLimit) * 100)}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Limit-reached message */}
+          {isLimitReached && (
+            <div className="mb-4 w-full rounded-xl border border-red-400/30 bg-red-500/20 px-4 py-3 text-center backdrop-blur-sm">
+              <p className="text-sm font-bold text-white">
+                {limitStatus?.isEventLimitReached
+                  ? "This event has reached its photo limit"
+                  : "You\'ve reached your photo limit for this event"}
+              </p>
+              <p className="mt-0.5 text-xs text-white/70">No more uploads allowed.</p>
+            </div>
+          )}
+
+          <div className="flex w-full items-center justify-between">
           {/* Left: Gallery thumbnail link */}
           <Link
             href={`/e/${eventCode}/gallery`}
@@ -361,6 +420,7 @@ export function CameraCaptureClient({ eventCode }: Props) {
               <line x1="12" y1="8" x2="12.01" y2="8" />
             </svg>
           </button>
+          </div>
         </footer>
       )}
 

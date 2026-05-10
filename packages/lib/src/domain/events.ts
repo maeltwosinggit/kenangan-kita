@@ -24,6 +24,26 @@ export type EventRow = {
   gallery_visible: boolean;
   created_by: string | null;
   cover_image_path: string | null;
+  upload_limit_enabled: boolean;
+  max_uploads_per_user: number | null;
+  max_uploads_total: number | null;
+};
+
+export type EventUploadStats = {
+  totalUploads: number;
+  totalLimit: number | null;
+  limitEnabled: boolean;
+};
+
+export type UserUploadLimitStatus = {
+  /** How many photos this user has uploaded to the event (non-deleted) */
+  uploadCount: number;
+  /** The per-user cap, or null if no limit is set / limits are disabled */
+  userLimit: number | null;
+  /** Whether the user has reached their personal cap */
+  isUserLimitReached: boolean;
+  /** Whether the event-wide total cap has been reached */
+  isEventLimitReached: boolean;
 };
 
 function randomEventCode(length = 6) {
@@ -127,13 +147,16 @@ export async function listEventsByCreator(userId: string) {
   const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from("events")
-    .select("id,name,event_date,event_code,reveal_mode,gallery_visible,created_by,cover_image_path")
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .select("id,name,event_date,event_code,reveal_mode,gallery_visible,created_by,cover_image_path,upload_limit_enabled,max_uploads_per_user,max_uploads_total" as any)
     .eq("created_by", userId)
     .order("created_at", { ascending: false });
 
   if (error) throw error;
-  return (data as EventRow[]) ?? [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return ((data as any[]) ?? []) as EventRow[];
 }
+
 
 export async function deleteEvent(supabase: SupabaseClient, eventId: string) {
 
@@ -159,3 +182,153 @@ export async function deleteEvent(supabase: SupabaseClient, eventId: string) {
   if (error) throw error;
 }
 
+/**
+ * Replaces (or sets) the cover photo for an event.
+ * - Uploads the new file to the `event-covers` bucket.
+ * - Removes the old cover file from storage if one existed.
+ * - Updates `events.cover_image_path` to the new path.
+ *
+ * @param supabase    Browser client (must be authenticated as the event creator or admin).
+ * @param eventId     The event to update.
+ * @param oldPath     The existing cover_image_path (or null) — used to delete the old file.
+ * @param file        The new cover image File object.
+ * @returns           The updated public URL of the new cover.
+ */
+export async function updateEventCoverPhoto(
+  supabase: SupabaseClient,
+  eventId: string,
+  oldPath: string | null,
+  file: File
+): Promise<string> {
+  const ext  = file.type === "image/png" ? "png" : "jpg";
+  const newPath = `covers/${crypto.randomUUID()}.${ext}`;
+
+  // Upload new file
+  const { error: uploadError } = await supabase.storage
+    .from("event-covers")
+    .upload(newPath, file, { contentType: file.type, upsert: false });
+  if (uploadError) throw uploadError;
+
+  // Update the DB row
+  const { error: updateError } = await supabase
+    .from("events")
+    .update({ cover_image_path: newPath })
+    .eq("id", eventId);
+  if (updateError) throw updateError;
+
+  // Remove old file (best-effort — don't throw if it fails)
+  if (oldPath) {
+    supabase.storage.from("event-covers").remove([oldPath]).catch(() => {});
+  }
+
+  const { data: { publicUrl } } = supabase.storage
+    .from("event-covers")
+    .getPublicUrl(newPath);
+
+  return publicUrl;
+}
+
+// ── Upload limit helpers ──────────────────────────────────────────────────────
+
+/**
+ * Returns the number of non-deleted photos the given user has uploaded
+ * to an event (reads event_guests.upload_count, maintained by DB trigger).
+ */
+export async function getUserUploadCount(
+  eventId: string,
+  userId: string
+): Promise<number> {
+  const supabase = getSupabaseClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any)
+    .rpc("get_user_upload_count", { p_event_id: eventId, p_user_id: userId });
+  if (error) throw error;
+  return (data as number) ?? 0;
+}
+
+/**
+ * Returns overall upload statistics for an event: total photos uploaded,
+ * configured total limit, and whether limits are enabled.
+ */
+export async function getEventUploadStats(
+  eventId: string
+): Promise<EventUploadStats> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const supabase = getSupabaseClient() as any;
+  const { data, error } = await supabase
+    .rpc("get_event_upload_stats", { p_event_id: eventId });
+  if (error) throw error;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const row = Array.isArray(data) ? (data as any[])[0] : data;
+  return {
+    totalUploads: Number(row?.total_uploads ?? 0),
+    totalLimit:   row?.total_limit   ?? null,
+    limitEnabled: row?.limit_enabled ?? false,
+  };
+}
+
+/**
+ * Checks whether a user is allowed to upload another photo to an event.
+ * Returns a structured status so callers can show the right message.
+ */
+export async function checkUserUploadLimit(
+  eventId: string,
+  userId: string
+): Promise<UserUploadLimitStatus> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const supabase = getSupabaseClient() as any;
+
+  const [countResult, statsResult] = await Promise.all([
+    supabase.rpc("get_user_upload_count",  { p_event_id: eventId, p_user_id: userId }),
+    supabase.rpc("get_event_upload_stats", { p_event_id: eventId }),
+  ]);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if ((countResult as any).error) throw (countResult as any).error;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if ((statsResult as any).error) throw (statsResult as any).error;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const uploadCount = ((countResult as any).data as number) ?? 0;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const statsRow = Array.isArray((statsResult as any).data) ? ((statsResult as any).data as any[])[0] : (statsResult as any).data;
+  const limitEnabled: boolean     = statsRow?.limit_enabled ?? false;
+  const userLimit: number | null  = limitEnabled ? (statsRow?.max_uploads_per_user ?? null) : null;
+  const totalLimit: number | null = limitEnabled ? (statsRow?.total_limit ?? null) : null;
+  const totalUploads: number      = Number(statsRow?.total_uploads ?? 0);
+
+  return {
+    uploadCount,
+    userLimit,
+    isUserLimitReached:  limitEnabled && userLimit  !== null && uploadCount  >= userLimit,
+    isEventLimitReached: limitEnabled && totalLimit !== null && totalUploads >= totalLimit,
+  };
+}
+
+/**
+ * Update the upload limit configuration for an event (creator / admin only).
+ */
+export async function updateEventUploadLimits(
+  eventId: string,
+  config: {
+    uploadLimitEnabled: boolean;
+    maxUploadsPerUser: number | null;
+    maxUploadsTotal: number | null;
+  }
+): Promise<EventRow> {
+  const supabase = getSupabaseClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any)
+    .from("events")
+    .update({
+      upload_limit_enabled: config.uploadLimitEnabled,
+      max_uploads_per_user: config.maxUploadsPerUser,
+      max_uploads_total:    config.maxUploadsTotal,
+    })
+    .eq("id", eventId)
+    .select("id,name,event_date,event_code,reveal_mode,gallery_visible,created_by,cover_image_path,upload_limit_enabled,max_uploads_per_user,max_uploads_total")
+    .single();
+
+  if (error) throw error;
+  return data as EventRow;
+}

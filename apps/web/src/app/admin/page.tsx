@@ -91,6 +91,8 @@ export default async function AdminPage() {
       activityRows={activityRows}
       allEvents={allEvents}
       creatorMap={creatorMap}
+      displayName={displayName}
+      avatarUrl={avatarUrl}
     />
   );
 }

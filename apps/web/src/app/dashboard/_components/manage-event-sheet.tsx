@@ -6,9 +6,12 @@ import {
   setEventGalleryVisibility,
   softDeletePhoto,
   deleteEvent,
+  updateEventUploadLimits,
+  getEventUploadStats,
+  updateEventCoverPhoto,
 } from "@kenangan/lib";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
-import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { CreatedEvent } from "@/lib/data/dashboard";
 import { QRCodeDisplay } from "@/components/qr-code-display";
 import { EditEventForm } from "@/components/edit-event-form";
@@ -74,6 +77,44 @@ export function ManageEventSheet({ event: incomingEvent, isOpen, onClose, onDele
   const [activeSection, setActiveSection] = useState<Section>("overview");
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
+  // Upload limit local state
+  const [limitEnabled, setLimitEnabled]   = useState(false);
+  const [maxPerUser,   setMaxPerUser]     = useState<string>("");
+  const [maxTotal,     setMaxTotal]       = useState<string>("");
+
+  // Cover photo local state
+  const coverFileRef  = useRef<HTMLInputElement>(null);
+  const [coverFile,    setCoverFile]    = useState<File | null>(null);
+  const [coverPreview, setCoverPreview] = useState<string | null>(null);
+
+  // Drag-to-dismiss state
+  const [dragY, setDragY] = useState(0);
+  const pointerStartY = useRef<number | null>(null);
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    if (e.button !== 0 && e.pointerType === 'mouse') return;
+    pointerStartY.current = e.clientY;
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (pointerStartY.current === null) return;
+    const diff = e.clientY - pointerStartY.current;
+    if (diff > 0) {
+      setDragY(diff);
+    }
+  };
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    if (pointerStartY.current === null) return;
+    (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+    if (dragY > 100) {
+      onClose();
+    }
+    setDragY(0);
+    pointerStartY.current = null;
+  };
+
   // Lock body scroll while sheet is open
   useEffect(() => {
     if (isOpen) {
@@ -84,14 +125,23 @@ export function ManageEventSheet({ event: incomingEvent, isOpen, onClose, onDele
     return () => { document.body.style.overflow = ""; };
   }, [isOpen]);
 
-  // Reset state when sheet opens for a different event
+  // Sync state when sheet opens (or switches to a different event)
   useEffect(() => {
     if (isOpen && incomingEvent) {
       setGalleryVisible(incomingEvent.isOpen);
       setShowDeleteConfirm(false);
       setActiveSection("overview");
+      // Seed limit fields from saved DB values
+      setLimitEnabled(incomingEvent.upload_limit_enabled ?? false);
+      setMaxPerUser(incomingEvent.max_uploads_per_user != null ? String(incomingEvent.max_uploads_per_user) : "");
+      setMaxTotal(incomingEvent.max_uploads_total    != null ? String(incomingEvent.max_uploads_total)    : "");
+      // Reset cover photo picker
+      if (coverPreview) URL.revokeObjectURL(coverPreview);
+      setCoverFile(null);
+      setCoverPreview(null);
     }
-  }, [isOpen, incomingEvent?.id, incomingEvent?.isOpen]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, incomingEvent?.id, incomingEvent?.upload_limit_enabled, incomingEvent?.max_uploads_per_user, incomingEvent?.max_uploads_total]);
 
   const photosQuery = useInfiniteQuery({
     queryKey: ["creator-photos", event?.id],
@@ -135,6 +185,45 @@ export function ManageEventSheet({ event: incomingEvent, isOpen, onClose, onDele
       onClose();
       onDeleted(event!.id);
     },
+  });
+
+  const coverMutation = useMutation({
+    mutationFn: () =>
+      updateEventCoverPhoto(
+        supabase,
+        event!.id,
+        event!.cover_image_path,
+        coverFile!
+      ),
+    onSuccess: (newUrl) => {
+      // Show the new cover immediately in the preview
+      if (coverPreview) URL.revokeObjectURL(coverPreview);
+      setCoverPreview(newUrl);
+      setCoverFile(null);
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+    },
+  });
+
+  const uploadLimitsMutation = useMutation({
+    mutationFn: () =>
+      updateEventUploadLimits(event!.id, {
+        uploadLimitEnabled: limitEnabled,
+        maxUploadsPerUser:  maxPerUser  ? parseInt(maxPerUser,  10) : null,
+        maxUploadsTotal:    maxTotal    ? parseInt(maxTotal,    10) : null,
+      }),
+    onSuccess: () => {
+      // Refresh both the stats widget and the parent dashboard list
+      // so incomingEvent carries the new values next time the sheet opens.
+      queryClient.invalidateQueries({ queryKey: ["upload-stats", event!.id] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+    },
+  });
+
+  const statsQuery = useQuery({
+    queryKey: ["upload-stats", event?.id],
+    queryFn:  () => getEventUploadStats(event!.id),
+    enabled:  !!event && isOpen && activeSection === "overview",
+    staleTime: 30_000,
   });
 
   const handleCopy = async () => {
@@ -182,10 +271,22 @@ export function ManageEventSheet({ event: incomingEvent, isOpen, onClose, onDele
         className={`fixed inset-x-0 bottom-0 z-[60] mx-auto max-w-[448px] rounded-t-2xl bg-white shadow-2xl ${
           isClosing ? "animate-sheet-slide-down" : "animate-sheet-slide-up"
         }`}
-        style={{ maxHeight: "90dvh", display: "flex", flexDirection: "column" }}
+        style={{ 
+          height: "85dvh", 
+          display: "flex", 
+          flexDirection: "column",
+          transform: dragY > 0 && !isClosing ? `translateY(${dragY}px)` : undefined,
+          transition: dragY === 0 && !isClosing ? "transform 0.25s cubic-bezier(0.32, 0.72, 0, 1)" : undefined
+        }}
       >
         {/* Drag handle + header */}
-        <div className="shrink-0 px-4 pb-3 pt-4">
+        <div 
+          className="shrink-0 px-4 pb-3 pt-4 touch-none cursor-grab active:cursor-grabbing"
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
+        >
           <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-slate-200" />
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
@@ -232,12 +333,18 @@ export function ManageEventSheet({ event: incomingEvent, isOpen, onClose, onDele
 
         <div className="divider h-px bg-slate-100 shrink-0" />
 
-        {/* Scrollable body */}
-        <div className="overflow-y-auto flex-1 px-4 py-4 space-y-4">
-
-          {/* ── OVERVIEW ── */}
-          {activeSection === "overview" && (
-            <>
+        {/* Swipeable body wrapper */}
+        <div className="flex-1 overflow-hidden relative">
+          <div
+            className="flex h-full w-full transition-transform duration-300 ease-in-out"
+            style={{
+              transform: `translateX(-${
+                ["overview", "edit", "guests", "photos", "danger"].indexOf(activeSection) * 100
+              }%)`,
+            }}
+          >
+            {/* ── OVERVIEW ── */}
+            <div className="w-full shrink-0 overflow-y-auto px-4 py-4 space-y-4">
               {/* Guest link + QR */}
               <section className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3">
                 <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500">Guest Link & QR</h3>
@@ -324,147 +431,350 @@ export function ManageEventSheet({ event: incomingEvent, isOpen, onClose, onDele
                     {new Date(event.event_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                   </span>
                 </div>
-              </section>
-            </>
-          )}
-
-          {/* ── EDIT EVENT ── */}
-          {activeSection === "edit" && (
-            <section className="rounded-xl border border-slate-200 bg-white p-4">
-              <h3 className="mb-4 text-xs font-bold uppercase tracking-widest text-slate-500">Edit Details</h3>
-              <EditEventForm event={event} />
-            </section>
-          )}
-
-          {/* ── GUESTS ── */}
-          {activeSection === "guests" && (
-            <section>
-              <h3 className="mb-4 text-xs font-bold uppercase tracking-widest text-slate-500">Guest Contributions</h3>
-              <EventGuestsList eventId={event.id} />
-            </section>
-          )}
-
-          {/* ── PHOTOS ── */}
-          {activeSection === "photos" && (
-            <section>
-              <h3 className="mb-3 text-xs font-bold uppercase tracking-widest text-slate-500">
-                Uploaded Photos
-              </h3>
-              {photosQuery.isLoading && (
-                <div className="flex items-center gap-2 text-sm text-slate-500">
-                  <Spinner /> Loading photos…
-                </div>
-              )}
-              {photosQuery.isError && (
-                <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
-                  Failed to load photos. Please try again.
-                </p>
-              )}
-              {!photosQuery.isLoading && photos.length === 0 && (
-                <p className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-8 text-center text-sm text-slate-400">
-                  No photos uploaded yet.
-                </p>
-              )}
-              {photos.length > 0 && (
-                <div className="grid grid-cols-3 gap-2">
-                  {photos.map((photo) => (
-                    <div key={photo.id} className="group relative overflow-hidden rounded-xl bg-slate-100 aspect-square">
-                      {photo.imageUrl ? (
-                        <img
-                          src={photo.imageUrl}
-                          alt=""
-                          className="h-full w-full object-cover"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center text-slate-300">
-                          <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                            <rect x="3" y="3" width="18" height="18" rx="2" />
-                            <circle cx="8.5" cy="8.5" r="1.5" />
-                            <polyline points="21 15 16 10 5 21" />
-                          </svg>
-                        </div>
-                      )}
-                      {/* Delete overlay */}
-                      <div className="absolute inset-0 flex items-end justify-center bg-black/0 p-1 transition-colors group-hover:bg-black/30">
-                        <button
-                          type="button"
-                          onClick={() => deletePhotoMutation.mutate(photo.id)}
-                          disabled={deletePhotoMutation.isPending}
-                          className="hidden w-full rounded-lg bg-red-600 py-1.5 text-[10px] font-bold uppercase tracking-widest text-white opacity-0 transition-opacity group-hover:opacity-100 group-hover:flex disabled:opacity-50"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                      {/* By label */}
-                      {photo.nickname && (
-                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent px-1.5 pb-1 pt-4">
-                          <p className="truncate text-[9px] font-medium text-white/90">{photo.nickname}</p>
-                        </div>
-                      )}
+                {/* Total photos usage */}
+                {statsQuery.data && (
+                  <div className="pt-2 border-t border-slate-100">
+                    <div className="flex items-center justify-between text-sm mb-1.5">
+                      <span className="text-slate-500">Photos uploaded</span>
+                      <span className="font-semibold text-slate-900">
+                        {statsQuery.data.totalUploads}
+                        {statsQuery.data.limitEnabled && statsQuery.data.totalLimit
+                          ? ` / ${statsQuery.data.totalLimit}`
+                          : ""}
+                      </span>
                     </div>
-                  ))}
-                </div>
-              )}
-              <div ref={sentinelRef} className="h-4" />
-              {photosQuery.isFetchingNextPage && (
-                <div className="flex justify-center py-2">
-                  <Spinner />
-                </div>
-              )}
-            </section>
-          )}
+                    {statsQuery.data.limitEnabled && statsQuery.data.totalLimit && (
+                      <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                        <div
+                          className={[
+                            "h-full rounded-full transition-all",
+                            statsQuery.data.totalUploads >= statsQuery.data.totalLimit
+                              ? "bg-red-500"
+                              : statsQuery.data.totalUploads / statsQuery.data.totalLimit > 0.8
+                              ? "bg-amber-400"
+                              : "bg-green-500",
+                          ].join(" ")}
+                          style={{ width: `${Math.min(100, (statsQuery.data.totalUploads / statsQuery.data.totalLimit) * 100)}%` }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+              </section>
 
-          {/* ── DANGER ── */}
-          {activeSection === "danger" && (
-            <section className="rounded-xl border border-red-200 bg-red-50 p-4">
-              <h3 className="text-xs font-bold uppercase tracking-widest text-red-600">Danger Zone</h3>
-              <p className="mt-2 text-sm text-red-700">
-                Permanently delete <strong>&ldquo;{event.name}&rdquo;</strong> and all its photos. This action cannot be undone.
-              </p>
-              {deleteEventMutation.isError && (
-                <p className="mt-2 rounded-lg border border-red-300 bg-white px-3 py-2 text-xs text-red-700">
-                  Failed to delete event. Please try again.
-                </p>
-              )}
-              {!showDeleteConfirm ? (
+              {/* Upload Limits */}
+              <section className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500">Upload Limits</h3>
+                  {/* Toggle */}
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={limitEnabled}
+                    onClick={() => setLimitEnabled((v) => !v)}
+                    className={[
+                      "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200",
+                      limitEnabled ? "bg-slate-900" : "bg-slate-200",
+                    ].join(" ")}
+                  >
+                    <span
+                      className={[
+                        "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200",
+                        limitEnabled ? "translate-x-5" : "translate-x-0",
+                      ].join(" ")}
+                    />
+                  </button>
+                </div>
+
+                {limitEnabled && (
+                  <div className="space-y-3 pt-1">
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-slate-600">
+                        Max photos per person
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        placeholder="e.g. 5 (leave blank = unlimited)"
+                        value={maxPerUser}
+                        onChange={(e) => setMaxPerUser(e.target.value)}
+                        className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-slate-600">
+                        Max photos total for event
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        placeholder="e.g. 200 (leave blank = unlimited)"
+                        value={maxTotal}
+                        onChange={(e) => setMaxTotal(e.target.value)}
+                        className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {uploadLimitsMutation.isError && (
+                  <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+                    Failed to save limits. Please try again.
+                  </p>
+                )}
+                {uploadLimitsMutation.isSuccess && (
+                  <p className="rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-xs text-green-700">
+                    Upload limits saved ✓
+                  </p>
+                )}
+
                 <button
                   type="button"
-                  onClick={() => setShowDeleteConfirm(true)}
-                  className="mt-4 flex w-full items-center justify-center rounded-lg border border-red-400 py-2.5 text-xs font-bold uppercase tracking-widest text-red-700 transition-colors hover:bg-red-100"
+                  disabled={uploadLimitsMutation.isPending}
+                  onClick={() => uploadLimitsMutation.mutate()}
+                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 py-2.5 text-xs font-bold uppercase tracking-widest text-white transition-colors hover:bg-slate-800 disabled:opacity-60"
                 >
-                  Delete Event
+                  {uploadLimitsMutation.isPending ? <Spinner /> : null}
+                  {uploadLimitsMutation.isPending ? "Saving…" : "Save Limits"}
                 </button>
-              ) : (
-                <div className="mt-4 space-y-2">
-                  <p className="text-xs font-semibold text-red-800">
-                    Are you sure? This cannot be undone.
-                  </p>
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      disabled={deleteEventMutation.isPending}
-                      onClick={() => deleteEventMutation.mutate()}
-                      className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-red-700 py-2.5 text-xs font-bold text-white transition-colors hover:bg-red-800 disabled:opacity-60"
-                    >
-                      {deleteEventMutation.isPending ? <><Spinner /> Deleting…</> : "Yes, delete"}
-                    </button>
-                    <button
-                      type="button"
-                      disabled={deleteEventMutation.isPending}
-                      onClick={() => setShowDeleteConfirm(false)}
-                      className="flex-1 rounded-lg border border-slate-200 bg-white py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              )}
-            </section>
-          )}
+              </section>
 
-          {/* Bottom safe area */}
-          <div className="h-4" />
+              <div className="h-4" />
+            </div>
+
+            {/* ── EDIT EVENT ── */}
+            <div className="w-full shrink-0 overflow-y-auto px-4 py-4 space-y-4">
+              {/* Cover photo */}
+              <section className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
+                <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500">Cover Photo</h3>
+
+                {/* Current / new preview */}
+                <div className="relative overflow-hidden rounded-xl bg-slate-100" style={{ aspectRatio: "16/7" }}>
+                  {(coverPreview ?? event.coverImageUrl) ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={coverPreview ?? event.coverImageUrl!}
+                      alt="Cover"
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center">
+                      <span className="material-symbols-outlined text-[40px] text-slate-300">image</span>
+                    </div>
+                  )}
+                  {/* Badge: unsaved new cover */}
+                  {coverFile && (
+                    <div className="absolute bottom-2 left-2 rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-bold text-white">
+                      Unsaved
+                    </div>
+                  )}
+                </div>
+
+                {/* Hidden file input */}
+                <input
+                  ref={coverFileRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] ?? null;
+                    if (!file) return;
+                    if (coverPreview?.startsWith("blob:")) URL.revokeObjectURL(coverPreview);
+                    setCoverFile(file);
+                    setCoverPreview(URL.createObjectURL(file));
+                    e.target.value = "";
+                  }}
+                />
+
+                {/* Action buttons */}
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => coverFileRef.current?.click()}
+                    className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-200 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 active:scale-95 transition-all"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">photo_library</span>
+                    {(coverPreview ?? event.coverImageUrl) ? "Change" : "Add Photo"}
+                  </button>
+
+                  {coverFile && (
+                    <button
+                      type="button"
+                      disabled={coverMutation.isPending}
+                      onClick={() => coverMutation.mutate()}
+                      className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-slate-900 py-2.5 text-xs font-bold text-white hover:bg-slate-800 disabled:opacity-60 active:scale-95 transition-all"
+                    >
+                      {coverMutation.isPending ? <Spinner /> : <span className="material-symbols-outlined text-[16px]">upload</span>}
+                      {coverMutation.isPending ? "Uploading…" : "Save Cover"}
+                    </button>
+                  )}
+                </div>
+
+                {coverMutation.isError && (
+                  <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+                    Failed to upload cover photo. Please try again.
+                  </p>
+                )}
+                {coverMutation.isSuccess && !coverFile && (
+                  <p className="rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-xs text-green-700">
+                    Cover photo updated ✓
+                  </p>
+                )}
+              </section>
+
+              {/* Event details form */}
+              <section className="rounded-xl border border-slate-200 bg-white p-4">
+                <h3 className="mb-4 text-xs font-bold uppercase tracking-widest text-slate-500">Edit Details</h3>
+                <EditEventForm event={event} />
+              </section>
+              <div className="h-4" />
+            </div>
+
+            {/* ── GUESTS ── */}
+            <div className="w-full shrink-0 overflow-y-auto px-4 py-4 space-y-4">
+              <section>
+                <h3 className="mb-4 text-xs font-bold uppercase tracking-widest text-slate-500">Guest Contributions</h3>
+                <EventGuestsList eventId={event.id} />
+              </section>
+              <div className="h-4" />
+            </div>
+
+            {/* ── PHOTOS ── */}
+            <div className="w-full shrink-0 overflow-y-auto px-4 py-4 space-y-4">
+              <section>
+                <h3 className="mb-3 text-xs font-bold uppercase tracking-widest text-slate-500">
+                  Uploaded Photos
+                </h3>
+                {photosQuery.isLoading && (
+                  <div className="flex items-center gap-2 text-sm text-slate-500">
+                    <Spinner /> Loading photos…
+                  </div>
+                )}
+                {photosQuery.isError && (
+                  <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+                    Failed to load photos. Please try again.
+                  </p>
+                )}
+                {!photosQuery.isLoading && photos.length === 0 && (
+                  <p className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-8 text-center text-sm text-slate-400">
+                    No photos uploaded yet.
+                  </p>
+                )}
+                {photos.length > 0 && (
+                  <div className="grid grid-cols-2 gap-3">
+                    {photos.map((photo) => {
+                      const isDeleting = deletePhotoMutation.isPending && deletePhotoMutation.variables === photo.id;
+                      return (
+                        <div key={photo.id} className="group relative overflow-hidden rounded-xl bg-slate-100 aspect-[4/5] ring-1 ring-slate-200/50 shadow-sm">
+                          {photo.imageUrl ? (
+                            <img
+                              src={photo.imageUrl}
+                              alt=""
+                              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                              loading="lazy"
+                            />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center text-slate-300 bg-slate-50">
+                              <svg className="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                <rect x="3" y="3" width="18" height="18" rx="2" />
+                                <circle cx="8.5" cy="8.5" r="1.5" />
+                                <polyline points="21 15 16 10 5 21" />
+                              </svg>
+                            </div>
+                          )}
+                          
+                          {/* Always visible delete button (top right) */}
+                          <div className="absolute right-2 top-2 z-10">
+                            <button
+                              type="button"
+                              onClick={() => deletePhotoMutation.mutate(photo.id)}
+                              disabled={deletePhotoMutation.isPending}
+                              aria-label="Delete photo"
+                              className="flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md transition-all hover:bg-red-600 active:scale-90 disabled:opacity-50"
+                            >
+                              {isDeleting ? (
+                                <svg className="h-4 w-4 animate-spin text-white" viewBox="0 0 24 24" fill="none">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                                </svg>
+                              ) : (
+                                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                              )}
+                            </button>
+                          </div>
+
+                          {/* Bottom info gradient */}
+                          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent px-3 pb-2 pt-8 pointer-events-none">
+                            <p className="truncate text-xs font-bold text-white drop-shadow-md">
+                              {photo.nickname ?? "Guest"}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+                <div ref={sentinelRef} className="h-4" />
+                {photosQuery.isFetchingNextPage && (
+                  <div className="flex justify-center py-2">
+                    <Spinner />
+                  </div>
+                )}
+              </section>
+              <div className="h-4" />
+            </div>
+
+            {/* ── DANGER ── */}
+            <div className="w-full shrink-0 overflow-y-auto px-4 py-4 space-y-4">
+              <section className="rounded-xl border border-red-200 bg-red-50 p-4">
+                <h3 className="text-xs font-bold uppercase tracking-widest text-red-600">Danger Zone</h3>
+                <p className="mt-2 text-sm text-red-700">
+                  Permanently delete <strong>&ldquo;{event.name}&rdquo;</strong> and all its photos. This action cannot be undone.
+                </p>
+                {deleteEventMutation.isError && (
+                  <p className="mt-2 rounded-lg border border-red-300 bg-white px-3 py-2 text-xs text-red-700">
+                    Failed to delete event. Please try again.
+                  </p>
+                )}
+                {!showDeleteConfirm ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="mt-4 flex w-full items-center justify-center rounded-lg border border-red-400 py-2.5 text-xs font-bold uppercase tracking-widest text-red-700 transition-colors hover:bg-red-100"
+                  >
+                    Delete Event
+                  </button>
+                ) : (
+                  <div className="mt-4 space-y-2">
+                    <p className="text-xs font-semibold text-red-800">
+                      Are you sure? This cannot be undone.
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        disabled={deleteEventMutation.isPending}
+                        onClick={() => deleteEventMutation.mutate()}
+                        className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-red-700 py-2.5 text-xs font-bold text-white transition-colors hover:bg-red-800 disabled:opacity-60"
+                      >
+                        {deleteEventMutation.isPending ? <><Spinner /> Deleting…</> : "Yes, delete"}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={deleteEventMutation.isPending}
+                        onClick={() => setShowDeleteConfirm(false)}
+                        className="flex-1 rounded-lg border border-slate-200 bg-white py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </section>
+              <div className="h-4" />
+            </div>
+          </div>
         </div>
       </div>
     </>

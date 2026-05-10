@@ -1,11 +1,11 @@
 # Kenangan Kita MVP Progress Tracker
 
-Last updated: 2026-05-02 (Phase 5.1 UX hardening + dashboard self-service complete)
+Last updated: 2026-05-10 (Phase 6 UI polish complete, Phase 7 starting)
 Owner: Engineering
 
 ## Overall Status
 
-- Current phase: Phase 6 (QR generation and share flow complete, Phase 7 next)
+- Current phase: Phase 7 (Upload Limits)
 - Project health: In progress
 - Architecture direction: Monorepo (Turbo + pnpm), shared logic in packages, Supabase backend
 
@@ -128,12 +128,45 @@ Owner: Engineering
 - [x] Show QR block on event admin dashboard
 - [x] Add print-friendly QR card layout
 
+#### Phase 6 UI Polish (completed alongside Phase 7 prep)
+- [x] Dashboard event thumbnails (cover photo shown in event card list)
+- [x] Admin header standardized across `/admin`, `/admin/events`, `/admin/users` (unified `AdminHeader` + `AdminBottomNav`)
+- [x] `/admin/events` and `/admin/users` redirect to `/admin` SPA (instant tab switching via `AdminClient`)
+- [x] `AdminBottomNav` refactored: supports `activeTab` + `onTabChange` for SPA mode, falls back to links otherwise
+- [x] `/camera` front-camera preview: captured image no longer mirrored in preview
+- [x] Dashboard Events tab: full visual redesign matching reference design
+  - `EventCard` redesigned: horizontal Camera/Gallery buttons (dark fill), icon-only Manage button
+  - Status badge (Active/Archived) inline with event name
+  - Monospace date, indigo event code with `grid_view` QR prefix icon
+  - Grayscale + opacity-75 for archived events
+  - `ManageEventSheet` bottom sheet: Overview / Photos / Danger Zone tabs
+- [x] Gallery lightbox: Fujifilm-style film overlay
+  - Film grain (SVG feTurbulence), vignette, warm tint
+  - Orange glowing imprint stamp: HH:MM, YYYY.MM.DD, uploader name (Share Tech Mono font)
+- [x] Material Symbols Outlined font added globally (`layout.tsx` + `globals.css`)
+
 ### Phase 7 - Upload Limits (Admin Controlled)
 
-- [ ] Add event-level config (`upload_limit_enabled`, `max_uploads_per_session`, `max_uploads_total`)
-- [ ] Track guest sessions and upload counts
-- [ ] Enforce limits during upload finalization
-- [ ] Add admin controls and usage counters
+#### Database
+- [ ] Migration: add `upload_limit_enabled` (bool), `max_uploads_per_user` (int), `max_uploads_total` (int) to `events` table
+- [ ] Migration: add `upload_count` to `event_guests` table (tracked per uploader per event)
+
+#### Backend / Lib
+- [ ] `getUploadCountForUser(eventId, uploaderId)` — query from `event_guests`
+- [ ] `getEventUploadStats(eventId)` — total photos count vs limit for admin display
+- [ ] Enforce per-user limit in upload flow: check before allowing camera → upload
+- [ ] Enforce total event limit: soft-lock event when `max_uploads_total` reached
+
+#### Camera / Upload UI
+- [ ] Pre-upload gate: fetch user's current upload count for event
+- [ ] Show quota indicator on camera page (e.g. "3 of 5 uploads used")
+- [ ] Block capture and show limit-reached message when quota exceeded
+
+#### Admin Controls
+- [ ] Add upload limit config section in `ManageEventSheet` (Overview tab)
+- [ ] Toggle to enable/disable per-event upload limits
+- [ ] Input fields for `max_uploads_per_user` and `max_uploads_total`
+- [ ] Show live usage counter: total photos uploaded vs limit
 
 ### Phase 8 - Event Modes (Preset Setup)
 
@@ -179,9 +212,10 @@ Owner: Engineering
 
 ## Immediate Next Tasks
 
-1. Seed one super-admin account in `admin_profiles` (`role = admin`) for production bootstrap.
-2. Validate RBAC flow end-to-end: first login => `user`, promote/demote via `/admin/users`.
-3. Build Phase 7 upload limits and enforcement path.
+1. Write migration for upload limit columns on `events` + `upload_count` on `event_guests`.
+2. Implement `getUploadCountForUser` and pre-upload gate in the camera flow.
+3. Add limit config UI in `ManageEventSheet` Overview tab.
+4. Add total usage counter to admin event dashboard.
 
 ## Product Enhancements Backlog (Mapped to Phases)
 
@@ -208,4 +242,4 @@ Owner: Engineering
 - Vercel Analytics added (`@vercel/analytics/next`) to root layout — live on next deploy.
 - Enhancement roadmap formalized into Phases 8-13 for incremental delivery.
 - RBAC management delivered before Phase 6: default `user` provisioning on first login + admin role management screen.
-
+- Phase 6 UI polish completed: admin layout standardized, dashboard EventCard redesigned with Material Symbols icons, ManageEventSheet bottom sheet for creator event management, Fujifilm film imprint overlay in gallery lightbox.

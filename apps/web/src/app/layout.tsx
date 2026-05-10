@@ -2,7 +2,6 @@ import "./globals.css";
 import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import { QueryProvider } from "@/providers/query-provider";
-import ConditionalHeader from "@/components/conditional-header";
 
 export const metadata: Metadata = {
   title: "Kenangan Kita",
@@ -23,7 +22,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <QueryProvider>
-          <ConditionalHeader />
           {children}
         </QueryProvider>
         <Analytics />

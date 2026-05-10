@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import AdminBottomNav from "./_components/admin-bottom-nav";
 import AdminEventsClient from "./events/admin-events-client";
 import { UsersClient } from "./users/users-client";
+import UserMenu from "@/components/user-menu";
 
 // Types
 type ActivityRow = {
@@ -40,6 +42,8 @@ type Props = {
   creatorMap: Record<string, string>;
   
   initialTab?: "overview" | "events" | "users";
+  displayName: string;
+  avatarUrl: string | null;
 };
 
 function timeAgo(iso: string): string {
@@ -82,7 +86,9 @@ export default function AdminClient({
   activityRows,
   allEvents,
   creatorMap,
-  initialTab = "overview"
+  initialTab = "overview",
+  displayName,
+  avatarUrl
 }: Props) {
   const searchParams = useSearchParams();
   const queryTab = searchParams.get("tab") as any;
