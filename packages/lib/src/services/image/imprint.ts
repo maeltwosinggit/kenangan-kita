@@ -6,10 +6,10 @@ export type ImprintOptions = {
 
 /**
  * Imprints the revamped Fujifilm-style orange stamp onto an image.
- * Editorial Layout:
- * - Top Left: Event Name
- * - Top Right: Branding
- * - Bottom Right: Date & Time (Same line)
+ * Editorial Layout with Digital Typography:
+ * - Top Left: Event Name (Clean Mono)
+ * - Top Right: Branding (Subtle Mono)
+ * - Bottom Right: Date & Time (DS-Digital)
  */
 export async function imprintPhoto(imageBlob: Blob, options: ImprintOptions): Promise<Blob> {
   const { capturedAt, eventName } = options;
@@ -36,35 +36,38 @@ export async function imprintPhoto(imageBlob: Blob, options: ImprintOptions): Pr
   // Responsive scaling (Base: 2048px)
   const scale = img.width / 2048;
   
-  const timeSize = Math.round(58 * scale);
+  const digitalSize = Math.round(82 * scale); // Larger for digital font
   const eventSize = Math.round(34 * scale);
   const brandSize = Math.round(28 * scale);
   const padding = Math.round(80 * scale);
 
-  const fontFace = "Orbitron, sans-serif";
+  // Fonts
+  const cleanMono = "'Share Tech Mono', monospace";
+  const digitalFont = "'DS-Digital', sans-serif";
+  
   ctx.fillStyle = "#f97316"; // Fuji Orange
-  ctx.shadowColor = "rgba(249, 115, 22, 0.6)";
-  ctx.shadowBlur = Math.round(10 * scale);
+  ctx.shadowColor = "rgba(249, 115, 22, 0.7)";
+  ctx.shadowBlur = Math.round(12 * scale);
 
   const timeStr = dateObj.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
   const dateStr = dateObj.toLocaleDateString("en-US", { year: "numeric", month: "2-digit", day: "2-digit" }).replace(/\//g, ".");
   const combinedDateTime = `${dateStr} ${timeStr}`;
 
-  // ── TOP LEFT: Event Name (Stick to mono/clean for titles) ──
+  // ── TOP LEFT: Event Name ──
   ctx.textAlign = "left";
-  ctx.font = `bold ${eventSize}px 'Courier New', monospace`;
+  ctx.font = `bold ${eventSize}px ${cleanMono}`;
   ctx.globalAlpha = 0.85;
   ctx.fillText(eventName.toUpperCase(), padding, padding + eventSize);
 
   // ── TOP RIGHT: Branding ──
   ctx.textAlign = "right";
-  ctx.font = `bold ${brandSize}px 'Courier New', monospace`;
+  ctx.font = `bold ${brandSize}px ${cleanMono}`;
   ctx.globalAlpha = 0.5;
   ctx.fillText("• KENANGAN KITA •", canvas.width - padding, padding + brandSize);
 
-  // ── BOTTOM RIGHT: Date & Time (Digital Font) ──
+  // ── BOTTOM RIGHT: Date & Time (DS-Digital) ──
   ctx.textAlign = "right";
-  ctx.font = `bold ${timeSize}px ${fontFace}`;
+  ctx.font = `italic bold ${digitalSize}px ${digitalFont}`;
   ctx.globalAlpha = 1.0;
   ctx.fillText(combinedDateTime, canvas.width - padding, canvas.height - padding);
 
