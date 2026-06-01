@@ -273,7 +273,7 @@ export async function listEventPhotosForAdmin(input: ListAdminPhotosInput) {
   };
 }
 
-export async function listAllEventPhotos(eventId: string) {
+export async function listAllEventPhotos(eventId: string): Promise<Array<EventPhoto & { imageUrl: string }>> {
   const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from("photos")

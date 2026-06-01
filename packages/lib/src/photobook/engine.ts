@@ -1,11 +1,13 @@
 import { EventPhoto } from "../domain/photos";
 
+export type PhotobookPhoto = EventPhoto & { imageUrl: string };
+
 export type PhotobookTemplate = "hero" | "duo" | "scrapbook" | "mosaic" | "stats";
 
 export type PhotobookPage = {
   id: string;
   template: PhotobookTemplate;
-  photos: EventPhoto[];
+  photos: PhotobookPhoto[];
   stats?: any;
 };
 
@@ -20,7 +22,7 @@ export type PhotobookData = {
  */
 export function generatePhotobookData(
   eventName: string,
-  photos: EventPhoto[],
+  photos: PhotobookPhoto[],
   guestCount: number
 ): PhotobookData {
   // Sort chronologically (earliest first for a story feel)
@@ -107,7 +109,7 @@ export function generatePhotobookData(
   };
 }
 
-function calculatePeakHour(photos: EventPhoto[]) {
+function calculatePeakHour(photos: PhotobookPhoto[]) {
   const hours = new Map<number, number>();
   photos.forEach((p) => {
     const h = new Date(p.captured_at).getHours();
