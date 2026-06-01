@@ -192,7 +192,7 @@ export function CameraCaptureClient({ eventCode, onClose }: Props) {
         return;
       }
 
-      const compressed = await compressImage(captured.blob, { maxWidth: 1600, quality: 0.72 });
+      const compressed = await compressImage(captured.blob);
       await uploadEventPhoto({
         eventCode,
         file: compressed.blob,
