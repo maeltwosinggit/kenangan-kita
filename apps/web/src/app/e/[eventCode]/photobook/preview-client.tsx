@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { PDFViewer, PDFDownloadLink } from "@react-pdf/renderer";
+import { pdf, PDFDownloadLink } from "@react-pdf/renderer";
 import { listAllEventPhotos, generatePhotobookData, getEventStats, type PhotobookData } from "@kenangan/lib";
 import { PhotobookPDF } from "@/components/photobook/photobook-pdf";
 import Link from "next/link";
@@ -9,6 +9,7 @@ import Link from "next/link";
 export default function PreviewClient({ eventCode, eventId, eventName }: { eventCode: string, eventId: string, eventName: string }) {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<PhotobookData | null>(null);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -25,6 +26,13 @@ export default function PreviewClient({ eventCode, eventId, eventName }: { event
 
         const bookData = generatePhotobookData(eventName, photos, stats.guestCount);
         setData(bookData);
+
+        // Generate the PDF blob manually instead of relying on PDFViewer component
+        // which has issues in React 18/Next.js Strict Mode
+        const blob = await pdf(<PhotobookPDF data={bookData} />).toBlob();
+        const url = URL.createObjectURL(blob);
+        setPdfUrl(url);
+
       } catch (err: any) {
         setError(err.message || "Failed to generate photobook preview.");
       } finally {
@@ -33,6 +41,13 @@ export default function PreviewClient({ eventCode, eventId, eventName }: { event
     }
     load();
   }, [eventId, eventName]);
+
+  // Clean up object URL
+  useEffect(() => {
+    return () => {
+      if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+    };
+  }, [pdfUrl]);
 
   return (
     <div className="fixed inset-0 z-[100] flex flex-col bg-slate-900">
@@ -107,11 +122,13 @@ export default function PreviewClient({ eventCode, eventId, eventName }: { event
           </div>
         )}
 
-        {data && !loading && !error && (
+        {pdfUrl && !loading && !error && (
           <div className="absolute inset-0 h-full w-full">
-            <PDFViewer width="100%" height="100%" showToolbar={false} className="border-none">
-              <PhotobookPDF data={data} />
-            </PDFViewer>
+            <iframe 
+              src={`${pdfUrl}#toolbar=0&navpanes=0&scrollbar=0`} 
+              className="h-full w-full border-none"
+              title="Photobook Preview"
+            />
           </div>
         )}
       </div>
