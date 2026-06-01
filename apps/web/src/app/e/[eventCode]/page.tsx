@@ -4,6 +4,69 @@ import { getEventByCode, getLatestEventPhoto, isEventGalleryOpen, getEventStats 
 import UserMenu from "@/components/user-menu";
 import { headers } from "next/headers";
 import { QRCodeDisplay } from "@/components/qr-code-display";
+import { Suspense } from "react";
+
+/**
+ * ── LivePulseStats Component ──
+ * Fetches and displays the live photo/guest counters.
+ * Wrapped in Suspense in the main page to prevent blocking.
+ */
+async function LivePulseStats({ eventId }: { eventId: string }) {
+  const { photoCount, guestCount } = await getEventStats(eventId);
+
+  return (
+    <div className="mb-4 flex items-center gap-4">
+      <div className="flex flex-col">
+        <span className="text-2xl font-black text-white leading-none">{photoCount}</span>
+        <span className="text-[9px] font-bold uppercase tracking-widest text-white/50">Memories</span>
+      </div>
+      <div className="h-8 w-px bg-white/20" />
+      <div className="flex flex-col">
+        <span className="text-2xl font-black text-white leading-none">{guestCount}</span>
+        <span className="text-[9px] font-bold uppercase tracking-widest text-white/50">Guests</span>
+      </div>
+    </div>
+  );
+}
+
+function StatsSkeleton() {
+  return (
+    <div className="mb-4 flex items-center gap-4 animate-pulse">
+      <div className="flex flex-col gap-1">
+        <div className="h-6 w-8 bg-white/20 rounded" />
+        <div className="h-2 w-12 bg-white/10 rounded" />
+      </div>
+      <div className="h-8 w-px bg-white/20" />
+      <div className="flex flex-col gap-1">
+        <div className="h-6 w-8 bg-white/20 rounded" />
+        <div className="h-2 w-12 bg-white/10 rounded" />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * ── UserMenuWrapper ──
+ * Handles auth state check without blocking the entire page shell.
+ */
+async function UserMenuWrapper() {
+  const supabaseClient = (await import("@/lib/supabase/server")).getSupabaseServerClient;
+  const sb = await supabaseClient();
+  const { data: { user } } = await sb.auth.getUser();
+
+  if (!user) {
+    return (
+      <Link href="/login" className="rounded-full bg-slate-900 px-4 py-1.5 text-[11px] font-bold uppercase tracking-wider text-white transition-transform active:scale-95">
+        Sign In
+      </Link>
+    );
+  }
+
+  const displayName = (user.user_metadata?.full_name ?? user.user_metadata?.name ?? user.email ?? "Guest") as string;
+  const avatarUrl = (user.user_metadata?.avatar_url ?? null) as string | null;
+
+  return <UserMenu avatarUrl={avatarUrl} displayName={displayName} />;
+}
 
 export default async function EventLandingPage({
   params,
@@ -25,10 +88,7 @@ export default async function EventLandingPage({
   const supabaseClient = (await import("@/lib/supabase/server")).getSupabaseServerClient;
   const sb = await supabaseClient();
 
-  // Stats fetching using cached helper
-  const { photoCount, guestCount } = await getEventStats(event.id);
-
-  // Cover image logic
+  // Cover image logic — still server side as it's the main visual
   let coverUrl: string | null = null;
   if (event.cover_image_path) {
     const { data } = sb.storage.from("event-covers").getPublicUrl(event.cover_image_path);
@@ -36,11 +96,6 @@ export default async function EventLandingPage({
   } else {
     coverUrl = await getLatestEventPhoto(event.id);
   }
-
-  // Auth info
-  const { data: { user } } = await sb.auth.getUser();
-  const displayName = (user?.user_metadata?.full_name ?? user?.user_metadata?.name ?? user?.email ?? "Guest") as string;
-  const avatarUrl = (user?.user_metadata?.avatar_url ?? null) as string | null;
 
   const formattedDate = new Date(event.event_date).toLocaleDateString("en-US", {
     month: "long",
@@ -65,13 +120,9 @@ export default async function EventLandingPage({
             <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
             <span className="text-[10px] font-bold uppercase tracking-wider text-green-700">Live Hub</span>
           </div>
-          {user ? (
-            <UserMenu avatarUrl={avatarUrl} displayName={displayName} />
-          ) : (
-            <Link href="/login" className="rounded-full bg-slate-900 px-4 py-1.5 text-[11px] font-bold uppercase tracking-wider text-white transition-transform active:scale-95">
-              Sign In
-            </Link>
-          )}
+          <Suspense fallback={<div className="h-10 w-10 rounded-full bg-slate-100 animate-pulse" />}>
+            <UserMenuWrapper />
+          </Suspense>
         </div>
       </header>
 
@@ -90,17 +141,10 @@ export default async function EventLandingPage({
                 
                 {/* Poster Content */}
                 <div className="absolute bottom-6 left-6 right-6 text-left">
-                  <div className="mb-4 flex items-center gap-4">
-                     <div className="flex flex-col">
-                        <span className="text-2xl font-black text-white leading-none">{photoCount ?? 0}</span>
-                        <span className="text-[9px] font-bold uppercase tracking-widest text-white/50">Memories</span>
-                     </div>
-                     <div className="h-8 w-px bg-white/20" />
-                     <div className="flex flex-col">
-                        <span className="text-2xl font-black text-white leading-none">{guestCount}</span>
-                        <span className="text-[9px] font-bold uppercase tracking-widest text-white/50">Guests</span>
-                     </div>
-                  </div>
+                  <Suspense fallback={<StatsSkeleton />}>
+                    <LivePulseStats eventId={event.id} />
+                  </Suspense>
+                  
                   <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.2em] text-white/70">
                     {formattedDate}
                   </p>
