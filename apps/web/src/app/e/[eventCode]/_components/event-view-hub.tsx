@@ -85,14 +85,16 @@ export function EventViewHub({
   );
 
   return (
-    <div className="relative min-h-screen bg-slate-50">
+    <div className="relative min-h-screen bg-slate-50 overflow-hidden">
       
-      {/* ── CONDITIONAL CONTENT ── */}
-
-      {/* 1. EVENT HUB TAB */}
-      {activeTab === "event" && (
-        <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-          <header className="sticky top-0 z-50 mx-auto flex h-16 w-full items-center justify-between border-b border-slate-100 bg-white/80 px-4 backdrop-blur-md">
+      {/* ── MAIN CONTENT CONTAINER (Sliding) ── */}
+      <div 
+        className="flex min-h-screen w-[200%] transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]"
+        style={{ transform: `translateX(${activeTab === "gallery" ? "-50%" : "0%"})` }}
+      >
+        {/* 1. EVENT HUB TAB */}
+        <div className="w-1/2 min-h-screen">
+          <header className="sticky top-0 z-30 mx-auto flex h-16 w-full items-center justify-between border-b border-slate-100 bg-white/80 px-4 backdrop-blur-md">
             <Link href="/dashboard" className="transition-opacity hover:opacity-80">
               <Image src="/logo.png" alt="Kenangan Kita" width={70} height={35} unoptimized className="object-contain" />
             </Link>
@@ -158,30 +160,11 @@ export function EventViewHub({
             </footer>
           </main>
         </div>
-      )}
 
-      {/* 2. CAMERA TAB */}
-      {activeTab === "camera" && (
-        <div className="fixed inset-0 z-[60] bg-black animate-in fade-in zoom-in-95 duration-200">
-           <CameraCaptureClient eventCode={eventCode} />
-           {/* Overriding the default back behavior of CameraCaptureClient to use our state */}
-           <button 
-              onClick={() => handleTabChange("event")}
-              className="absolute left-4 top-4 z-[70] flex h-10 w-10 items-center justify-center rounded-full bg-black/20 text-white backdrop-blur-md transition-all active:scale-90"
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-           </button>
-        </div>
-      )}
-
-      {/* 3. GALLERY TAB */}
-      {activeTab === "gallery" && (
-        <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-          <header className="sticky top-0 z-50 mx-auto flex h-16 w-full items-center justify-between border-b border-slate-100 bg-white/80 px-4 backdrop-blur-md">
-            <button onClick={() => setActiveTab("event")} className="transition-opacity hover:opacity-80">
+        {/* 3. GALLERY TAB */}
+        <div className="w-1/2 min-h-screen">
+          <header className="sticky top-0 z-30 mx-auto flex h-16 w-full items-center justify-between border-b border-slate-100 bg-white/80 px-4 backdrop-blur-md">
+            <button onClick={() => handleTabChange("event")} className="transition-opacity hover:opacity-80">
               <Image src="/logo.png" alt="Kenangan Kita" width={70} height={35} unoptimized className="object-contain" />
             </button>
             <div className="flex items-center gap-3">
@@ -218,7 +201,24 @@ export function EventViewHub({
              <GalleryClient eventCode={eventCode} currentUserId={currentUserId} eventId={event.id} />
           </section>
         </div>
-      )}
+      </div>
+
+      {/* 2. CAMERA TAB (Slide-up Overlay) */}
+      <div 
+        className="fixed inset-0 z-[60] bg-black transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]"
+        style={{ transform: `translateY(${activeTab === "camera" ? "0%" : "100%"})` }}
+      >
+         <CameraCaptureClient eventCode={eventCode} />
+         <button 
+            onClick={() => handleTabChange("event")}
+            className="absolute left-4 top-4 z-[70] flex h-10 w-10 items-center justify-center rounded-full bg-black/20 text-white backdrop-blur-md transition-all active:scale-90"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+         </button>
+      </div>
 
       {/* ── SHARED BOTTOM NAV ── */}
       <nav 
