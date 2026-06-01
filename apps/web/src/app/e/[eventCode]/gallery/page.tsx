@@ -3,6 +3,7 @@ import Image from "next/image";
 import { getEventByCode, isEventGalleryOpen } from "@kenangan/lib";
 import { GalleryClient } from "./gallery-client";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
+import UserMenu from "@/components/user-menu";
 
 export default async function GalleryPage({
   params
@@ -68,22 +69,28 @@ export default async function GalleryPage({
     heroUrl = data?.signedUrl ?? null;
   }
 
-  const eventDay = new Date(event.event_date).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-  });
-  const eventYear = new Date(event.event_date).getFullYear();
-
   return (
     <div className="pb-32">
-      {/* Minimal Header */}
-      <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between bg-white/80 px-4 backdrop-blur-md">
-        <h1 className="text-base font-bold tracking-tight text-slate-900">
-          {event.name}
-        </h1>
-        <div className="flex items-center gap-2">
-           <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-           <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Live</span>
+      {/* ── Global Header ── */}
+      <header className="sticky top-0 z-50 mx-auto flex h-16 w-full items-center justify-between border-b border-slate-100 bg-white/80 px-4 backdrop-blur-md">
+        <Link href={`/e/${eventCode}`} className="transition-opacity hover:opacity-80">
+          <Image src="/logo.png" alt="Kenangan Kita" width={70} height={35} unoptimized className="object-contain" />
+        </Link>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 rounded-full bg-green-50 px-2.5 py-1">
+            <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
+            <span className="text-[10px] font-bold uppercase tracking-wider text-green-700">Live</span>
+          </div>
+          {user ? (
+            <UserMenu 
+              avatarUrl={(user.user_metadata?.avatar_url as string | null) ?? null} 
+              displayName={(user.user_metadata?.full_name ?? user.user_metadata?.name ?? user.email ?? "Guest") as string} 
+            />
+          ) : (
+            <Link href="/login" className="rounded-full bg-slate-900 px-4 py-1.5 text-[11px] font-bold uppercase tracking-wider text-white transition-transform active:scale-95">
+              Sign In
+            </Link>
+          )}
         </div>
       </header>
 
@@ -125,4 +132,3 @@ export default async function GalleryPage({
     </div>
   );
 }
-

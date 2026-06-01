@@ -87,16 +87,6 @@ export function EventBottomNav({ eventCode, hasUser }: { eventCode: string; hasU
           Gallery
         </span>
       </Link>
-
-      <Link
-        href={hasUser ? "/dashboard" : "/login"}
-        className="flex flex-1 flex-col items-center gap-1 transition-all active:scale-90"
-      >
-        <PersonIcon active={false} />
-        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-          Profile
-        </span>
-      </Link>
     </nav>
   );
 }
