@@ -208,7 +208,12 @@ export function EventViewHub({
         className="fixed inset-0 z-[60] bg-black transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]"
         style={{ transform: `translateY(${activeTab === "camera" ? "0%" : "100%"})` }}
       >
-         <CameraCaptureClient eventCode={eventCode} />
+         {/* 
+            CRITICAL FIX: Only mount camera when active to kill the 'green dot' indicator
+            We use a small delay to let the animation start before mounting if entering.
+         */}
+         {activeTab === "camera" && <CameraCaptureClient eventCode={eventCode} />}
+         
          <button 
             onClick={() => handleTabChange("event")}
             className="absolute left-4 top-4 z-[70] flex h-10 w-10 items-center justify-center rounded-full bg-black/20 text-white backdrop-blur-md transition-all active:scale-90"

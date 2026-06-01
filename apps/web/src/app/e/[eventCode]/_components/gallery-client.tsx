@@ -4,6 +4,7 @@ import { listEventPhotosByCode, softDeletePhoto } from "@kenangan/lib";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 type PhotoItem = { id: string; imageUrl: string; nickname: string | null; uploader_id: string | null; captured_at: string };
 
@@ -35,13 +36,16 @@ export function GalleryClient({ eventCode, currentUserId, eventId }: Props) {
     setOutgoing(null);
     setSelected(item);
     setSelectedIndex(index);
+    // Double frame for smooth mount transition
     requestAnimationFrame(() => requestAnimationFrame(() => setIsVisible(true)));
   };
 
   const closePhoto = () => {
     setIsVisible(false);
     setOutgoing(null);
-    setTimeout(() => setSelected(null), 300);
+    setTimeout(() => {
+      setSelected(null);
+    }, 300);
   };
 
   const goTo = (index: number, dir: "left" | "right", startX = 0) => {
@@ -52,7 +56,6 @@ export function GalleryClient({ eventCode, currentUserId, eventId }: Props) {
     setSelected(items[index]);
     setSelectedIndex(index);
 
-    // CRITICAL FIX: Reset swipe state after animation completes
     setTimeout(() => {
       setOutgoing(null);
       setSlideDir(null);
@@ -79,8 +82,9 @@ export function GalleryClient({ eventCode, currentUserId, eventId }: Props) {
     c.style.transition = "transform 0.28s cubic-bezier(0.34,1.56,0.64,1), opacity 0.25s ease";
     c.style.transform = "translateX(0)";
     c.style.opacity = "1";
-    const ref = c;
-    setTimeout(() => { ref.style.transition = ""; }, 280);
+    setTimeout(() => { 
+        if (c) c.style.transition = ""; 
+    }, 280);
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
@@ -130,7 +134,7 @@ export function GalleryClient({ eventCode, currentUserId, eventId }: Props) {
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
-    } catch { /* ignore */ }
+    } catch (err) { console.error(err); }
   };
 
   const handleDelete = async (item: PhotoItem) => {
@@ -142,7 +146,7 @@ export function GalleryClient({ eventCode, currentUserId, eventId }: Props) {
       setLightboxMenuOpen(false);
       if (selected?.id === item.id) closePhoto();
       await query.refetch();
-    } catch { /* ignore */ } finally {
+    } catch (err) { console.error(err); } finally {
       setDeleting(false);
     }
   };
@@ -196,19 +200,16 @@ export function GalleryClient({ eventCode, currentUserId, eventId }: Props) {
   const items = query.data.pages.flatMap((page) => page.items);
   allItems.current = items;
 
-  if (items.length === 0) {
-    return <div className="py-20 text-center"><p className="text-sm text-slate-400">No photos yet</p></div>;
-  }
-
-  const groups: { label: string; items: typeof items }[] = [];
+  const groups: { label: string; items: PhotoItem[] }[] = [];
   for (const item of items) {
     const label = new Date(item.captured_at).toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
     const last = groups[groups.length - 1];
     if (last && last.label === label) last.items.push(item); else groups.push({ label, items: [item] });
   }
 
-  return (
-    <>
+  // PORTAL FOR LIGHTBOX (To avoid parent transform constraints)
+  const Lightbox = selected ? createPortal(
+    <div className={["fixed inset-0 z-[1000] flex flex-col bg-black transition-opacity duration-300", isVisible ? "opacity-100" : "opacity-0"].join(" ")} onClick={closePhoto}>
       <style>{`
         @keyframes kk-slide-in-right { from { transform: translateX(110%); opacity: 0.4; } to { transform: translateX(0); opacity: 1; } }
         @keyframes kk-slide-in-left { from { transform: translateX(-110%); opacity: 0.4; } to { transform: translateX(0); opacity: 1; } }
@@ -217,88 +218,65 @@ export function GalleryClient({ eventCode, currentUserId, eventId }: Props) {
         @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
         .fuji-imprint { font-family: 'Share Tech Mono', monospace; color: #f97316; text-shadow: 0 0 8px rgba(249,115,22,0.8); letter-spacing: 0.08em; }
       `}</style>
-      
-      {selected && (
-        <div className={["fixed inset-0 z-[100] flex flex-col bg-black transition-opacity duration-300", isVisible ? "opacity-100" : "opacity-0"].join(" ")} onClick={closePhoto}>
-          <div className={["flex items-center justify-between px-4 py-3 transition-transform duration-300", isVisible ? "translate-y-0" : "-translate-y-4"].join(" ")} onClick={(e) => e.stopPropagation()}>
-            <div className="flex flex-col"><span className="text-sm font-medium text-white">{selected.nickname ?? ""}</span><span className="text-xs text-white/60">{new Date(selected.captured_at).toLocaleString()}</span></div>
-            <div className="flex items-center gap-1">
-              <button onClick={() => setLightboxMenuOpen(!lightboxMenuOpen)} className="flex h-10 w-10 items-center justify-center rounded-full text-white"><svg viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5"><circle cx="12" cy="5" r="1.5" /><circle cx="12" cy="12" r="1.5" /><circle cx="12" cy="19" r="1.5" /></svg></button>
-              {lightboxMenuOpen && (
-                <div className="absolute right-4 top-14 z-[110] min-w-[160px] rounded-xl bg-white shadow-xl ring-1 ring-slate-200">
-                  <button onClick={() => { handleDownload(selected); setLightboxMenuOpen(false); }} className="flex w-full items-center gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50">Download</button>
-                  {selected.uploader_id === currentUserId && <button onClick={() => handleDelete(selected)} className="flex w-full items-center gap-3 px-4 py-3 text-sm text-red-600 hover:bg-red-50">Delete</button>}
-                </div>
-              )}
-              <button onClick={closePhoto} className="flex h-10 w-10 items-center justify-center rounded-full text-white"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-6 w-6"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg></button>
+      <div className={["flex items-center justify-between px-4 py-3 transition-transform duration-300", isVisible ? "translate-y-0" : "-translate-y-4"].join(" ")} onClick={(e) => e.stopPropagation()}>
+        <div className="flex flex-col"><span className="text-sm font-medium text-white">{selected.nickname ?? "Guest"}</span><span className="text-xs text-white/60">{new Date(selected.captured_at).toLocaleString()}</span></div>
+        <div className="flex items-center gap-1">
+          <button onClick={() => setLightboxMenuOpen(!lightboxMenuOpen)} className="flex h-10 w-10 items-center justify-center rounded-full text-white"><svg viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5"><circle cx="12" cy="5" r="1.5" /><circle cx="12" cy="12" r="1.5" /><circle cx="12" cy="19" r="1.5" /></svg></button>
+          {lightboxMenuOpen && (
+            <div className="absolute right-4 top-14 z-[1100] min-w-[160px] rounded-xl bg-white shadow-xl ring-1 ring-slate-200">
+              <button onClick={(e) => { e.stopPropagation(); handleDownload(selected); setLightboxMenuOpen(false); }} className="flex w-full items-center gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors">Download</button>
+              {selected.uploader_id === currentUserId && <button onClick={(e) => { e.stopPropagation(); handleDelete(selected); }} className="flex w-full items-center gap-3 px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors">Delete</button>}
             </div>
-          </div>
-          <div className="relative flex flex-1 overflow-hidden" onTouchStart={(e) => { if (outgoing) return; touchStartX.current = e.touches[0].clientX; touchCurrentX.current = 0; isDragging.current = true; if (imageContainerRef.current) imageContainerRef.current.style.transition = ""; }} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
-            {outgoing && <div key={`out-${outgoing.item.id}`} style={{ "--exit-x": `${outgoing.startX}px`, "--exit-op": String(Math.max(0.35, 1 - Math.abs(outgoing.startX) / 320)), animation: `${outgoing.dir === "left" ? "kk-exit-left" : "kk-exit-right"} 0.26s ease-out forwards` } as any} className="absolute inset-0 flex items-center justify-center px-10"><img src={outgoing.item.imageUrl} className="max-h-full max-w-full rounded-lg object-contain" alt="" /></div>}
-            <div key={selected.id} ref={imageContainerRef} style={slideDir ? { animation: `kk-slide-in-${slideDir === "left" ? "right" : "left"} 0.26s ease-out` } : undefined} className="absolute inset-0 flex items-center justify-center px-4">
-              <div className={["relative max-h-full max-w-full transition-all duration-300", isVisible ? "scale-100 opacity-100" : "scale-90 opacity-0"].join(" ")} onClick={(e) => e.stopPropagation()}>
-                <img src={selected.imageUrl} alt="" className="block max-h-[75dvh] max-w-full rounded-lg object-contain" />
-                <div className="pointer-events-none absolute inset-0 rounded-lg" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E")`, mixBlendMode: "overlay", opacity: 0.55 }} />
-                <div className="pointer-events-none absolute inset-0 rounded-lg" style={{ background: "radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.45) 100%)" }} />
-                <div className="pointer-events-none absolute bottom-3 right-3 flex flex-col items-end gap-0.5">
-                  <span className="fuji-imprint text-[15px] font-bold">{new Date(selected.captured_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })}</span>
-                  <span className="fuji-imprint text-[10px] opacity-80">{new Date(selected.captured_at).toLocaleDateString().replace(/\//g, ".")}</span>
-                  {selected.nickname && <span className="fuji-imprint text-[10px] opacity-90 mt-0.5">{selected.nickname.toUpperCase()}</span>}
-                </div>
-              </div>
+          )}
+          <button onClick={closePhoto} className="flex h-10 w-10 items-center justify-center rounded-full text-white"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-6 w-6"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg></button>
+        </div>
+      </div>
+      <div className="relative flex flex-1 overflow-hidden" onTouchStart={(e) => { if (outgoing) return; touchStartX.current = e.touches[0].clientX; touchCurrentX.current = 0; isDragging.current = true; if (imageContainerRef.current) imageContainerRef.current.style.transition = ""; }} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
+        {outgoing && <div key={`out-${outgoing.item.id}`} style={{ "--exit-x": `${outgoing.startX}px`, "--exit-op": String(Math.max(0.35, 1 - Math.abs(outgoing.startX) / 320)), animation: `${outgoing.dir === "left" ? "kk-exit-left" : "kk-exit-right"} 0.26s ease-out forwards` } as any} className="absolute inset-0 flex items-center justify-center px-10"><img src={outgoing.item.imageUrl} className="max-h-full max-w-full rounded-lg object-contain" alt="" /></div>}
+        <div key={selected.id} ref={imageContainerRef} style={slideDir ? { animation: `kk-slide-in-${slideDir === "left" ? "right" : "left"} 0.26s ease-out` } : undefined} className="absolute inset-0 flex items-center justify-center px-4">
+          <div className={["relative max-h-full max-w-full transition-all duration-300", isVisible ? "scale-100 opacity-100" : "scale-90 opacity-0"].join(" ")} onClick={(e) => e.stopPropagation()}>
+            <img src={selected.imageUrl} alt="" className="block max-h-[75dvh] max-w-full rounded-lg object-contain" />
+            <div className="pointer-events-none absolute inset-0 rounded-lg" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E")`, mixBlendMode: "overlay", opacity: 0.55 }} />
+            <div className="pointer-events-none absolute inset-0 rounded-lg" style={{ background: "radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.45) 100%)" }} />
+            <div className="pointer-events-none absolute bottom-3 right-3 flex flex-col items-end gap-0.5">
+              <span className="fuji-imprint text-[15px] font-bold">{new Date(selected.captured_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })}</span>
+              <span className="fuji-imprint text-[10px] opacity-80">{new Date(selected.captured_at).toLocaleDateString().replace(/\//g, ".")}</span>
+              {selected.nickname && <span className="fuji-imprint text-[10px] opacity-90 mt-0.5">{selected.nickname.toUpperCase()}</span>}
             </div>
           </div>
         </div>
-      )}
+      </div>
+    </div>,
+    document.body
+  ) : null;
 
+  return (
+    <>
+      {Lightbox}
+      
       <div className="space-y-8">
         {groups.map((group) => (
           <div key={group.label}>
             <h2 className="mb-3 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">{group.label}</h2>
             <div className="grid grid-cols-2 gap-2">
-              {group.items.map((item) => (
+              {group.items.map((item, idx) => (
                 <article key={item.id} className="group relative rounded-lg overflow-hidden bg-slate-200 aspect-[3/4]">
-                  <button onClick={() => openPhoto(item, allItems.current.findIndex((i) => i.id === item.id))} className="h-full w-full">
+                  <button onClick={() => openPhoto(item, idx)} className="h-full w-full">
                     <img src={item.imageUrl} alt="" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
                     <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent px-2 py-3 flex justify-between items-end">
                       <span className="truncate text-[10px] font-bold text-white uppercase tracking-wider drop-shadow-sm">{item.nickname ?? "Guest"}</span>
                     </div>
                   </button>
-                  
-                  {/* Thumbnail Menu Button */}
                   <div className="absolute right-1 top-1 z-10">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setMenuOpenId(menuOpenId === item.id ? null : item.id);
-                      }}
-                      className="flex h-8 w-8 items-center justify-center rounded-full bg-black/20 text-white backdrop-blur-md transition-colors hover:bg-black/40 active:scale-90"
-                    >
-                      <svg viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4">
-                        <circle cx="12" cy="5" r="1.5" />
-                        <circle cx="12" cy="12" r="1.5" />
-                        <circle cx="12" cy="19" r="1.5" />
-                      </svg>
+                    <button onClick={(e) => { e.stopPropagation(); setMenuOpenId(menuOpenId === item.id ? null : item.id); }} className="flex h-8 w-8 items-center justify-center rounded-full bg-black/20 text-white backdrop-blur-md transition-colors hover:bg-black/40 active:scale-90">
+                      <svg viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4"><circle cx="12" cy="5" r="1.5" /><circle cx="12" cy="12" r="1.5" /><circle cx="12" cy="19" r="1.5" /></svg>
                     </button>
-
                     {menuOpenId === item.id && (
                       <>
                         <div className="fixed inset-0 z-10" onClick={() => setMenuOpenId(null)} />
                         <div className="absolute right-0 mt-1 z-20 min-w-[120px] overflow-hidden rounded-xl bg-white shadow-xl ring-1 ring-slate-200">
-                          <button
-                            onClick={() => { handleDownload(item); setMenuOpenId(null); }}
-                            className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
-                          >
-                            Download
-                          </button>
-                          {item.uploader_id === currentUserId && (
-                            <button
-                              onClick={() => handleDelete(item)}
-                              className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors"
-                            >
-                              Delete
-                            </button>
-                          )}
+                          <button onClick={(e) => { e.stopPropagation(); handleDownload(item); setMenuOpenId(null); }} className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors">Download</button>
+                          {item.uploader_id === currentUserId && <button onClick={(e) => { e.stopPropagation(); handleDelete(item); }} className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors">Delete</button>}
                         </div>
                       </>
                     )}
