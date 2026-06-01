@@ -5,26 +5,6 @@ import UserMenu from "@/components/user-menu";
 import { headers } from "next/headers";
 import { QRCodeDisplay } from "@/components/qr-code-display";
 
-/* ── Icons ── */
-function CameraIcon({ filled = false }: { filled?: boolean }) {
-  return (
-    <svg className="h-6 w-6" viewBox="0 0 24 24" fill={filled ? "currentColor" : "none"} stroke={filled ? "none" : "currentColor"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-      <circle cx="12" cy="13" r="4" />
-    </svg>
-  );
-}
-
-function GalleryIcon() {
-  return (
-    <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="3" width="18" height="18" rx="2" />
-      <circle cx="8.5" cy="8.5" r="1.5" />
-      <polyline points="21 15 16 10 5 21" />
-    </svg>
-  );
-}
-
 export default async function EventLandingPage({
   params,
 }: {
@@ -67,7 +47,6 @@ export default async function EventLandingPage({
   const displayName = (user?.user_metadata?.full_name ?? user?.user_metadata?.name ?? user?.email ?? "Guest") as string;
   const avatarUrl = (user?.user_metadata?.avatar_url ?? null) as string | null;
 
-  const galleryOpen = isEventGalleryOpen(event);
   const formattedDate = new Date(event.event_date).toLocaleDateString("en-US", {
     month: "long",
     day: "numeric",
@@ -104,7 +83,7 @@ export default async function EventLandingPage({
       <main className="flex flex-col px-4 pb-32 pt-6">
         
         {/* ── Visual Poster Card ── */}
-        <section className="mb-6">
+        <section className="mb-8">
            <div className="rounded-2xl bg-white p-2 shadow-sm ring-1 ring-slate-200/60">
               <div className="relative aspect-[4/5] w-full overflow-hidden rounded-xl">
                 {coverUrl ? (
@@ -136,24 +115,6 @@ export default async function EventLandingPage({
                 </div>
               </div>
            </div>
-        </section>
-
-        {/* ── Main Action Grid ── */}
-        <section className="grid grid-cols-2 gap-3 mb-10">
-          <Link
-            href={`/e/${eventCode}/camera`}
-            className="flex h-28 flex-col items-center justify-center gap-2 rounded-2xl bg-slate-900 text-white transition-all active:scale-[0.96] shadow-xl shadow-slate-200"
-          >
-            <CameraIcon filled />
-            <span className="text-xs font-bold uppercase tracking-[0.1em]">Open Camera</span>
-          </Link>
-          <Link
-            href={`/e/${eventCode}/gallery`}
-            className="flex h-28 flex-col items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white text-slate-900 transition-all active:scale-[0.96] shadow-sm"
-          >
-            <GalleryIcon />
-            <span className="text-xs font-bold uppercase tracking-[0.1em]">View Gallery</span>
-          </Link>
         </section>
 
         {/* ── Share / Invite Section ── */}
