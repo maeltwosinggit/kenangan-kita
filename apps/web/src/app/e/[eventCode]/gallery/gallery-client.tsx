@@ -1,19 +1,22 @@
 "use client";
 
 import { listEventPhotosByCode, softDeletePhoto } from "@kenangan/lib";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 
 type Props = {
   eventCode: string;
   currentUserId: string | null;
+  eventId: string;
 };
 
 const PAGE_SIZE = 24;
 
 type PhotoItem = { id: string; imageUrl: string; nickname: string | null; uploader_id: string | null; captured_at: string };
 
-export function GalleryClient({ eventCode, currentUserId }: Props) {
+export function GalleryClient({ eventCode, currentUserId, eventId }: Props) {
+  const queryClient = useQueryClient();
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const [selected, setSelected] = useState<PhotoItem | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number>(-1);
@@ -177,6 +180,73 @@ export function GalleryClient({ eventCode, currentUserId }: Props) {
     observer.observe(target);
     return () => observer.disconnect();
   }, [query]);
+
+  // ── Realtime Subscription (Pool Effect) ────────────────────────────────────
+  useEffect(() => {
+    const supabase = getSupabaseBrowserClient();
+    
+    const channel = supabase
+      .channel(`gallery-${eventId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "photos",
+          filter: `event_id=eq.${eventId}`,
+        },
+        async (payload) => {
+          const newPhoto = payload.new as any;
+          if (!newPhoto || newPhoto.is_deleted) return;
+
+          // Get signed URL for the new photo
+          const { data: signed } = await supabase.storage
+            .from("event-photos")
+            .createSignedUrl(newPhoto.storage_path, 3600);
+
+          if (!signed?.signedUrl) return;
+
+          const newItem: PhotoItem = {
+            id: newPhoto.id,
+            imageUrl: signed.signedUrl,
+            nickname: newPhoto.nickname,
+            uploader_id: newPhoto.uploader_id,
+            captured_at: newPhoto.captured_at,
+          };
+
+          // Update TanStack Query cache to prepend the new photo
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          queryClient.setQueryData(["gallery", eventCode], (oldData: any) => {
+            if (!oldData) return oldData;
+            
+            // Avoid duplicates (if we refetch simultaneously)
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const alreadyExists = oldData.pages.some((page: any) => 
+              page.items.some((item: any) => item.id === newItem.id)
+            );
+            if (alreadyExists) return oldData;
+
+            const firstPage = oldData.pages[0];
+            return {
+              ...oldData,
+              pages: [
+                {
+                  ...firstPage,
+                  items: [newItem, ...firstPage.items],
+                },
+                ...oldData.pages.slice(1),
+              ],
+            };
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [eventId, eventCode, queryClient]);
+  // ───────────────────────────────────────────────────────────────────────────
 
   if (query.isLoading) {
     return (

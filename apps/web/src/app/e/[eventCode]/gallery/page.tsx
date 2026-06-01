@@ -164,7 +164,7 @@ export default async function GalleryPage({
 
       {/* Gallery grid */}
       <section className="bg-white px-2 pt-3">
-        <GalleryClient eventCode={eventCode} currentUserId={currentUserId} />
+        <GalleryClient eventCode={eventCode} currentUserId={currentUserId} eventId={event.id} />
       </section>
 
       {/* Footer */}
