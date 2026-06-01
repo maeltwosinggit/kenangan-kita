@@ -10,7 +10,7 @@ type PhotoItem = { id: string; imageUrl: string; nickname: string | null; upload
 
 type Props = {
   eventCode: string;
-  eventName: string; // Passed from parent for the stamp
+  eventName: string;
   currentUserId: string | null;
   eventId: string;
 };
@@ -264,30 +264,34 @@ export function GalleryClient({ eventCode, eventName, currentUserId, eventId }: 
             <div className="pointer-events-none absolute inset-0 rounded-lg" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E")`, mixBlendMode: "overlay", opacity: 0.55 }} />
             <div className="pointer-events-none absolute inset-0 rounded-lg" style={{ background: "radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.45) 100%)" }} />
             
-            {/* ── REVAMPED FUJI STAMP OVERLAY ── */}
+            {/* ── EDITORIAL FUJI STAMP OVERLAY ── */}
+            {/* Top Right: Branding */}
+            <div className="pointer-events-none absolute top-4 right-4 text-right">
+               <span className="fuji-imprint text-[10px] tracking-[0.2em] opacity-50 uppercase">
+                • Kenangan Kita •
+              </span>
+            </div>
+
+            {/* Bottom Right: Metadata */}
             <div className="pointer-events-none absolute bottom-4 right-4 flex flex-col items-end gap-0.5 text-right">
-              {/* 5. Time (Top-most) */}
+              {/* Time */}
               <span className="fuji-imprint text-[18px] font-bold leading-none">
                 {new Date(selected.captured_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })}
               </span>
-              {/* 4. Date */}
+              {/* Date */}
               <span className="fuji-imprint text-[11px] leading-none opacity-90">
                 {new Date(selected.captured_at).toLocaleDateString("en-US", { year: "numeric", month: "2-digit", day: "2-digit" }).replace(/\//g, ".")}
               </span>
-              {/* 3. Event Name */}
-              <span className="fuji-imprint text-[10px] font-bold leading-none mt-0.5 opacity-90">
-                {eventName.toUpperCase()}
+              {/* Event Name */}
+              <span className="fuji-imprint text-[10px] font-bold leading-none mt-1 opacity-90 uppercase">
+                {eventName}
               </span>
-              {/* 2. Capturer */}
+              {/* Capturer */}
               {selected.nickname && (
-                <span className="fuji-imprint text-[10px] leading-none opacity-80">
-                  BY: {selected.nickname.toUpperCase()}
+                <span className="fuji-imprint text-[10px] leading-none opacity-80 uppercase">
+                  {selected.nickname}
                 </span>
               )}
-              {/* 1. Product Branding (Bottom-most) */}
-              <span className="fuji-imprint text-[8px] tracking-[0.2em] opacity-60 mt-1">
-                • KENANGAN KITA •
-              </span>
             </div>
           </div>
         </div>
