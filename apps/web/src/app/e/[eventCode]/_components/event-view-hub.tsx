@@ -99,15 +99,15 @@ export function EventViewHub({
   );
 
   return (
-    <div className="relative min-h-screen bg-slate-50 overflow-hidden">
+    <div className="relative min-h-screen bg-slate-50 overflow-x-hidden">
       
       {/* ── MAIN CONTENT CONTAINER (Sliding) ── */}
       <div 
-        className="flex min-h-screen w-[200%] transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]"
+        className="flex items-start min-h-screen w-[200%] transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]"
         style={{ transform: `translateX(${activeTab === "gallery" ? "-50%" : "0%"})` }}
       >
         {/* 1. EVENT HUB TAB */}
-        <div className="w-1/2 min-h-screen">
+        <div className={["w-1/2 min-h-screen", activeTab !== "event" ? "h-0 overflow-hidden" : ""].join(" ")}>
           <header className="sticky top-0 z-30 mx-auto flex h-16 w-full items-center justify-between border-b border-slate-100 bg-white/80 px-4 backdrop-blur-md">
             <Link href="/dashboard" className="transition-opacity hover:opacity-80">
               <Image src="/logo.png" alt="Kenangan Kita" width={70} height={35} unoptimized className="object-contain" />
@@ -176,7 +176,7 @@ export function EventViewHub({
         </div>
 
         {/* 3. GALLERY TAB */}
-        <div className="w-1/2 min-h-screen">
+        <div className={["w-1/2 min-h-screen", activeTab !== "gallery" ? "h-0 overflow-hidden" : ""].join(" ")}>
           <header className="sticky top-0 z-30 mx-auto flex h-16 w-full items-center justify-between border-b border-slate-100 bg-white/80 px-4 backdrop-blur-md">
             <button onClick={() => handleTabChange("event")} className="transition-opacity hover:opacity-80">
               <Image src="/logo.png" alt="Kenangan Kita" width={70} height={35} unoptimized className="object-contain" />
@@ -219,23 +219,25 @@ export function EventViewHub({
 
       {/* 2. CAMERA TAB (Slide-up Overlay) */}
       <div 
-        className="fixed inset-0 z-[60] bg-black transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]"
+        className="fixed inset-0 z-[60] transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]"
         style={{ transform: `translateY(${activeTab === "camera" ? "0%" : "100%"})` }}
       >
          {/* 
             CRITICAL FIX: Only mount camera when active to kill the 'green dot' indicator
          */}
          {activeTab === "camera" && (
-           <CameraCaptureClient 
-             eventCode={eventCode} 
-             onClose={() => handleTabChange("event")} 
-           />
+           <div className="h-full w-full bg-black">
+              <CameraCaptureClient 
+                eventCode={eventCode} 
+                onClose={() => handleTabChange("event")} 
+              />
+           </div>
          )}
       </div>
 
       {/* ── SHARED BOTTOM NAV ── */}
       <nav 
-        className={`fixed inset-x-0 bottom-0 z-40 mx-auto flex h-20 max-w-[448px] items-center justify-around border-t border-slate-100 bg-white/80 px-4 pb-safe backdrop-blur-lg transition-transform duration-300 ease-in-out ${activeTab === "camera" ? "translate-y-full" : "translate-y-0"}`}
+        className={`fixed inset-x-0 bottom-0 z-50 mx-auto flex h-20 max-w-[448px] items-center justify-around border-t border-slate-100 bg-white/80 px-4 pb-safe backdrop-blur-lg transition-transform duration-300 ease-in-out ${activeTab === "camera" ? "translate-y-full" : "translate-y-0"}`}
       >
         <button
           onClick={() => handleTabChange("event")}
