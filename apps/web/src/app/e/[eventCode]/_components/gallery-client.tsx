@@ -265,6 +265,13 @@ export function GalleryClient({ eventCode, eventName, currentUserId, eventId }: 
             <div className="pointer-events-none absolute inset-0 rounded-lg" style={{ background: "radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.45) 100%)" }} />
             
             {/* ── EDITORIAL FUJI STAMP OVERLAY ── */}
+            {/* Top Left: Event Name */}
+            <div className="pointer-events-none absolute top-4 left-4 text-left">
+               <span className="fuji-imprint text-[10px] font-bold opacity-80 uppercase tracking-wider">
+                {eventName}
+              </span>
+            </div>
+
             {/* Top Right: Branding */}
             <div className="pointer-events-none absolute top-4 right-4 text-right">
                <span className="fuji-imprint text-[10px] tracking-[0.2em] opacity-50 uppercase">
@@ -272,26 +279,11 @@ export function GalleryClient({ eventCode, eventName, currentUserId, eventId }: 
               </span>
             </div>
 
-            {/* Bottom Right: Metadata */}
-            <div className="pointer-events-none absolute bottom-4 right-4 flex flex-col items-end gap-0.5 text-right">
-              {/* Time */}
-              <span className="fuji-imprint text-[18px] font-bold leading-none">
-                {new Date(selected.captured_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })}
+            {/* Bottom Right: Date & Time (Same line) */}
+            <div className="pointer-events-none absolute bottom-4 right-4 flex flex-col items-end text-right">
+              <span className="fuji-imprint text-[16px] font-bold leading-none">
+                {new Date(selected.captured_at).toLocaleDateString("en-US", { year: "numeric", month: "2-digit", day: "2-digit" }).replace(/\//g, ".")} {new Date(selected.captured_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })}
               </span>
-              {/* Date */}
-              <span className="fuji-imprint text-[11px] leading-none opacity-90">
-                {new Date(selected.captured_at).toLocaleDateString("en-US", { year: "numeric", month: "2-digit", day: "2-digit" }).replace(/\//g, ".")}
-              </span>
-              {/* Event Name */}
-              <span className="fuji-imprint text-[10px] font-bold leading-none mt-1 opacity-90 uppercase">
-                {eventName}
-              </span>
-              {/* Capturer */}
-              {selected.nickname && (
-                <span className="fuji-imprint text-[10px] leading-none opacity-80 uppercase">
-                  {selected.nickname}
-                </span>
-              )}
             </div>
           </div>
         </div>
