@@ -1,29 +1,13 @@
 "use client";
 
-import { Document, Page, Text, View, StyleSheet, Image as PDFImage, Font } from "@react-pdf/renderer";
-import { PhotobookData, PhotobookPage } from "@kenangan/lib";
-
-// ── FONTS ──
-// Registering standard fonts. For premium DS-Digital, we would need to host the .ttf
-Font.register({
-  family: "Inter",
-  fonts: [
-    { src: "https://cdn.jsdelivr.net/npm/inter-ui@3.19.3/Inter%20(web)/fonts/Inter-Regular.woff", fontWeight: 400 },
-    { src: "https://cdn.jsdelivr.net/npm/inter-ui@3.19.3/Inter%20(web)/fonts/Inter-SemiBold.woff", fontWeight: 600 },
-    { src: "https://cdn.jsdelivr.net/npm/inter-ui@3.19.3/Inter%20(web)/fonts/Inter-Bold.woff", fontWeight: 700 }
-  ]
-});
-
-Font.register({
-  family: "ShareTechMono",
-  src: "https://cdn.jsdelivr.net/npm/@fontsource/share-tech-mono@5.0.18/files/share-tech-mono-latin-400-normal.woff"
-});
+import { Document, Page, Text, View, StyleSheet, Image as PDFImage } from "@react-pdf/renderer";
+import { PhotobookData } from "@kenangan/lib";
 
 const styles = StyleSheet.create({
   page: {
     padding: 40,
     backgroundColor: "#ffffff",
-    fontFamily: "Inter"
+    fontFamily: "Helvetica" // Built-in standard font
   },
   header: {
     marginBottom: 20,
@@ -36,13 +20,13 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontWeight: 700,
+    fontFamily: "Helvetica-Bold",
     color: "#0f172a"
   },
   branding: {
     fontSize: 10,
     color: "#94a3b8",
-    fontWeight: 600,
+    fontFamily: "Helvetica-Bold",
     letterSpacing: 2
   },
   // ── TEMPLATE STYLES ──
@@ -83,7 +67,8 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     borderWidth: 8,
     borderColor: "#ffffff",
-    boxShadow: "0 4px 6px rgba(0,0,0,0.1)"
+    // Note: React-PDF has limited support for box-shadow and transform
+    // We rely on standard absolute positioning here.
   },
   // ── STATS STYLES ──
   statsPage: {
@@ -96,7 +81,7 @@ const styles = StyleSheet.create({
   },
   statsTitle: {
     fontSize: 12,
-    fontWeight: 700,
+    fontFamily: "Helvetica-Bold",
     color: "#64748b",
     textTransform: "uppercase",
     letterSpacing: 4,
@@ -104,7 +89,7 @@ const styles = StyleSheet.create({
   },
   statsValue: {
     fontSize: 48,
-    fontWeight: 700,
+    fontFamily: "Helvetica-Bold",
     color: "#0f172a"
   },
   statsSub: {
@@ -116,7 +101,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 20,
     right: 20,
-    fontFamily: "ShareTechMono",
+    fontFamily: "Courier-Bold", // Built-in monospace font
     color: "#f97316",
     fontSize: 12
   }
