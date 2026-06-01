@@ -273,6 +273,41 @@ export async function listEventPhotosForAdmin(input: ListAdminPhotosInput) {
   };
 }
 
+export async function listAllEventPhotos(eventId: string) {
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase
+    .from("photos")
+    .select("id,storage_path,captured_at,nickname,uploader_id,width,height")
+    .eq("event_id", eventId)
+    .eq("is_deleted", false)
+    .order("captured_at", { ascending: true }); // Chronological
+
+  if (error) throw error;
+
+  const rows = (data as EventPhoto[]) ?? [];
+  const paths = rows.map((row) => row.storage_path);
+  let signedUrlMap = new Map<string, string>();
+
+  if (paths.length > 0) {
+    const { data: signedData, error: signedError } = await supabase.storage
+      .from("event-photos")
+      .createSignedUrls(paths, 60 * 60);
+
+    if (signedError) throw signedError;
+
+    signedUrlMap = new Map(
+      (signedData ?? [])
+        .filter((item): item is typeof item & { path: string; signedUrl: string } => !!item.signedUrl && item.path !== null)
+        .map((item) => [item.path, item.signedUrl])
+    );
+  }
+
+  return rows.map((row) => ({
+    ...row,
+    imageUrl: signedUrlMap.get(row.storage_path) ?? ""
+  }));
+}
+
 export async function softDeletePhoto(photoId: string) {
   const supabase = getSupabaseClient();
   const { error } = await supabase.from("photos").update({ is_deleted: true }).eq("id", photoId);

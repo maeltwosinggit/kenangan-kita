@@ -204,11 +204,18 @@ Owner: Engineering
 - [ ] Add export job status and downloadable link
 
 ### Phase 13 - Guest Engagement
-
 - [ ] Add optional reactions (e.g. ❤️) without login
 - [ ] Add "Thanks" completion screen with CTA to gallery
 - [ ] Add simple engagement counters per photo
 - [ ] Add admin toggle to enable/disable engagement features
+
+### Phase 14 - Digital Photobook Experience
+- [ ] Define "Editorial Layout Pool" (Hero, Duo, Scrapbook, Mosaic templates)
+- [ ] Build dynamic layout generator (algorithm to assign unique templates per page)
+- [ ] Implement paginated flip-book UI for web
+- [ ] Add "Event Pulse" stats pages (Early Bird, Night Owl, Prolific Guest, Activity Heatmap)
+- [ ] Add "Memory Export" (High-quality PDF generation for physical printing)
+- [ ] Add admin toggle to "Generate Photobook" once event ends
 
 ## Immediate Next Tasks
 

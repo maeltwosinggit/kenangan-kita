@@ -16,6 +16,7 @@ import type { CreatedEvent } from "@/lib/data/dashboard";
 import { QRCodeDisplay } from "@/components/qr-code-display";
 import { EditEventForm } from "@/components/edit-event-form";
 import { EventGuestsList } from "@/components/event-guests-list";
+import { PhotobookGenerator } from "../../admin/events/[eventId]/photobook/photobook-generator";
 
 type Props = {
   event: CreatedEvent | null;
@@ -44,7 +45,7 @@ function Spinner() {
   );
 }
 
-type Section = "overview" | "edit" | "guests" | "photos" | "danger";
+type Section = "overview" | "edit" | "guests" | "photos" | "photobook" | "danger";
 
 export function ManageEventSheet({ event: incomingEvent, isOpen, onClose, onDeleted }: Props) {
   const supabase = getSupabaseBrowserClient();
@@ -325,6 +326,7 @@ export function ManageEventSheet({ event: incomingEvent, isOpen, onClose, onDele
           <div className="mt-3 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {sectionBtn("overview", "Overview")}
             {sectionBtn("edit", "Edit")}
+            {sectionBtn("photobook", "Photobook")}
             {sectionBtn("guests", "Guests")}
             {sectionBtn("photos", "Photos")}
             {sectionBtn("danger", "Danger")}
@@ -339,7 +341,7 @@ export function ManageEventSheet({ event: incomingEvent, isOpen, onClose, onDele
             className="flex h-full w-full transition-transform duration-300 ease-in-out"
             style={{
               transform: `translateX(-${
-                ["overview", "edit", "guests", "photos", "danger"].indexOf(activeSection) * 100
+                ["overview", "edit", "photobook", "guests", "photos", "danger"].indexOf(activeSection) * 100
               }%)`,
             }}
           >
@@ -639,6 +641,12 @@ export function ManageEventSheet({ event: incomingEvent, isOpen, onClose, onDele
                 <EditEventForm event={event} />
               </section>
               <div className="h-4" />
+            </div>
+
+            {/* ── PHOTOBOOK ── */}
+            <div className="w-full shrink-0 overflow-y-auto px-4 py-4 space-y-4">
+               <PhotobookGenerator eventId={event.id} eventName={event.name} />
+               <div className="h-4" />
             </div>
 
             {/* ── GUESTS ── */}
