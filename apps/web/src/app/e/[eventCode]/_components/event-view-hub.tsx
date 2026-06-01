@@ -7,7 +7,7 @@ import UserMenu from "@/components/user-menu";
 import Image from "next/image";
 import Link from "next/link";
 import { QRCodeDisplay } from "@/components/qr-code-display";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 
 type Props = {
   event: any;
