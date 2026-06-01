@@ -169,7 +169,7 @@ export function PhotobookPDF({ data }: { data: PhotobookData }) {
                       transform: style.transform 
                     }}>
                        <PDFImage src={p.imageUrl} style={{ width: "100%", height: 240, objectFit: "cover" }} />
-                       <Text style={{ fontSize: 8, color: "#f97316", marginTop: 4, fontFamily: "ShareTechMono" }}>{formatFuji(p)}</Text>
+                       <Text style={{ fontSize: 8, color: "#f97316", marginTop: 4, fontFamily: "Courier-Bold" }}>{formatFuji(p)}</Text>
                     </View>
                   );
                 })}
