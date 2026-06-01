@@ -338,38 +338,52 @@ export function CameraCaptureClient({ eventCode }: Props) {
       )}
 
       {/* ── Top header ── */}
-      <header className="absolute left-0 right-0 top-0 z-50 flex h-14 items-center justify-between px-4">
-        {/* Flip camera */}
-        <button
-          type="button"
-          onClick={onFlip}
-          disabled={flipPhase !== "idle" || !!captured}
-          aria-label="Flip camera"
-          className="p-2 text-white transition-opacity duration-150 hover:opacity-70 active:scale-95 disabled:opacity-30"
+      <header className="absolute left-0 right-0 top-0 z-50 flex h-16 items-center justify-between px-4">
+        {/* Close button */}
+        <Link
+          href={`/e/${eventCode}`}
+          aria-label="Exit camera"
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-black/20 text-white backdrop-blur-md transition-all active:scale-90 hover:bg-black/40"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
-            <path d="M20 7h-9" />
-            <path d="M14 17H5" />
-            <polyline points="17 4 20 7 17 10" />
-            <polyline points="7 14 4 17 7 20" />
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
           </svg>
-        </button>
+        </Link>
 
         {/* Brand label */}
-        <div className="text-sm font-black uppercase tracking-[0.2em] text-white">EVENT CAM</div>
+        <div className="text-[10px] font-black uppercase tracking-[0.3em] text-white/90 drop-shadow-sm">EVENT CAMERA</div>
 
-        {/* Flash toggle */}
-        <button
-          type="button"
-          onClick={() => setFlashOn((v) => !v)}
-          disabled={!!captured}
-          aria-label={flashOn ? "Turn flash off" : "Turn flash on"}
-          className={["p-2 transition-opacity duration-150 hover:opacity-70 active:scale-95 disabled:opacity-30", flashOn ? "text-yellow-300" : "text-white"].join(" ")}
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill={flashOn ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
-            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-          </svg>
-        </button>
+        <div className="flex items-center gap-1">
+          {/* Flip camera */}
+          <button
+            type="button"
+            onClick={onFlip}
+            disabled={flipPhase !== "idle" || !!captured}
+            aria-label="Flip camera"
+            className="flex h-10 w-10 items-center justify-center text-white transition-opacity duration-150 hover:opacity-70 active:scale-95 disabled:opacity-30"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+              <path d="M20 7h-9" />
+              <path d="M14 17H5" />
+              <polyline points="17 4 20 7 17 10" />
+              <polyline points="7 14 4 17 7 20" />
+            </svg>
+          </button>
+
+          {/* Flash toggle */}
+          <button
+            type="button"
+            onClick={() => setFlashOn((v) => !v)}
+            disabled={!!captured}
+            aria-label={flashOn ? "Turn flash off" : "Turn flash on"}
+            className={["flex h-10 w-10 items-center justify-center transition-opacity duration-150 hover:opacity-70 active:scale-95 disabled:opacity-30", flashOn ? "text-yellow-300" : "text-white"].join(" ")}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill={flashOn ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+            </svg>
+          </button>
+        </div>
       </header>
 
       {/* Kenangan Kita subtitle */}
