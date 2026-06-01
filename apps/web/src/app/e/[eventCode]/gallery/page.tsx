@@ -1,9 +1,57 @@
 import Link from "next/link";
 import Image from "next/image";
-import { getEventByCode, isEventGalleryOpen, getEventStats } from "@kenangan/lib";
+import { isEventGalleryOpen } from "@kenangan/lib";
 import { GalleryClient } from "./gallery-client";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import UserMenu from "@/components/user-menu";
+import { getCachedEventByCode, getCachedEventStats, getCachedLatestPhoto } from "@/lib/data/events";
+import { Suspense } from "react";
+
+/**
+ * ── GalleryPulseStats ──
+ * Inline stats for the gallery hero.
+ */
+async function GalleryPulseStats({ eventId }: { eventId: string }) {
+  const { photoCount, guestCount } = await getCachedEventStats(eventId);
+  return (
+    <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between">
+      <div className="flex gap-4">
+        <div className="flex flex-col">
+          <span className="text-2xl font-black text-white">{photoCount}</span>
+          <span className="text-[9px] font-bold uppercase tracking-widest text-white/60">Photos</span>
+        </div>
+        <div className="flex flex-col">
+          <span className="text-2xl font-black text-white">{guestCount}</span>
+          <span className="text-[9px] font-bold uppercase tracking-widest text-white/60">Guests</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * ── GalleryHeroImage ──
+ */
+async function GalleryHeroImage({ event }: { event: any }) {
+  const supabaseClient = (await import("@/lib/supabase/server")).getSupabaseServerClient;
+  const supabase = await supabaseClient();
+
+  let heroUrl: string | null = null;
+  if (event.cover_image_path) {
+    const { data } = supabase.storage
+      .from("event-covers")
+      .getPublicUrl(event.cover_image_path);
+    heroUrl = data.publicUrl ?? null;
+  } else {
+    heroUrl = await getCachedLatestPhoto(event.id);
+  }
+
+  return heroUrl ? (
+    <img src={heroUrl} alt={event.name} className="h-full w-full object-cover animate-in fade-in duration-500" />
+  ) : (
+    <div className="h-full w-full bg-gradient-to-br from-slate-700 to-slate-950" />
+  );
+}
 
 export default async function GalleryPage({
   params
@@ -11,7 +59,7 @@ export default async function GalleryPage({
   params: Promise<{ eventCode: string }>;
 }) {
   const { eventCode } = await params;
-  const event = await getEventByCode(eventCode);
+  const event = await getCachedEventByCode(eventCode);
 
   if (!event) {
     return (
@@ -26,37 +74,6 @@ export default async function GalleryPage({
   const { data: { user } } = await supabase.auth.getUser();
   const currentUserId = user?.id ?? null;
   const galleryOpen = isEventGalleryOpen(event);
-
-  // Fetch stats using cached helper
-  const { photoCount, guestCount } = await getEventStats(event.id);
-
-  // Hero: fetch latest photo only if no cover
-  let latestPhoto: { storage_path: string } | null = null;
-  if (!event.cover_image_path) {
-    const { data } = await supabase
-      .from("photos")
-      .select("storage_path")
-      .eq("event_id", event.id)
-      .eq("is_deleted", false)
-      .order("captured_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    latestPhoto = data;
-  }
-
-  // Hero: use the event's designated cover photo first; fall back to latest uploaded photo.
-  let heroUrl: string | null = null;
-  if (event.cover_image_path) {
-    const { data } = supabase.storage
-      .from("event-covers")
-      .getPublicUrl(event.cover_image_path);
-    heroUrl = data.publicUrl ?? null;
-  } else if (latestPhoto) {
-    const { data } = await supabase.storage
-      .from("event-photos")
-      .createSignedUrl(latestPhoto.storage_path, 60 * 60);
-    heroUrl = data?.signedUrl ?? null;
-  }
 
   return (
     <div className="pb-32">
@@ -83,30 +100,17 @@ export default async function GalleryPage({
         </div>
       </header>
 
-      {/* Hero section — reduced height since we have a dedicated page for info */}
-      <section className="relative h-[300px] w-full overflow-hidden">
-        {heroUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={heroUrl} alt={event.name} className="h-full w-full object-cover" />
-        ) : (
-          <div className="h-full w-full bg-gradient-to-br from-slate-700 to-slate-950" />
-        )}
+      {/* Hero section */}
+      <section className="relative h-[300px] w-full overflow-hidden bg-slate-100">
+        <Suspense fallback={<div className="h-full w-full bg-slate-100 animate-pulse" />}>
+          <GalleryHeroImage event={event} />
+        </Suspense>
 
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 
-        {/* Stats overlay */}
-        <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between">
-            <div className="flex gap-4">
-              <div className="flex flex-col">
-                <span className="text-2xl font-black text-white">{photoCount ?? 0}</span>
-                <span className="text-[9px] font-bold uppercase tracking-widest text-white/60">Photos</span>
-              </div>
-              <div className="flex flex-col">
-                <span className="text-2xl font-black text-white">{guestCount}</span>
-                <span className="text-[9px] font-bold uppercase tracking-widest text-white/60">Guests</span>
-              </div>
-            </div>
-        </div>
+        <Suspense fallback={null}>
+          <GalleryPulseStats eventId={event.id} />
+        </Suspense>
       </section>
 
       {/* Gallery grid */}

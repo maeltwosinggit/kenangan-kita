@@ -1,18 +1,18 @@
 import Link from "next/link";
 import Image from "next/image";
-import { getEventByCode, getLatestEventPhoto, isEventGalleryOpen, getEventStats } from "@kenangan/lib";
+import { isEventGalleryOpen } from "@kenangan/lib";
 import UserMenu from "@/components/user-menu";
 import { headers } from "next/headers";
 import { QRCodeDisplay } from "@/components/qr-code-display";
 import { Suspense } from "react";
+import { getCachedEventByCode, getCachedEventStats, getCachedLatestPhoto } from "@/lib/data/events";
 
 /**
  * ── LivePulseStats Component ──
  * Fetches and displays the live photo/guest counters.
- * Wrapped in Suspense in the main page to prevent blocking.
  */
 async function LivePulseStats({ eventId }: { eventId: string }) {
-  const { photoCount, guestCount } = await getEventStats(eventId);
+  const { photoCount, guestCount } = await getCachedEventStats(eventId);
 
   return (
     <div className="mb-4 flex items-center gap-4">
@@ -47,7 +47,6 @@ function StatsSkeleton() {
 
 /**
  * ── UserMenuWrapper ──
- * Handles auth state check without blocking the entire page shell.
  */
 async function UserMenuWrapper() {
   const supabaseClient = (await import("@/lib/supabase/server")).getSupabaseServerClient;
@@ -70,8 +69,6 @@ async function UserMenuWrapper() {
 
 /**
  * ── EventPoster Component ──
- * Renders the main visual card. Fallback logic for cover image
- * is handled here to prevent blocking the initial page shell.
  */
 async function EventPoster({ 
   event, 
@@ -89,7 +86,7 @@ async function EventPoster({
     coverUrl = data.publicUrl ?? null;
   } else {
     // Fallback to latest photo (cached lookup)
-    coverUrl = await getLatestEventPhoto(event.id);
+    coverUrl = await getCachedLatestPhoto(event.id);
   }
 
   return (
@@ -140,7 +137,7 @@ export default async function EventLandingPage({
   params: Promise<{ eventCode: string }>;
 }) {
   const { eventCode } = await params;
-  const event = await getEventByCode(eventCode);
+  const event = await getCachedEventByCode(eventCode);
 
   if (!event) {
     return (
