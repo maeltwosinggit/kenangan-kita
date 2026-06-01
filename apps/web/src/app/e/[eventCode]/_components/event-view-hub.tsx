@@ -210,19 +210,13 @@ export function EventViewHub({
       >
          {/* 
             CRITICAL FIX: Only mount camera when active to kill the 'green dot' indicator
-            We use a small delay to let the animation start before mounting if entering.
          */}
-         {activeTab === "camera" && <CameraCaptureClient eventCode={eventCode} />}
-         
-         <button 
-            onClick={() => handleTabChange("event")}
-            className="absolute left-4 top-4 z-[70] flex h-10 w-10 items-center justify-center rounded-full bg-black/20 text-white backdrop-blur-md transition-all active:scale-90"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-         </button>
+         {activeTab === "camera" && (
+           <CameraCaptureClient 
+             eventCode={eventCode} 
+             onClose={() => handleTabChange("event")} 
+           />
+         )}
       </div>
 
       {/* ── SHARED BOTTOM NAV ── */}
