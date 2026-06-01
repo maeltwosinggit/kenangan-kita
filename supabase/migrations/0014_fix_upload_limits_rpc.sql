@@ -1,5 +1,7 @@
 -- 0014: Fix get_event_upload_stats RPC to include max_uploads_per_user
 
+drop function if exists public.get_event_upload_stats(uuid);
+
 create or replace function public.get_event_upload_stats(
   p_event_id uuid
 )
