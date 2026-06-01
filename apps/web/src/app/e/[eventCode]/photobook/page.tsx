@@ -1,7 +1,7 @@
 import { getCachedEventByCode } from "@/lib/data/events";
 import { notFound } from "next/navigation";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
-import { PreviewWrapper } from "./preview-wrapper";
+import PreviewClient from "./preview-client";
 
 export default async function PhotobookPreviewPage({
   params,
@@ -40,7 +40,7 @@ export default async function PhotobookPreviewPage({
   }
 
   return (
-    <PreviewWrapper 
+    <PreviewClient 
       eventCode={eventCode} 
       eventId={event.id} 
       eventName={event.name} 

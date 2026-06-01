@@ -1,15 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { pdf, PDFDownloadLink } from "@react-pdf/renderer";
 import { listAllEventPhotos, generatePhotobookData, getEventStats, type PhotobookData } from "@kenangan/lib";
-import { PhotobookPDF } from "@/components/photobook/photobook-pdf";
 import Link from "next/link";
+import { HtmlPhotobook } from "./_components/html-photobook";
 
 export default function PreviewClient({ eventCode, eventId, eventName }: { eventCode: string, eventId: string, eventName: string }) {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<PhotobookData | null>(null);
-  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -26,13 +24,6 @@ export default function PreviewClient({ eventCode, eventId, eventName }: { event
 
         const bookData = generatePhotobookData(eventName, photos, stats.guestCount);
         setData(bookData);
-
-        // Generate the PDF blob manually instead of relying on PDFViewer component
-        // which has issues in React 18/Next.js Strict Mode
-        const blob = await pdf(<PhotobookPDF data={bookData} />).toBlob();
-        const url = URL.createObjectURL(blob);
-        setPdfUrl(url);
-
       } catch (err: any) {
         setError(err.message || "Failed to generate photobook preview.");
       } finally {
@@ -41,13 +32,6 @@ export default function PreviewClient({ eventCode, eventId, eventName }: { event
     }
     load();
   }, [eventId, eventName]);
-
-  // Clean up object URL
-  useEffect(() => {
-    return () => {
-      if (pdfUrl) URL.revokeObjectURL(pdfUrl);
-    };
-  }, [pdfUrl]);
 
   return (
     <div className="fixed inset-0 z-[100] flex flex-col bg-slate-900">
@@ -64,50 +48,22 @@ export default function PreviewClient({ eventCode, eventId, eventName }: { event
         </Link>
         
         <div className="flex flex-col items-center">
-          <span className="text-xs font-bold uppercase tracking-widest text-white">Photobook Preview</span>
+          <span className="text-xs font-bold uppercase tracking-widest text-white">Photobook</span>
           <span className="text-[10px] text-white/50">{eventName}</span>
         </div>
 
-        {data && !loading ? (
-          <PDFDownloadLink
-            document={<PhotobookPDF data={data} />}
-            fileName={`photobook-${eventName.toLowerCase().replace(/\s+/g, '-')}.pdf`}
-            className="flex items-center gap-1.5 rounded-full bg-green-600 px-4 py-1.5 transition-all active:scale-95 hover:bg-green-500"
-          >
-            {({ loading: pdfLoading }) => (
-              <>
-                {pdfLoading ? (
-                  <svg className="h-4 w-4 animate-spin text-white" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
-                ) : (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4 text-white">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                    <polyline points="7 10 12 15 17 10" />
-                    <line x1="12" y1="15" x2="12" y2="3" />
-                  </svg>
-                )}
-                <span className="text-[10px] font-bold uppercase tracking-wider text-white">
-                  {pdfLoading ? "Wait" : "Save"}
-                </span>
-              </>
-            )}
-          </PDFDownloadLink>
-        ) : (
-          <div className="w-[84px]" />
-        )}
+        <div className="w-10" /> {/* Balance */}
       </header>
 
       {/* Main Content */}
-      <div className="flex-1 relative bg-slate-900 flex items-center justify-center">
+      <div className="flex-1 relative bg-slate-900 flex items-center justify-center overflow-hidden">
         {loading && (
           <div className="flex flex-col items-center gap-4 text-white/60">
             <svg className="h-8 w-8 animate-spin" viewBox="0 0 24 24" fill="none">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
-            <p className="text-xs font-bold uppercase tracking-[0.2em] animate-pulse">Rendering Photobook...</p>
+            <p className="text-xs font-bold uppercase tracking-[0.2em] animate-pulse">Organizing Memories...</p>
           </div>
         )}
 
@@ -122,14 +78,8 @@ export default function PreviewClient({ eventCode, eventId, eventName }: { event
           </div>
         )}
 
-        {pdfUrl && !loading && !error && (
-          <div className="absolute inset-0 h-full w-full">
-            <iframe 
-              src={`${pdfUrl}#toolbar=0&navpanes=0&scrollbar=0`} 
-              className="h-full w-full border-none"
-              title="Photobook Preview"
-            />
-          </div>
+        {data && !loading && !error && (
+          <HtmlPhotobook data={data} />
         )}
       </div>
 
