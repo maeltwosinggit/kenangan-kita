@@ -1,6 +1,6 @@
 "use client";
 
-import { listEventPhotosByCode, softDeletePhoto } from "@kenangan/lib";
+import { listEventPhotosByCode, softDeletePhoto, imprintPhoto } from "@kenangan/lib";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
@@ -142,11 +142,18 @@ export function GalleryClient({ eventCode, currentUserId, eventId }: Props) {
   const handleDownload = async (item: PhotoItem) => {
     try {
       const res = await fetch(item.imageUrl);
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
+      const originalBlob = await res.blob();
+
+      // Burn the orange stamp into the photo
+      const imprintedBlob = await imprintPhoto(originalBlob, {
+        nickname: item.nickname,
+        capturedAt: item.captured_at
+      });
+
+      const url = URL.createObjectURL(imprintedBlob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `photo-${item.id}.jpg`;
+      a.download = `kenangan-${item.id}.jpg`;
       document.body.appendChild(a);
       a.click();
       a.remove();
