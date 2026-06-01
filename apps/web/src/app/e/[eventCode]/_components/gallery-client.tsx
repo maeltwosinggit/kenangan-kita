@@ -265,6 +265,9 @@ export function GalleryClient({ eventCode, currentUserId, eventId }: Props) {
                     <img src={item.imageUrl} alt="" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
                     <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent px-2 py-3 flex justify-between items-end">
                       <span className="truncate text-[10px] font-bold text-white uppercase tracking-wider drop-shadow-sm">{item.nickname ?? "Guest"}</span>
+                      <span className="ml-2 shrink-0 text-[10px] font-bold text-white/80 drop-shadow-sm uppercase tracking-wider">
+                        {new Date(item.captured_at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit", hour12: true })}
+                      </span>
                     </div>
                   </button>
                   <div className="absolute right-1 top-1 z-10">
