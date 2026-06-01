@@ -272,14 +272,29 @@ export async function getEventUploadStats(
  * Returns a structured status so callers can show the right message.
  */
 export async function checkUserUploadLimit(
-  eventId: string,
-  userId: string
+  eventCode: string,
+  userId: string | null,
+  supabaseClient?: SupabaseClient
 ): Promise<UserUploadLimitStatus> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = getSupabaseClient() as any;
+  const supabase = (supabaseClient ?? getSupabaseClient()) as any;
+
+  // First resolve the event code to an event ID
+  const { data: eventData, error: eventError } = await supabase
+    .from("events")
+    .select("id")
+    .eq("event_code", eventCode)
+    .single();
+
+  if (eventError || !eventData) {
+    throw new Error("Event not found");
+  }
+  const eventId = eventData.id;
 
   const [countResult, statsResult] = await Promise.all([
-    supabase.rpc("get_user_upload_count",  { p_event_id: eventId, p_user_id: userId }),
+    userId 
+      ? supabase.rpc("get_user_upload_count", { p_event_id: eventId, p_user_id: userId })
+      : Promise.resolve({ data: 0, error: null }),
     supabase.rpc("get_event_upload_stats", { p_event_id: eventId }),
   ]);
 

@@ -28,6 +28,10 @@ export function CameraCaptureClient({ eventCode }: Props) {
   const [limitStatus, setLimitStatus] = useState<UserUploadLimitStatus | null>(null);
 
   const isLimitReached = !!limitStatus && (limitStatus.isUserLimitReached || limitStatus.isEventLimitReached);
+  // How many shots remain before the user hits their personal cap
+  const shotsLeft = limitStatus && limitStatus.userLimit !== null
+    ? Math.max(0, limitStatus.userLimit - limitStatus.uploadCount)
+    : null;
   const canCapture = useMemo(
     () => !!adapter && isCameraReady && !captured && !loading && !isLimitReached,
     [adapter, isCameraReady, captured, loading, isLimitReached]
@@ -35,10 +39,22 @@ export function CameraCaptureClient({ eventCode }: Props) {
   const canUpload = useMemo(() => !!captured && !loading, [captured, loading]);
 
   // Fetch limit status for this user+event whenever userId resolves
-  const fetchLimitStatus = (uid: string) => {
-    checkUserUploadLimit(eventCode, uid)
-      .then(setLimitStatus)
-      .catch(() => {});
+  const fetchLimitStatus = (uid: string | null) => {
+    const supabase = getSupabaseBrowserClient();
+    checkUserUploadLimit(eventCode, uid, supabase)
+      .then((status) => {
+        // If guest (uid is null), use localStorage to track their personal upload count
+        if (!uid && status.userLimit !== null) {
+          const guestCountStr = localStorage.getItem(`guest_uploads_${eventCode}`);
+          const guestCount = guestCountStr ? parseInt(guestCountStr, 10) : 0;
+          status.uploadCount = guestCount;
+          status.isUserLimitReached = guestCount >= status.userLimit;
+        }
+        setLimitStatus(status);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch limit status:", err);
+      });
   };
 
   // Fetch logged-in user's display name and id once on mount
@@ -53,9 +69,12 @@ export function CameraCaptureClient({ eventCode }: Props) {
         setLoggedInName(name);
         const uid = data.user?.id ?? null;
         setUserId(uid);
-        if (uid) fetchLimitStatus(uid);
+        // Always fetch limits, even if guest
+        fetchLimitStatus(uid);
       })
-      .catch(() => {});
+      .catch(() => {
+        fetchLimitStatus(null);
+      });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -179,6 +198,30 @@ export function CameraCaptureClient({ eventCode }: Props) {
     setError(null);
     const nameToUse = loggedInName ?? undefined;
     try {
+      // Re-check limit right before upload to prevent race-condition bypasses
+      const supabase = getSupabaseBrowserClient();
+      const freshStatus = await checkUserUploadLimit(eventCode, userId, supabase);
+      
+      // Merge local storage count for guests
+      if (!userId && freshStatus.userLimit !== null) {
+        const guestCountStr = localStorage.getItem(`guest_uploads_${eventCode}`);
+        const guestCount = guestCountStr ? parseInt(guestCountStr, 10) : 0;
+        freshStatus.uploadCount = guestCount;
+        freshStatus.isUserLimitReached = guestCount >= freshStatus.userLimit;
+      }
+      
+      setLimitStatus(freshStatus);
+      if (freshStatus.isUserLimitReached) {
+        setError("You've reached your photo limit for this event.");
+        setLoading(false);
+        return;
+      }
+      if (freshStatus.isEventLimitReached) {
+        setError("This event has reached its total photo limit.");
+        setLoading(false);
+        return;
+      }
+
       const compressed = await compressImage(captured.blob, {
         maxWidth: 1600,
         maxHeight: 1600,
@@ -203,8 +246,16 @@ export function CameraCaptureClient({ eventCode }: Props) {
       setCaptured(null);
       setShowSaved(true);
       setTimeout(() => setShowSaved(false), 3000);
+      
+      // Increment guest local count if anonymous
+      if (!userId) {
+        const guestCountStr = localStorage.getItem(`guest_uploads_${eventCode}`);
+        const guestCount = guestCountStr ? parseInt(guestCountStr, 10) : 0;
+        localStorage.setItem(`guest_uploads_${eventCode}`, String(guestCount + 1));
+      }
+      
       // Refresh quota after upload
-      if (userId) fetchLimitStatus(userId);
+      fetchLimitStatus(userId);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed");
     } finally {
@@ -332,27 +383,46 @@ export function CameraCaptureClient({ eventCode }: Props) {
 
       {/* ── Bottom controls (viewfinder only) ── */}
       {!captured && (
-        <footer className="absolute bottom-0 left-0 right-0 z-50 flex flex-col items-center gap-0 px-8 pb-12">
+        <footer className="absolute bottom-0 left-0 right-0 z-50 flex flex-col items-center px-8 pb-12">
 
-          {/* Quota bar — shown when limits are active */}
+          {/* ── Shots-left indicator ── */}
           {limitStatus && limitStatus.userLimit !== null && (
-            <div className="mb-4 w-full">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[10px] uppercase tracking-widest text-white/60">Your quota</span>
-                <span className={[
-                  "text-[11px] font-bold",
-                  limitStatus.isUserLimitReached ? "text-red-400" : "text-white/80",
-                ].join(" ")}>
-                  {limitStatus.uploadCount} / {limitStatus.userLimit}
-                </span>
+            <div className="mb-5 flex flex-col items-center gap-2 w-full">
+              {/* Pill label */}
+              <div className={[
+                "flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold backdrop-blur-sm",
+                limitStatus.isUserLimitReached
+                  ? "bg-red-500/30 text-red-300 ring-1 ring-red-400/40"
+                  : shotsLeft !== null && shotsLeft <= 2
+                  ? "bg-amber-500/25 text-amber-300 ring-1 ring-amber-400/40"
+                  : "bg-white/10 text-white/90 ring-1 ring-white/20",
+              ].join(" ")}>
+                {limitStatus.isUserLimitReached ? (
+                  <>
+                    <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                      <circle cx="12" cy="12" r="10" />
+                      <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+                    </svg>
+                    No shots left
+                  </>
+                ) : (
+                  <>
+                    <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                      <circle cx="12" cy="13" r="4" />
+                    </svg>
+                    {shotsLeft} {shotsLeft === 1 ? "shot" : "shots"} left
+                  </>
+                )}
               </div>
-              <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/20">
+              {/* Slim progress bar */}
+              <div className="h-1 w-32 overflow-hidden rounded-full bg-white/20">
                 <div
                   className={[
-                    "h-full rounded-full transition-all",
+                    "h-full rounded-full transition-all duration-500",
                     limitStatus.isUserLimitReached
                       ? "bg-red-400"
-                      : limitStatus.uploadCount / limitStatus.userLimit > 0.8
+                      : shotsLeft !== null && shotsLeft <= 2
                       ? "bg-amber-400"
                       : "bg-white",
                   ].join(" ")}
@@ -362,14 +432,10 @@ export function CameraCaptureClient({ eventCode }: Props) {
             </div>
           )}
 
-          {/* Limit-reached message */}
-          {isLimitReached && (
+          {/* Limit-reached message (event-wide) */}
+          {limitStatus?.isEventLimitReached && (
             <div className="mb-4 w-full rounded-xl border border-red-400/30 bg-red-500/20 px-4 py-3 text-center backdrop-blur-sm">
-              <p className="text-sm font-bold text-white">
-                {limitStatus?.isEventLimitReached
-                  ? "This event has reached its photo limit"
-                  : "You\'ve reached your photo limit for this event"}
-              </p>
+              <p className="text-sm font-bold text-white">This event has reached its photo limit</p>
               <p className="mt-0.5 text-xs text-white/70">No more uploads allowed.</p>
             </div>
           )}

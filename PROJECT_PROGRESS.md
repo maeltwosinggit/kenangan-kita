@@ -158,15 +158,15 @@ Owner: Engineering
 - [ ] Enforce total event limit: soft-lock event when `max_uploads_total` reached
 
 #### Camera / Upload UI
-- [ ] Pre-upload gate: fetch user's current upload count for event
-- [ ] Show quota indicator on camera page (e.g. "3 of 5 uploads used")
-- [ ] Block capture and show limit-reached message when quota exceeded
+- [x] Pre-upload gate: fetch user's current upload count for event
+- [x] Show quota indicator on camera page (e.g. "3 of 5 uploads used")
+- [x] Block capture and show limit-reached message when quota exceeded
 
 #### Admin Controls
-- [ ] Add upload limit config section in `ManageEventSheet` (Overview tab)
-- [ ] Toggle to enable/disable per-event upload limits
-- [ ] Input fields for `max_uploads_per_user` and `max_uploads_total`
-- [ ] Show live usage counter: total photos uploaded vs limit
+- [x] Add upload limit config section in `ManageEventSheet` (Overview tab)
+- [x] Toggle to enable/disable per-event upload limits
+- [x] Input fields for `max_uploads_per_user` and `max_uploads_total`
+- [x] Show live usage counter: total photos uploaded vs limit
 
 ### Phase 8 - Event Modes (Preset Setup)
 
