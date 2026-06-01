@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { getSupabaseClient } from "../supabase/client";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { cache } from "react";
 
 const createEventInputSchema = z.object({
   name: z.string().min(2),
@@ -80,7 +81,7 @@ export async function createEvent(
   return data as EventRow;
 }
 
-export async function getEventByCode(eventCode: string) {
+export const getEventByCode = cache(async (eventCode: string) => {
   const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from("events")
@@ -90,7 +91,7 @@ export async function getEventByCode(eventCode: string) {
 
   if (error) throw error;
   return (data as EventRow | null) ?? null;
-}
+});
 
 export async function updateEvent(input: z.infer<typeof updateEventInputSchema>) {
   const parsed = updateEventInputSchema.parse(input);
