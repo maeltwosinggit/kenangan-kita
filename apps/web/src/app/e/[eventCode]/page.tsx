@@ -20,6 +20,16 @@ export default async function UnifiedEventPage({
   const { data: { user } } = await supabase.auth.getUser();
   const currentUserId = user?.id ?? null;
 
+  let isAdmin = false;
+  if (currentUserId) {
+    const { data: roleData } = await supabase
+      .from("admin_profiles")
+      .select("role")
+      .eq("user_id", currentUserId)
+      .maybeSingle();
+    isAdmin = roleData?.role === "admin";
+  }
+
   // Initial data for fast first paint
   const [stats, latestPhoto] = await Promise.all([
     getEventStats(event.id),
@@ -49,6 +59,7 @@ export default async function UnifiedEventPage({
       event={event}
       eventCode={eventCode}
       currentUserId={currentUserId}
+      isAdmin={isAdmin}
       initialStats={stats}
       initialHeroUrl={heroUrl}
       shareUrl={shareUrl}

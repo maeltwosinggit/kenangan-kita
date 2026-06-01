@@ -15,6 +15,7 @@ type Props = {
   event: any;
   eventCode: string;
   currentUserId: string | null;
+  isAdmin?: boolean;
   initialStats: { photoCount: number; guestCount: number };
   initialHeroUrl: string | null;
   shareUrl: string;
@@ -25,6 +26,7 @@ export function EventViewHub({
   event,
   eventCode,
   currentUserId,
+  isAdmin = false,
   initialStats,
   initialHeroUrl,
   shareUrl,
@@ -182,9 +184,9 @@ export function EventViewHub({
               <Image src="/logo.png" alt="Kenangan Kita" width={70} height={35} unoptimized className="object-contain" />
             </button>
             <div className="flex items-center gap-3">
-              {currentUserId === event.created_by && (
+              {(isAdmin || currentUserId === event.created_by) && (
                 <Link 
-                  href={`/admin/events/${event.id}`} 
+                  href={`/admin/events/${event.id}?tab=photobook`} 
                   className="flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 transition-colors hover:bg-slate-200"
                   aria-label="Generate Photobook"
                 >
