@@ -7,6 +7,7 @@ import UserMenu from "@/components/user-menu";
 import Image from "next/image";
 import Link from "next/link";
 import { QRCodeDisplay } from "@/components/qr-code-display";
+import { useSearchParams } from "next/navigation";
 
 type Props = {
   event: any;
@@ -27,7 +28,32 @@ export function EventViewHub({
   shareUrl,
   userMenuProps
 }: Props) {
-  const [activeTab, setActiveTab] = useState<"event" | "camera" | "gallery">("event");
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const initialTab = searchParams.get("tab") as "event" | "camera" | "gallery" | null;
+  const [activeTab, setActiveTab] = useState<"event" | "camera" | "gallery">(initialTab || "event");
+
+  // Sync state if query param changes (browser back/forward)
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (tab === "event" || tab === "camera" || tab === "gallery") {
+      setActiveTab(tab);
+    } else if (!tab) {
+      setActiveTab("event");
+    }
+  }, [searchParams]);
+
+  const handleTabChange = (newTab: "event" | "camera" | "gallery") => {
+    setActiveTab(newTab);
+    // Update URL without triggering a full reload
+    const params = new URLSearchParams(searchParams.toString());
+    if (newTab === "event") {
+      params.delete("tab");
+    } else {
+      params.set("tab", newTab);
+    }
+    router.replace(`/e/${eventCode}?${params.toString()}`, { scroll: false });
+  };
 
   // Format date once
   const formattedDate = new Date(event.event_date).toLocaleDateString("en-US", {
@@ -140,7 +166,7 @@ export function EventViewHub({
            <CameraCaptureClient eventCode={eventCode} />
            {/* Overriding the default back behavior of CameraCaptureClient to use our state */}
            <button 
-              onClick={() => setActiveTab("event")}
+              onClick={() => handleTabChange("event")}
               className="absolute left-4 top-4 z-[70] flex h-10 w-10 items-center justify-center rounded-full bg-black/20 text-white backdrop-blur-md transition-all active:scale-90"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
@@ -199,7 +225,7 @@ export function EventViewHub({
         className={`fixed inset-x-0 bottom-0 z-40 mx-auto flex h-20 max-w-[448px] items-center justify-around border-t border-slate-100 bg-white/80 px-4 pb-safe backdrop-blur-lg transition-transform duration-300 ease-in-out ${activeTab === "camera" ? "translate-y-full" : "translate-y-0"}`}
       >
         <button
-          onClick={() => setActiveTab("event")}
+          onClick={() => handleTabChange("event")}
           className="flex flex-1 flex-col items-center gap-1 transition-all active:scale-90"
         >
           <EventIcon active={activeTab === "event"} />
@@ -209,14 +235,14 @@ export function EventViewHub({
         </button>
 
         <button
-          onClick={() => setActiveTab("camera")}
+          onClick={() => handleTabChange("camera")}
           className={`relative -top-4 flex h-16 w-16 items-center justify-center rounded-2xl shadow-xl transition-all active:scale-95 ${activeTab === "camera" ? "bg-slate-900" : "bg-white border border-slate-100"}`}
         >
           <CameraIcon active={activeTab === "camera"} />
         </button>
 
         <button
-          onClick={() => setActiveTab("gallery")}
+          onClick={() => handleTabChange("gallery")}
           className="flex flex-1 flex-col items-center gap-1 transition-all active:scale-90"
         >
           <GalleryIcon active={activeTab === "gallery"} />

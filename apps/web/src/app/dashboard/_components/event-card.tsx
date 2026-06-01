@@ -100,7 +100,7 @@ export function EventCard({ event, isCreated = false, onManage }: EventCardProps
       {isArchived ? (
         /* Archived: single full-width outline button */
         <Link
-          href={`/e/${event.event_code}/gallery`}
+          href={`/e/${event.event_code}?tab=gallery`}
           className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 py-3 text-sm font-semibold text-slate-600 transition-all hover:bg-slate-50 active:scale-95"
         >
           <span className="material-symbols-outlined text-[20px]">visibility</span>
@@ -110,7 +110,7 @@ export function EventCard({ event, isCreated = false, onManage }: EventCardProps
         <div className="flex gap-2">
           {/* Camera — fills half width, dark */}
           <Link
-            href={`/e/${event.event_code}/camera`}
+            href={`/e/${event.event_code}?tab=camera`}
             className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-slate-900 py-3 text-sm font-semibold text-white transition-all active:scale-95 hover:bg-slate-800"
           >
             <span className="material-symbols-outlined text-[20px]">photo_camera</span>
@@ -119,7 +119,7 @@ export function EventCard({ event, isCreated = false, onManage }: EventCardProps
 
           {/* Gallery — fills remaining width, outline */}
           <Link
-            href={`/e/${event.event_code}/gallery`}
+            href={`/e/${event.event_code}?tab=gallery`}
             className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 py-3 text-sm font-semibold text-slate-700 transition-all hover:bg-slate-50 active:scale-95"
           >
             <span className="material-symbols-outlined text-[20px]">grid_view</span>
