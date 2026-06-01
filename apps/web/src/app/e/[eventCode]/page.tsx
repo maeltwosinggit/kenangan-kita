@@ -1,6 +1,6 @@
 import { getEventByCode, getLatestEventPhoto, getEventStats } from "@kenangan/lib";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
-import { notFound } from "next/headers";
+import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import { EventViewHub } from "./_components/event-view-hub";
 
