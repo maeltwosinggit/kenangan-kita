@@ -36,7 +36,7 @@ export async function imprintPhoto(imageBlob: Blob, options: ImprintOptions): Pr
   // Responsive scaling (Base: 2048px)
   const scale = img.width / 2048;
   
-  const digitalSize = Math.round(82 * scale); // Larger for digital font
+  const digitalSize = Math.round(62 * scale); // Refined size for digital font
   const eventSize = Math.round(34 * scale);
   const brandSize = Math.round(28 * scale);
   const padding = Math.round(80 * scale);

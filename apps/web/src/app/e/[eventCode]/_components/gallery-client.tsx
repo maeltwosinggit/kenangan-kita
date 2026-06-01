@@ -283,7 +283,7 @@ export function GalleryClient({ eventCode, eventName, currentUserId, eventId }: 
 
             {/* Bottom Right: Date & Time (Digital Font) */}
             <div className="pointer-events-none absolute bottom-4 right-4 flex flex-col items-end text-right">
-              <span className="digital-font text-[22px] font-bold leading-none italic">
+              <span className="digital-font text-[16px] font-bold leading-none italic">
                 {new Date(selected.captured_at).toLocaleDateString("en-US", { year: "numeric", month: "2-digit", day: "2-digit" }).replace(/\//g, ".")} {new Date(selected.captured_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })}
               </span>
             </div>
