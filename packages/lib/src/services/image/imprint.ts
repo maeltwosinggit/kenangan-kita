@@ -41,7 +41,7 @@ export async function imprintPhoto(imageBlob: Blob, options: ImprintOptions): Pr
   const brandSize = Math.round(28 * scale);
   const padding = Math.round(80 * scale);
 
-  const fontFace = "'Share Tech Mono', 'Courier New', monospace";
+  const fontFace = "Orbitron, sans-serif";
   ctx.fillStyle = "#f97316"; // Fuji Orange
   ctx.shadowColor = "rgba(249, 115, 22, 0.6)";
   ctx.shadowBlur = Math.round(10 * scale);
@@ -50,19 +50,19 @@ export async function imprintPhoto(imageBlob: Blob, options: ImprintOptions): Pr
   const dateStr = dateObj.toLocaleDateString("en-US", { year: "numeric", month: "2-digit", day: "2-digit" }).replace(/\//g, ".");
   const combinedDateTime = `${dateStr} ${timeStr}`;
 
-  // ── TOP LEFT: Event Name ──
+  // ── TOP LEFT: Event Name (Stick to mono/clean for titles) ──
   ctx.textAlign = "left";
-  ctx.font = `bold ${eventSize}px ${fontFace}`;
+  ctx.font = `bold ${eventSize}px 'Courier New', monospace`;
   ctx.globalAlpha = 0.85;
   ctx.fillText(eventName.toUpperCase(), padding, padding + eventSize);
 
   // ── TOP RIGHT: Branding ──
   ctx.textAlign = "right";
-  ctx.font = `bold ${brandSize}px ${fontFace}`;
+  ctx.font = `bold ${brandSize}px 'Courier New', monospace`;
   ctx.globalAlpha = 0.5;
   ctx.fillText("• KENANGAN KITA •", canvas.width - padding, padding + brandSize);
 
-  // ── BOTTOM RIGHT: Date & Time (Same Line) ──
+  // ── BOTTOM RIGHT: Date & Time (Digital Font) ──
   ctx.textAlign = "right";
   ctx.font = `bold ${timeSize}px ${fontFace}`;
   ctx.globalAlpha = 1.0;

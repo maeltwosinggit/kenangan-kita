@@ -240,8 +240,8 @@ export function GalleryClient({ eventCode, eventName, currentUserId, eventId }: 
         @keyframes kk-slide-in-left { from { transform: translateX(-110%); opacity: 0.4; } to { transform: translateX(0); opacity: 1; } }
         @keyframes kk-exit-left { from { transform: translateX(var(--exit-x, 0px)); opacity: var(--exit-op, 1); } to { transform: translateX(-115%); opacity: 0; } }
         @keyframes kk-exit-right { from { transform: translateX(var(--exit-x, 0px)); opacity: var(--exit-op, 1); } to { transform: translateX(115%); opacity: 0; } }
-        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
-        .fuji-imprint { font-family: 'Share Tech Mono', monospace; color: #f97316; text-shadow: 0 0 8px rgba(249,115,22,0.8); letter-spacing: 0.08em; }
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400..900&family=Share+Tech+Mono&display=swap');
+        .fuji-imprint { font-family: 'Orbitron', sans-serif; color: #f97316; text-shadow: 0 0 8px rgba(249,115,22,0.6), 0 0 2px rgba(0,0,0,0.4); letter-spacing: 0.12em; }
       `}</style>
       <div className={["flex items-center justify-between px-4 py-3 transition-transform duration-300", isVisible ? "translate-y-0" : "-translate-y-4"].join(" ")} onClick={(e) => e.stopPropagation()}>
         <div className="flex flex-col"><span className="text-sm font-medium text-white">{selected.nickname ?? "Guest"}</span><span className="text-xs text-white/60">{new Date(selected.captured_at).toLocaleString()}</span></div>
