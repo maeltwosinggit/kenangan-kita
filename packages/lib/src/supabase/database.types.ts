@@ -11,6 +11,9 @@ export type Database = {
           gallery_visible: boolean;
           created_by: string | null;
           cover_image_path: string | null;
+          upload_limit_enabled: boolean;
+          max_uploads_per_user: number | null;
+          max_uploads_total: number | null;
           created_at: string;
           updated_at: string;
         };
@@ -23,6 +26,9 @@ export type Database = {
           gallery_visible?: boolean;
           created_by?: string | null;
           cover_image_path?: string | null;
+          upload_limit_enabled?: boolean;
+          max_uploads_per_user?: number | null;
+          max_uploads_total?: number | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -35,10 +41,42 @@ export type Database = {
           gallery_visible?: boolean;
           created_by?: string | null;
           cover_image_path?: string | null;
+          upload_limit_enabled?: boolean;
+          max_uploads_per_user?: number | null;
+          max_uploads_total?: number | null;
           created_at?: string;
           updated_at?: string;
         };
         Relationships: [];
+      };
+      event_guests: {
+        Row: {
+          event_id: string;
+          user_id: string;
+          joined_at: string;
+          upload_count: number;
+        };
+        Insert: {
+          event_id: string;
+          user_id: string;
+          joined_at?: string;
+          upload_count?: number;
+        };
+        Update: {
+          event_id?: string;
+          user_id?: string;
+          joined_at?: string;
+          upload_count?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "event_guests_event_id_fkey";
+            columns: ["event_id"];
+            isOneToOne: false;
+            referencedRelation: "events";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       photos: {
         Row: {

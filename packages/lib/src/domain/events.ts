@@ -150,14 +150,12 @@ export async function listEventsByCreator(userId: string) {
   const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from("events")
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    .select("id,name,event_date,event_code,reveal_mode,gallery_visible,created_by,cover_image_path,upload_limit_enabled,max_uploads_per_user,max_uploads_total" as any)
+    .select("id,name,event_date,event_code,reveal_mode,gallery_visible,created_by,cover_image_path,upload_limit_enabled,max_uploads_per_user,max_uploads_total")
     .eq("created_by", userId)
     .order("created_at", { ascending: false });
 
   if (error) throw error;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return ((data as any[]) ?? []) as EventRow[];
+  return (data as EventRow[]) ?? [];
 }
 
 
@@ -242,8 +240,7 @@ export async function getUserUploadCount(
   userId: string
 ): Promise<number> {
   const supabase = getSupabaseClient();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .rpc("get_user_upload_count", { p_event_id: eventId, p_user_id: userId });
   if (error) throw error;
   return (data as number) ?? 0;
@@ -256,13 +253,11 @@ export async function getUserUploadCount(
 export async function getEventUploadStats(
   eventId: string
 ): Promise<EventUploadStats> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = getSupabaseClient() as any;
+  const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .rpc("get_event_upload_stats", { p_event_id: eventId });
   if (error) throw error;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const row = Array.isArray(data) ? (data as any[])[0] : data;
+  const row = Array.isArray(data) ? data[0] : data;
   return {
     totalUploads:      Number(row?.total_uploads ?? 0),
     maxUploadsPerUser: row?.max_uploads_per_user ?? null,
@@ -280,8 +275,7 @@ export async function checkUserUploadLimit(
   userId: string | null,
   supabaseClient?: SupabaseClient
 ): Promise<UserUploadLimitStatus> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = (supabaseClient ?? getSupabaseClient()) as any;
+  const supabase = supabaseClient ?? getSupabaseClient();
 
   // First resolve the event code to an event ID
   const { data: eventData, error: eventError } = await supabase
@@ -302,15 +296,11 @@ export async function checkUserUploadLimit(
     supabase.rpc("get_event_upload_stats", { p_event_id: eventId }),
   ]);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  if ((countResult as any).error) throw (countResult as any).error;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  if ((statsResult as any).error) throw (statsResult as any).error;
+  if (countResult.error) throw countResult.error;
+  if (statsResult.error) throw statsResult.error;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const uploadCount = ((countResult as any).data as number) ?? 0;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const statsRow = Array.isArray((statsResult as any).data) ? ((statsResult as any).data as any[])[0] : (statsResult as any).data;
+  const uploadCount = (countResult.data as number) ?? 0;
+  const statsRow = Array.isArray(statsResult.data) ? statsResult.data[0] : statsResult.data;
   const limitEnabled: boolean     = statsRow?.limit_enabled ?? false;
   const userLimit: number | null  = limitEnabled ? (statsRow?.max_uploads_per_user ?? null) : null;
   const totalLimit: number | null = limitEnabled ? (statsRow?.max_uploads_total ?? null) : null;
@@ -337,8 +327,7 @@ export async function updateEventUploadLimits(
   }
 ): Promise<EventRow> {
   const supabase = getSupabaseClient();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from("events")
     .update({
       upload_limit_enabled: config.uploadLimitEnabled,
