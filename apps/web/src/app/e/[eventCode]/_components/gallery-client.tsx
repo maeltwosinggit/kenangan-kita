@@ -16,6 +16,23 @@ type Props = {
 
 const PAGE_SIZE = 24;
 
+function GallerySkeleton() {
+  return (
+    <div className="space-y-6">
+      {[0, 1].map((g) => (
+        <div key={g} className="space-y-3">
+          <div className="h-3 w-32 animate-pulse rounded-full bg-slate-200" />
+          <div className="grid grid-cols-2 gap-2">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="aspect-[3/4] animate-pulse rounded-lg bg-slate-200" />
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function GalleryClient({ eventCode, currentUserId, eventId }: Props) {
   const queryClient = useQueryClient();
   const sentinelRef = useRef<HTMLDivElement | null>(null);
@@ -193,7 +210,7 @@ export function GalleryClient({ eventCode, currentUserId, eventId }: Props) {
     return () => observer.disconnect();
   }, [query]);
 
-  if (query.isLoading) return <div className="p-4 text-center text-xs text-slate-400">Loading gallery...</div>;
+  if (query.isLoading) return <GallerySkeleton />;
   if (query.isError) return <div className="p-4 text-center text-xs text-red-500">Failed to load photos.</div>;
   if (!query.data) return null;
 
