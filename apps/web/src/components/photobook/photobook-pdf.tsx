@@ -8,15 +8,15 @@ import { PhotobookData, PhotobookPage } from "@kenangan/lib";
 Font.register({
   family: "Inter",
   fonts: [
-    { src: "https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZJhjp-Ek-_EeA.woff2", fontWeight: 400 },
-    { src: "https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuGKYAZJhjp-Ek-_EeA.woff2", fontWeight: 600 },
-    { src: "https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuFuYAZJhjp-Ek-_EeA.woff2", fontWeight: 700 }
+    { src: "https://cdn.jsdelivr.net/npm/inter-ui@3.19.3/Inter%20(web)/fonts/Inter-Regular.woff", fontWeight: 400 },
+    { src: "https://cdn.jsdelivr.net/npm/inter-ui@3.19.3/Inter%20(web)/fonts/Inter-SemiBold.woff", fontWeight: 600 },
+    { src: "https://cdn.jsdelivr.net/npm/inter-ui@3.19.3/Inter%20(web)/fonts/Inter-Bold.woff", fontWeight: 700 }
   ]
 });
 
 Font.register({
   family: "ShareTechMono",
-  src: "https://fonts.gstatic.com/s/sharetechmono/v15/J7aHndS2Yz9cXw22m2W77S3reZ6m7A.ttf"
+  src: "https://cdn.jsdelivr.net/npm/@fontsource/share-tech-mono@5.0.18/files/share-tech-mono-latin-400-normal.woff"
 });
 
 const styles = StyleSheet.create({
