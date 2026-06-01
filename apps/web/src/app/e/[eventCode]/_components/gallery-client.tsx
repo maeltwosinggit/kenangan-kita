@@ -51,6 +51,12 @@ export function GalleryClient({ eventCode, currentUserId, eventId }: Props) {
     setSlideDir(dir);
     setSelected(items[index]);
     setSelectedIndex(index);
+
+    // CRITICAL FIX: Reset swipe state after animation completes
+    setTimeout(() => {
+      setOutgoing(null);
+      setSlideDir(null);
+    }, 300);
   };
 
   const goPrev = () => goTo(selectedIndex - 1, "right");
@@ -219,9 +225,9 @@ export function GalleryClient({ eventCode, currentUserId, eventId }: Props) {
             <div className="flex items-center gap-1">
               <button onClick={() => setLightboxMenuOpen(!lightboxMenuOpen)} className="flex h-10 w-10 items-center justify-center rounded-full text-white"><svg viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5"><circle cx="12" cy="5" r="1.5" /><circle cx="12" cy="12" r="1.5" /><circle cx="12" cy="19" r="1.5" /></svg></button>
               {lightboxMenuOpen && (
-                <div className="absolute right-4 top-14 z-[110] min-w-[160px] rounded-xl bg-white shadow-xl">
-                  <button onClick={() => { handleDownload(selected); setLightboxMenuOpen(false); }} className="flex w-full items-center gap-3 px-4 py-3 text-sm text-slate-700">Download</button>
-                  {selected.uploader_id === currentUserId && <button onClick={() => handleDelete(selected)} className="flex w-full items-center gap-3 px-4 py-3 text-sm text-red-600">Delete</button>}
+                <div className="absolute right-4 top-14 z-[110] min-w-[160px] rounded-xl bg-white shadow-xl ring-1 ring-slate-200">
+                  <button onClick={() => { handleDownload(selected); setLightboxMenuOpen(false); }} className="flex w-full items-center gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50">Download</button>
+                  {selected.uploader_id === currentUserId && <button onClick={() => handleDelete(selected)} className="flex w-full items-center gap-3 px-4 py-3 text-sm text-red-600 hover:bg-red-50">Delete</button>}
                 </div>
               )}
               <button onClick={closePhoto} className="flex h-10 w-10 items-center justify-center rounded-full text-white"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-6 w-6"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg></button>
@@ -251,13 +257,52 @@ export function GalleryClient({ eventCode, currentUserId, eventId }: Props) {
             <h2 className="mb-3 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">{group.label}</h2>
             <div className="grid grid-cols-2 gap-2">
               {group.items.map((item) => (
-                <article key={item.id} className="relative rounded-lg overflow-hidden bg-slate-200 aspect-[3/4]">
+                <article key={item.id} className="group relative rounded-lg overflow-hidden bg-slate-200 aspect-[3/4]">
                   <button onClick={() => openPhoto(item, allItems.current.findIndex((i) => i.id === item.id))} className="h-full w-full">
-                    <img src={item.imageUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 px-2 py-1.5 flex justify-between items-end">
-                      <span className="truncate text-[10px] font-bold text-white uppercase tracking-wider">{item.nickname ?? "Guest"}</span>
+                    <img src={item.imageUrl} alt="" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent px-2 py-3 flex justify-between items-end">
+                      <span className="truncate text-[10px] font-bold text-white uppercase tracking-wider drop-shadow-sm">{item.nickname ?? "Guest"}</span>
                     </div>
                   </button>
+                  
+                  {/* Thumbnail Menu Button */}
+                  <div className="absolute right-1 top-1 z-10">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setMenuOpenId(menuOpenId === item.id ? null : item.id);
+                      }}
+                      className="flex h-8 w-8 items-center justify-center rounded-full bg-black/20 text-white backdrop-blur-md transition-colors hover:bg-black/40 active:scale-90"
+                    >
+                      <svg viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4">
+                        <circle cx="12" cy="5" r="1.5" />
+                        <circle cx="12" cy="12" r="1.5" />
+                        <circle cx="12" cy="19" r="1.5" />
+                      </svg>
+                    </button>
+
+                    {menuOpenId === item.id && (
+                      <>
+                        <div className="fixed inset-0 z-10" onClick={() => setMenuOpenId(null)} />
+                        <div className="absolute right-0 mt-1 z-20 min-w-[120px] overflow-hidden rounded-xl bg-white shadow-xl ring-1 ring-slate-200">
+                          <button
+                            onClick={() => { handleDownload(item); setMenuOpenId(null); }}
+                            className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+                          >
+                            Download
+                          </button>
+                          {item.uploader_id === currentUserId && (
+                            <button
+                              onClick={() => handleDelete(item)}
+                              className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors"
+                            >
+                              Delete
+                            </button>
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </article>
               ))}
             </div>
