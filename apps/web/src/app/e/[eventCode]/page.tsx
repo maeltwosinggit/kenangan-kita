@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { getEventByCode, getLatestEventPhoto, isEventGalleryOpen } from "@kenangan/lib";
+import { getEventByCode, getLatestEventPhoto, isEventGalleryOpen, getEventStats } from "@kenangan/lib";
 import UserMenu from "@/components/user-menu";
 import { headers } from "next/headers";
 import { QRCodeDisplay } from "@/components/qr-code-display";
@@ -25,13 +25,8 @@ export default async function EventLandingPage({
   const supabaseClient = (await import("@/lib/supabase/server")).getSupabaseServerClient;
   const sb = await supabaseClient();
 
-  // Stats fetching
-  const [{ count: photoCount }, { data: nicknameRows }] = await Promise.all([
-    sb.from("photos").select("*", { count: "exact", head: true }).eq("event_id", event.id).eq("is_deleted", false),
-    sb.from("photos").select("nickname").eq("event_id", event.id).eq("is_deleted", false).not("nickname", "is", null),
-  ]);
-
-  const guestCount = new Set(nicknameRows?.map((r) => r.nickname)).size;
+  // Stats fetching using cached helper
+  const { photoCount, guestCount } = await getEventStats(event.id);
 
   // Cover image logic
   let coverUrl: string | null = null;

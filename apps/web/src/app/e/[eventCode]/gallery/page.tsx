@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { getEventByCode, isEventGalleryOpen } from "@kenangan/lib";
+import { getEventByCode, isEventGalleryOpen, getEventStats } from "@kenangan/lib";
 import { GalleryClient } from "./gallery-client";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import UserMenu from "@/components/user-menu";
@@ -27,33 +27,22 @@ export default async function GalleryPage({
   const currentUserId = user?.id ?? null;
   const galleryOpen = isEventGalleryOpen(event);
 
-  // Fetch stats; only fetch latest photo if no cover is set
-  const [{ count: photoCount }, { data: nicknameRows }, { data: latestPhoto }] =
-    await Promise.all([
-      supabase
-        .from("photos")
-        .select("*", { count: "exact", head: true })
-        .eq("event_id", event.id)
-        .eq("is_deleted", false),
-      supabase
-        .from("photos")
-        .select("nickname")
-        .eq("event_id", event.id)
-        .eq("is_deleted", false)
-        .not("nickname", "is", null),
-      event.cover_image_path
-        ? Promise.resolve({ data: null })
-        : supabase
-            .from("photos")
-            .select("storage_path")
-            .eq("event_id", event.id)
-            .eq("is_deleted", false)
-            .order("captured_at", { ascending: false })
-            .limit(1)
-            .maybeSingle(),
-    ]);
+  // Fetch stats using cached helper
+  const { photoCount, guestCount } = await getEventStats(event.id);
 
-  const guestCount = new Set(nicknameRows?.map((r) => r.nickname)).size;
+  // Hero: fetch latest photo only if no cover
+  let latestPhoto: { storage_path: string } | null = null;
+  if (!event.cover_image_path) {
+    const { data } = await supabase
+      .from("photos")
+      .select("storage_path")
+      .eq("event_id", event.id)
+      .eq("is_deleted", false)
+      .order("captured_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    latestPhoto = data;
+  }
 
   // Hero: use the event's designated cover photo first; fall back to latest uploaded photo.
   let heroUrl: string | null = null;

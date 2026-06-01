@@ -93,6 +93,30 @@ export const getEventByCode = cache(async (eventCode: string) => {
   return (data as EventRow | null) ?? null;
 });
 
+/**
+ * Optimized stats fetching for the event hub/gallery.
+ * Wrapped in React cache to deduplicate within a single request.
+ */
+export const getEventStats = cache(async (eventId: string) => {
+  const supabase = getSupabaseClient();
+  const [{ count: photoCount }, { data: nicknameRows }] = await Promise.all([
+    supabase
+      .from("photos")
+      .select("*", { count: "exact", head: true })
+      .eq("event_id", eventId)
+      .eq("is_deleted", false),
+    supabase
+      .from("photos")
+      .select("nickname")
+      .eq("event_id", eventId)
+      .eq("is_deleted", false)
+      .not("nickname", "is", null),
+  ]);
+
+  const guestCount = new Set(nicknameRows?.map((r) => r.nickname)).size;
+  return { photoCount: photoCount ?? 0, guestCount };
+});
+
 export async function updateEvent(input: z.infer<typeof updateEventInputSchema>) {
   const parsed = updateEventInputSchema.parse(input);
   const supabase = getSupabaseClient();
