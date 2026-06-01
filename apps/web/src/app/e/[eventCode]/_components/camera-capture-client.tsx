@@ -16,9 +16,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 type Props = {
   eventCode: string;
   onClose?: () => void;
+  onGalleryClick?: () => void;
 };
 
-export function CameraCaptureClient({ eventCode, onClose }: Props) {
+export function CameraCaptureClient({ eventCode, onClose, onGalleryClick }: Props) {
   const queryClient = useQueryClient();
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -304,7 +305,10 @@ export function CameraCaptureClient({ eventCode, onClose }: Props) {
             </div>
           )}
           <div className="flex w-full items-center justify-between">
-            <button onClick={() => {}} className="relative h-14 w-14 overflow-hidden rounded-xl border-2 border-white/20 transition-all duration-200 hover:border-white/40 active:scale-90">
+            <button 
+              onClick={() => onGalleryClick?.()} 
+              className="relative h-14 w-14 overflow-hidden rounded-xl border-2 border-white/20 transition-all duration-200 hover:border-white/40 active:scale-90"
+            >
               {lastThumbUrl ? <img src={lastThumbUrl} alt="" className="h-full w-full object-cover" /> : <div className="flex h-full w-full items-center justify-center text-white/70"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-6 w-6"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" /></svg></div>}
             </button>
             <div className="relative flex items-center justify-center">

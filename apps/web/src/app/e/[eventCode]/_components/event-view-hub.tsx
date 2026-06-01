@@ -230,6 +230,7 @@ export function EventViewHub({
               <CameraCaptureClient 
                 eventCode={eventCode} 
                 onClose={() => handleTabChange("event")} 
+                onGalleryClick={() => handleTabChange("gallery")}
               />
            </div>
          )}
