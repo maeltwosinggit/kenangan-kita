@@ -1,13 +1,7 @@
 import { getCachedEventByCode } from "@/lib/data/events";
 import { notFound } from "next/navigation";
-import dynamic from "next/dynamic";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
-
-// Dynamically import the client viewer with SSR disabled
-// because PDFViewer relies heavily on browser APIs (window/navigator).
-const PreviewClient = dynamic(() => import("./preview-client"), {
-  ssr: false,
-});
+import { PreviewWrapper } from "./preview-wrapper";
 
 export default async function PhotobookPreviewPage({
   params,
@@ -46,7 +40,7 @@ export default async function PhotobookPreviewPage({
   }
 
   return (
-    <PreviewClient 
+    <PreviewWrapper 
       eventCode={eventCode} 
       eventId={event.id} 
       eventName={event.name} 
