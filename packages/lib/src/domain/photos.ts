@@ -23,10 +23,13 @@ export async function uploadEventPhoto(input: UploadPhotoInput) {
   if (event.upload_limit_enabled) {
     // 1. Check total event limit
     if (event.max_uploads_total !== null) {
-      const { data: totalData, error: totalError } = await supabase
-        .rpc("get_event_upload_stats", { p_event_id: event.id });
+      const { data: stats, error: totalError } = await supabase
+        .rpc("get_event_upload_stats", { p_event_id: event.id })
+        .single();
+      
       if (totalError) throw totalError;
-      const totalCount = Number(Array.isArray(totalData) ? totalData[0]?.total_uploads : totalData?.total_uploads);
+      
+      const totalCount = Number(stats?.total_uploads ?? 0);
       if (totalCount >= event.max_uploads_total) {
         throw new Error("Event upload limit reached");
       }

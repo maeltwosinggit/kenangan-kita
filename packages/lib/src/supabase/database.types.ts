@@ -174,7 +174,7 @@ export type Database = {
           max_uploads_per_user: number | null;
           max_uploads_total: number | null;
           limit_enabled: boolean;
-        }[];
+        };
       };
     };
     Enums: Record<string, never>;
