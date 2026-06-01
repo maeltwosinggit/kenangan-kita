@@ -148,14 +148,14 @@ Owner: Engineering
 ### Phase 7 - Upload Limits (Admin Controlled)
 
 #### Database
-- [ ] Migration: add `upload_limit_enabled` (bool), `max_uploads_per_user` (int), `max_uploads_total` (int) to `events` table
-- [ ] Migration: add `upload_count` to `event_guests` table (tracked per uploader per event)
+- [x] Migration: add `upload_limit_enabled` (bool), `max_uploads_per_user` (int), `max_uploads_total` (int) to `events` table
+- [x] Migration: add `upload_count` to `event_guests` table (tracked per uploader per event)
 
 #### Backend / Lib
-- [ ] `getUploadCountForUser(eventId, uploaderId)` — query from `event_guests`
-- [ ] `getEventUploadStats(eventId)` — total photos count vs limit for admin display
-- [ ] Enforce per-user limit in upload flow: check before allowing camera → upload
-- [ ] Enforce total event limit: soft-lock event when `max_uploads_total` reached
+- [x] `getUploadCountForUser(eventId, uploaderId)` — query from `event_guests`
+- [x] `getEventUploadStats(eventId)` — total photos count vs limit for admin display
+- [x] Enforce per-user limit in upload flow: check before allowing camera → upload
+- [x] Enforce total event limit: soft-lock event when `max_uploads_total` reached
 
 #### Camera / Upload UI
 - [x] Pre-upload gate: fetch user's current upload count for event

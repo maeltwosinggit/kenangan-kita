@@ -31,6 +31,7 @@ export type EventRow = {
 
 export type EventUploadStats = {
   totalUploads: number;
+  maxUploadsPerUser: number | null;
   totalLimit: number | null;
   limitEnabled: boolean;
 };
@@ -40,6 +41,8 @@ export type UserUploadLimitStatus = {
   uploadCount: number;
   /** The per-user cap, or null if no limit is set / limits are disabled */
   userLimit: number | null;
+  /** The event-wide total cap, or null if no limit is set / limits are disabled */
+  totalLimit: number | null;
   /** Whether the user has reached their personal cap */
   isUserLimitReached: boolean;
   /** Whether the event-wide total cap has been reached */
@@ -70,7 +73,7 @@ export async function createEvent(
       created_by: user?.id ?? null,
       cover_image_path: parsed.coverImagePath ?? null,
     })
-    .select("id,name,event_date,event_code,reveal_mode,gallery_visible,created_by,cover_image_path")
+    .select("id,name,event_date,event_code,reveal_mode,gallery_visible,created_by,cover_image_path,upload_limit_enabled,max_uploads_per_user,max_uploads_total")
     .single();
 
   if (error) throw error;
@@ -81,7 +84,7 @@ export async function getEventByCode(eventCode: string) {
   const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from("events")
-    .select("id,name,event_date,event_code,reveal_mode,gallery_visible,cover_image_path")
+    .select("id,name,event_date,event_code,reveal_mode,gallery_visible,cover_image_path,upload_limit_enabled,max_uploads_per_user,max_uploads_total")
     .eq("event_code", eventCode)
     .maybeSingle();
 
@@ -100,7 +103,7 @@ export async function updateEvent(input: z.infer<typeof updateEventInputSchema>)
       reveal_mode: parsed.revealMode,
     })
     .eq("id", parsed.id)
-    .select("id,name,event_date,event_code,reveal_mode,gallery_visible,cover_image_path")
+    .select("id,name,event_date,event_code,reveal_mode,gallery_visible,cover_image_path,upload_limit_enabled,max_uploads_per_user,max_uploads_total")
     .single();
 
   if (error) throw error;
@@ -111,7 +114,7 @@ export async function getEventById(eventId: string) {
   const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from("events")
-    .select("id,name,event_date,event_code,reveal_mode,gallery_visible")
+    .select("id,name,event_date,event_code,reveal_mode,gallery_visible,upload_limit_enabled,max_uploads_per_user,max_uploads_total")
     .eq("id", eventId)
     .maybeSingle();
 
@@ -125,7 +128,7 @@ export async function setEventGalleryVisibility(eventId: string, galleryVisible:
     .from("events")
     .update({ gallery_visible: galleryVisible })
     .eq("id", eventId)
-    .select("id,name,event_date,event_code,reveal_mode,gallery_visible")
+    .select("id,name,event_date,event_code,reveal_mode,gallery_visible,upload_limit_enabled,max_uploads_per_user,max_uploads_total")
     .single();
 
   if (error) throw error;
@@ -136,7 +139,7 @@ export async function listAllEvents() {
   const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from("events")
-    .select("id,name,event_date,event_code,reveal_mode,gallery_visible,created_by,cover_image_path")
+    .select("id,name,event_date,event_code,reveal_mode,gallery_visible,created_by,cover_image_path,upload_limit_enabled,max_uploads_per_user,max_uploads_total")
     .order("created_at", { ascending: false });
 
   if (error) throw error;
@@ -261,9 +264,10 @@ export async function getEventUploadStats(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const row = Array.isArray(data) ? (data as any[])[0] : data;
   return {
-    totalUploads: Number(row?.total_uploads ?? 0),
-    totalLimit:   row?.total_limit   ?? null,
-    limitEnabled: row?.limit_enabled ?? false,
+    totalUploads:      Number(row?.total_uploads ?? 0),
+    maxUploadsPerUser: row?.max_uploads_per_user ?? null,
+    totalLimit:        row?.max_uploads_total    ?? null,
+    limitEnabled:      row?.limit_enabled        ?? false,
   };
 }
 
@@ -309,12 +313,13 @@ export async function checkUserUploadLimit(
   const statsRow = Array.isArray((statsResult as any).data) ? ((statsResult as any).data as any[])[0] : (statsResult as any).data;
   const limitEnabled: boolean     = statsRow?.limit_enabled ?? false;
   const userLimit: number | null  = limitEnabled ? (statsRow?.max_uploads_per_user ?? null) : null;
-  const totalLimit: number | null = limitEnabled ? (statsRow?.total_limit ?? null) : null;
+  const totalLimit: number | null = limitEnabled ? (statsRow?.max_uploads_total ?? null) : null;
   const totalUploads: number      = Number(statsRow?.total_uploads ?? 0);
 
   return {
     uploadCount,
     userLimit,
+    totalLimit,
     isUserLimitReached:  limitEnabled && userLimit  !== null && uploadCount  >= userLimit,
     isEventLimitReached: limitEnabled && totalLimit !== null && totalUploads >= totalLimit,
   };

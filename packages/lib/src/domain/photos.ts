@@ -19,6 +19,39 @@ export async function uploadEventPhoto(input: UploadPhotoInput) {
     throw new Error("Event not found");
   }
 
+  // ── Limit Enforcement ──────────────────────────────────────────────────────
+  if (event.upload_limit_enabled) {
+    // 1. Check total event limit
+    if (event.max_uploads_total !== null) {
+      const { data: totalData, error: totalError } = await supabase
+        .rpc("get_event_upload_stats", { p_event_id: event.id });
+      if (totalError) throw totalError;
+      const totalCount = Number(Array.isArray(totalData) ? totalData[0]?.total_uploads : totalData?.total_uploads);
+      if (totalCount >= event.max_uploads_total) {
+        throw new Error("Event upload limit reached");
+      }
+    }
+
+    // 2. Check per-user limit
+    if (event.max_uploads_per_user !== null) {
+      let currentCount = 0;
+      if (input.uploaderId) {
+        const { data: userCount, error: countError } = await supabase
+          .rpc("get_user_upload_count", { p_event_id: event.id, p_user_id: input.uploaderId });
+        if (countError) throw countError;
+        currentCount = userCount ?? 0;
+      }
+      // Note: for anonymous guests, we can't reliably enforce per-user limits
+      // on the server without a session/IP tracking, so we rely on client-side
+      // localStorage + this best-effort check if uploaderId is present.
+
+      if (input.uploaderId && currentCount >= event.max_uploads_per_user) {
+        throw new Error("Personal upload limit reached for this event");
+      }
+    }
+  }
+  // ───────────────────────────────────────────────────────────────────────────
+
   const photoId = crypto.randomUUID();
   const storagePath = `events/${event.id}/${photoId}.jpg`;
   const capturedAt = input.capturedAt ?? new Date().toISOString();

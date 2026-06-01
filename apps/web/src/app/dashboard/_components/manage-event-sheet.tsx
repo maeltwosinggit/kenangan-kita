@@ -433,29 +433,40 @@ export function ManageEventSheet({ event: incomingEvent, isOpen, onClose, onDele
                 </div>
                 {/* Total photos usage */}
                 {statsQuery.data && (
-                  <div className="pt-2 border-t border-slate-100">
-                    <div className="flex items-center justify-between text-sm mb-1.5">
-                      <span className="text-slate-500">Photos uploaded</span>
-                      <span className="font-semibold text-slate-900">
-                        {statsQuery.data.totalUploads}
-                        {statsQuery.data.limitEnabled && statsQuery.data.totalLimit
-                          ? ` / ${statsQuery.data.totalLimit}`
-                          : ""}
-                      </span>
+                  <div className="pt-2 border-t border-slate-100 space-y-3">
+                    <div>
+                      <div className="flex items-center justify-between text-sm mb-1.5">
+                        <span className="text-slate-500">Total photos uploaded</span>
+                        <span className="font-semibold text-slate-900">
+                          {statsQuery.data.totalUploads}
+                          {statsQuery.data.limitEnabled && statsQuery.data.totalLimit
+                            ? ` / ${statsQuery.data.totalLimit}`
+                            : ""}
+                        </span>
+                      </div>
+                      {statsQuery.data.limitEnabled && statsQuery.data.totalLimit && (
+                        <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                          <div
+                            className={[
+                              "h-full rounded-full transition-all",
+                              statsQuery.data.totalUploads >= statsQuery.data.totalLimit
+                                ? "bg-red-500"
+                                : statsQuery.data.totalUploads / statsQuery.data.totalLimit > 0.8
+                                ? "bg-amber-400"
+                                : "bg-green-500",
+                            ].join(" ")}
+                            style={{ width: `${Math.min(100, (statsQuery.data.totalUploads / statsQuery.data.totalLimit) * 100)}%` }}
+                          />
+                        </div>
+                      )}
                     </div>
-                    {statsQuery.data.limitEnabled && statsQuery.data.totalLimit && (
-                      <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
-                        <div
-                          className={[
-                            "h-full rounded-full transition-all",
-                            statsQuery.data.totalUploads >= statsQuery.data.totalLimit
-                              ? "bg-red-500"
-                              : statsQuery.data.totalUploads / statsQuery.data.totalLimit > 0.8
-                              ? "bg-amber-400"
-                              : "bg-green-500",
-                          ].join(" ")}
-                          style={{ width: `${Math.min(100, (statsQuery.data.totalUploads / statsQuery.data.totalLimit) * 100)}%` }}
-                        />
+
+                    {statsQuery.data.limitEnabled && statsQuery.data.maxUploadsPerUser && (
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-slate-500">Limit per person</span>
+                        <span className="font-semibold text-slate-900">
+                          {statsQuery.data.maxUploadsPerUser} photos
+                        </span>
                       </div>
                     )}
                   </div>
