@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import { listAllEventPhotos, generatePhotobookData, getEventStats } from "@kenangan/lib";
-import { PhotobookPDF } from "./photobook-pdf";
+import { PhotobookPDF } from "@/components/photobook/photobook-pdf";
 
 type Props = {
   eventId: string;

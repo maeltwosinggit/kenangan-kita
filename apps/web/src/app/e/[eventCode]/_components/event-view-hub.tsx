@@ -186,7 +186,7 @@ export function EventViewHub({
             <div className="flex items-center gap-3">
               {(isAdmin || currentUserId === event.created_by) && (
                 <Link 
-                  href={`/admin/events/${event.id}?tab=photobook`} 
+                  href={`/e/${eventCode}/photobook`} 
                   className="flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 transition-colors hover:bg-slate-200"
                   aria-label="Generate Photobook"
                 >
