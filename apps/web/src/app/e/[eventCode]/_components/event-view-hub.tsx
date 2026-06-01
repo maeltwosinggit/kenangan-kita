@@ -212,7 +212,7 @@ export function EventViewHub({
           </section>
 
           <section className="px-2 pt-3 pb-32">
-             <GalleryClient eventCode={eventCode} currentUserId={currentUserId} eventId={event.id} />
+             <GalleryClient eventCode={eventCode} eventName={event.name} currentUserId={currentUserId} eventId={event.id} />
           </section>
         </div>
       </div>

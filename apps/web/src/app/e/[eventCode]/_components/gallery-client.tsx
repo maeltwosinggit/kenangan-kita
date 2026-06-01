@@ -10,6 +10,7 @@ type PhotoItem = { id: string; imageUrl: string; nickname: string | null; upload
 
 type Props = {
   eventCode: string;
+  eventName: string; // Passed from parent for the stamp
   currentUserId: string | null;
   eventId: string;
 };
@@ -33,7 +34,7 @@ function GallerySkeleton() {
   );
 }
 
-export function GalleryClient({ eventCode, currentUserId, eventId }: Props) {
+export function GalleryClient({ eventCode, eventName, currentUserId, eventId }: Props) {
   const queryClient = useQueryClient();
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const [selected, setSelected] = useState<PhotoItem | null>(null);
@@ -53,7 +54,6 @@ export function GalleryClient({ eventCode, currentUserId, eventId }: Props) {
     setOutgoing(null);
     setSelected(item);
     setSelectedIndex(index);
-    // Double frame for smooth mount transition
     requestAnimationFrame(() => requestAnimationFrame(() => setIsVisible(true)));
   };
 
@@ -147,7 +147,8 @@ export function GalleryClient({ eventCode, currentUserId, eventId }: Props) {
       // Burn the orange stamp into the photo
       const imprintedBlob = await imprintPhoto(originalBlob, {
         nickname: item.nickname,
-        capturedAt: item.captured_at
+        capturedAt: item.captured_at,
+        eventName: eventName
       });
 
       const url = URL.createObjectURL(imprintedBlob);
@@ -262,10 +263,31 @@ export function GalleryClient({ eventCode, currentUserId, eventId }: Props) {
             <img src={selected.imageUrl} alt="" className="block max-h-[75dvh] max-w-full rounded-lg object-contain" />
             <div className="pointer-events-none absolute inset-0 rounded-lg" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E")`, mixBlendMode: "overlay", opacity: 0.55 }} />
             <div className="pointer-events-none absolute inset-0 rounded-lg" style={{ background: "radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.45) 100%)" }} />
-            <div className="pointer-events-none absolute bottom-3 right-3 flex flex-col items-end gap-0.5">
-              <span className="fuji-imprint text-[15px] font-bold">{new Date(selected.captured_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })}</span>
-              <span className="fuji-imprint text-[10px] opacity-80">{new Date(selected.captured_at).toLocaleDateString().replace(/\//g, ".")}</span>
-              {selected.nickname && <span className="fuji-imprint text-[10px] opacity-90 mt-0.5">{selected.nickname.toUpperCase()}</span>}
+            
+            {/* ── REVAMPED FUJI STAMP OVERLAY ── */}
+            <div className="pointer-events-none absolute bottom-4 right-4 flex flex-col items-end gap-0.5 text-right">
+              {/* 5. Time (Top-most) */}
+              <span className="fuji-imprint text-[18px] font-bold leading-none">
+                {new Date(selected.captured_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })}
+              </span>
+              {/* 4. Date */}
+              <span className="fuji-imprint text-[11px] leading-none opacity-90">
+                {new Date(selected.captured_at).toLocaleDateString("en-US", { year: "numeric", month: "2-digit", day: "2-digit" }).replace(/\//g, ".")}
+              </span>
+              {/* 3. Event Name */}
+              <span className="fuji-imprint text-[10px] font-bold leading-none mt-0.5 opacity-90">
+                {eventName.toUpperCase()}
+              </span>
+              {/* 2. Capturer */}
+              {selected.nickname && (
+                <span className="fuji-imprint text-[10px] leading-none opacity-80">
+                  BY: {selected.nickname.toUpperCase()}
+                </span>
+              )}
+              {/* 1. Product Branding (Bottom-most) */}
+              <span className="fuji-imprint text-[8px] tracking-[0.2em] opacity-60 mt-1">
+                • KENANGAN KITA •
+              </span>
             </div>
           </div>
         </div>
