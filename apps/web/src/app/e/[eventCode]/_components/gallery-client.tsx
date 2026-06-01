@@ -208,7 +208,7 @@ export function GalleryClient({ eventCode, currentUserId, eventId }: Props) {
   }
 
   // PORTAL FOR LIGHTBOX (To avoid parent transform constraints)
-  const Lightbox = selected ? createPortal(
+  const Lightbox = (selected && typeof document !== "undefined") ? createPortal(
     <div className={["fixed inset-0 z-[1000] flex flex-col bg-black transition-opacity duration-300", isVisible ? "opacity-100" : "opacity-0"].join(" ")} onClick={closePhoto}>
       <style>{`
         @keyframes kk-slide-in-right { from { transform: translateX(110%); opacity: 0.4; } to { transform: translateX(0); opacity: 1; } }

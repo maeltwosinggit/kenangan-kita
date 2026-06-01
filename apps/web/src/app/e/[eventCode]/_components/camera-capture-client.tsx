@@ -2,7 +2,6 @@
 
 import { compressImage, getLatestUserPhotoUrl, uploadEventPhoto, checkUserUploadLimit, WebCameraAdapter, type CapturedPhoto, type UserUploadLimitStatus } from "@kenangan/lib";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
-import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 type Props = {
@@ -284,9 +283,9 @@ export function CameraCaptureClient({ eventCode, onClose }: Props) {
           {limitStatus && limitStatus.userLimit !== null && (
             <div className="mb-5 flex flex-col items-center gap-2 w-full">
               <div className={["flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold backdrop-blur-sm", limitStatus.isUserLimitReached ? "bg-red-500/30 text-red-300 ring-1 ring-red-400/40" : "bg-white/10 text-white/90 ring-1 ring-white/20"].join(" ")}>
-                {limitStatus.isUserLimitReached ? "No shots left" : \`\${shotsLeft} shots left\`}
+                {limitStatus.isUserLimitReached ? "No shots left" : `${shotsLeft} shots left`}
               </div>
-              <div className="h-1 w-32 overflow-hidden rounded-full bg-white/20"><div className={["h-full rounded-full transition-all duration-500", limitStatus.isUserLimitReached ? "bg-red-400" : "bg-white"].join(" ")} style={{ width: \`\${Math.min(100, (limitStatus.uploadCount / limitStatus.userLimit) * 100)}%\` }} /></div>
+              <div className="h-1 w-32 overflow-hidden rounded-full bg-white/20"><div className={["h-full rounded-full transition-all duration-500", limitStatus.isUserLimitReached ? "bg-red-400" : "bg-white"].join(" ")} style={{ width: `${Math.min(100, (limitStatus.uploadCount / limitStatus.userLimit) * 100)}%` }} /></div>
             </div>
           )}
           <div className="flex w-full items-center justify-between">
