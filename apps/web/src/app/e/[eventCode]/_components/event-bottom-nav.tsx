@@ -5,11 +5,10 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 /* ── Icons ── */
-function HomeIcon({ active }: { active: boolean }) {
+function EventIcon({ active }: { active: boolean }) {
   return (
     <svg className={`h-6 w-6 ${active ? "text-slate-900" : "text-slate-400"}`} viewBox="0 0 24 24" fill={active ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-      <polyline points="9 22 9 12 15 12 15 22" />
+      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
     </svg>
   );
 }
@@ -29,15 +28,6 @@ function GalleryIcon({ active }: { active: boolean }) {
       <rect x="3" y="3" width="18" height="18" rx="2" />
       <circle cx="8.5" cy="8.5" r="1.5" />
       <polyline points="21 15 16 10 5 21" />
-    </svg>
-  );
-}
-
-function PersonIcon({ active }: { active: boolean }) {
-  return (
-    <svg className={`h-6 w-6 ${active ? "text-slate-900" : "text-slate-400"}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-      <circle cx="12" cy="7" r="4" />
     </svg>
   );
 }
@@ -65,12 +55,12 @@ export function EventBottomNav({ eventCode, hasUser }: { eventCode: string; hasU
         href={`/e/${eventCode}`}
         className="flex flex-1 flex-col items-center gap-1 transition-all active:scale-90"
       >
-        <HomeIcon active={isHome} />
+        <EventIcon active={isHome} />
         <span className={`text-[10px] font-bold uppercase tracking-wider ${isHome ? "text-slate-900" : "text-slate-400"}`}>
-          Home
+          Event
         </span>
       </Link>
-  ...
+
       <Link
         href={`/e/${eventCode}/camera`}
         className={`relative -top-4 flex h-16 w-16 items-center justify-center rounded-2xl shadow-xl transition-all active:scale-95 ${isCamera ? "bg-slate-900 rotate-0" : "bg-white border border-slate-100 rotate-3 hover:rotate-0"}`}
