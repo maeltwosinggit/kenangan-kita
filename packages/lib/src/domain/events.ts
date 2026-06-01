@@ -254,10 +254,12 @@ export async function getEventUploadStats(
   eventId: string
 ): Promise<EventUploadStats> {
   const supabase = getSupabaseClient();
-  const { data: row, error } = await supabase
-    .rpc("get_event_upload_stats", { p_event_id: eventId })
-    .single();
+  const { data, error } = await supabase
+    .rpc("get_event_upload_stats", { p_event_id: eventId });
+    
   if (error) throw error;
+  
+  const row = (data as any)?.[0] || data;
   
   return {
     totalUploads:      Number(row?.total_uploads ?? 0),
@@ -294,14 +296,14 @@ export async function checkUserUploadLimit(
     userId 
       ? supabase.rpc("get_user_upload_count", { p_event_id: eventId, p_user_id: userId })
       : Promise.resolve({ data: 0, error: null }),
-    supabase.rpc("get_event_upload_stats", { p_event_id: eventId }).single(),
+    supabase.rpc("get_event_upload_stats", { p_event_id: eventId }),
   ]);
 
   if (countResult.error) throw countResult.error;
   if (statsResult.error) throw statsResult.error;
 
   const uploadCount = (countResult.data as number) ?? 0;
-  const statsRow = statsResult.data;
+  const statsRow = (statsResult.data as any)?.[0] || statsResult.data;
   const limitEnabled: boolean     = statsRow?.limit_enabled ?? false;
   const userLimit: number | null  = limitEnabled ? (statsRow?.max_uploads_per_user ?? null) : null;
   const totalLimit: number | null = limitEnabled ? (statsRow?.max_uploads_total ?? null) : null;
