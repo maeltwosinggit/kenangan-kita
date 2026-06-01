@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { GalleryClient } from "../gallery/gallery-client";
-import { CameraCaptureClient } from "../camera/camera-capture-client";
+import { GalleryClient } from "./gallery-client";
+import { CameraCaptureClient } from "./camera-capture-client";
 import UserMenu from "@/components/user-menu";
 import Image from "next/image";
 import Link from "next/link";
