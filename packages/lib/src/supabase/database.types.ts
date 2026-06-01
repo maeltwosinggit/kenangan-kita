@@ -157,7 +157,26 @@ export type Database = {
       };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      get_user_upload_count: {
+        Args: {
+          p_event_id: string;
+          p_user_id: string;
+        };
+        Returns: number;
+      };
+      get_event_upload_stats: {
+        Args: {
+          p_event_id: string;
+        };
+        Returns: {
+          total_uploads: number;
+          max_uploads_per_user: number | null;
+          max_uploads_total: number | null;
+          limit_enabled: boolean;
+        }[];
+      };
+    };
     Enums: Record<string, never>;
   };
 };
