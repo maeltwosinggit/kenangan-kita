@@ -68,6 +68,72 @@ async function UserMenuWrapper() {
   return <UserMenu avatarUrl={avatarUrl} displayName={displayName} />;
 }
 
+/**
+ * ── EventPoster Component ──
+ * Renders the main visual card. Fallback logic for cover image
+ * is handled here to prevent blocking the initial page shell.
+ */
+async function EventPoster({ 
+  event, 
+  formattedDate 
+}: { 
+  event: any; 
+  formattedDate: string;
+}) {
+  const supabaseClient = (await import("@/lib/supabase/server")).getSupabaseServerClient;
+  const sb = await supabaseClient();
+
+  let coverUrl: string | null = null;
+  if (event.cover_image_path) {
+    const { data } = sb.storage.from("event-covers").getPublicUrl(event.cover_image_path);
+    coverUrl = data.publicUrl ?? null;
+  } else {
+    // Fallback to latest photo (cached lookup)
+    coverUrl = await getLatestEventPhoto(event.id);
+  }
+
+  return (
+    <div className="rounded-2xl bg-white p-2 shadow-sm ring-1 ring-slate-200/60 transition-opacity duration-500">
+      <div className="relative aspect-[4/5] w-full overflow-hidden rounded-xl bg-slate-100">
+        {coverUrl ? (
+          <img 
+            src={coverUrl} 
+            alt={event.name} 
+            className="h-full w-full object-cover animate-in fade-in duration-700" 
+          />
+        ) : (
+          <div className="h-full w-full bg-gradient-to-br from-slate-200 to-slate-300" />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+        
+        {/* Poster Content */}
+        <div className="absolute bottom-6 left-6 right-6 text-left">
+          <Suspense fallback={<StatsSkeleton />}>
+            <LivePulseStats eventId={event.id} />
+          </Suspense>
+          
+          <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.2em] text-white/70">
+            {formattedDate}
+          </p>
+          <h2 className="text-3xl font-black leading-tight text-white tracking-tighter uppercase">
+            {event.name}
+          </h2>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PosterSkeleton() {
+  return (
+    <div className="rounded-2xl bg-white p-2 shadow-sm ring-1 ring-slate-200/60">
+      <div className="relative aspect-[4/5] w-full overflow-hidden rounded-xl bg-slate-100 animate-pulse">
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+      </div>
+    </div>
+  );
+}
+
 export default async function EventLandingPage({
   params,
 }: {
@@ -83,18 +149,6 @@ export default async function EventLandingPage({
         <p className="mt-2 text-sm text-slate-500">Please check your QR code or link.</p>
       </main>
     );
-  }
-
-  const supabaseClient = (await import("@/lib/supabase/server")).getSupabaseServerClient;
-  const sb = await supabaseClient();
-
-  // Cover image logic — still server side as it's the main visual
-  let coverUrl: string | null = null;
-  if (event.cover_image_path) {
-    const { data } = sb.storage.from("event-covers").getPublicUrl(event.cover_image_path);
-    coverUrl = data.publicUrl ?? null;
-  } else {
-    coverUrl = await getLatestEventPhoto(event.id);
   }
 
   const formattedDate = new Date(event.event_date).toLocaleDateString("en-US", {
@@ -130,30 +184,9 @@ export default async function EventLandingPage({
         
         {/* ── Visual Poster Card ── */}
         <section className="mb-8">
-           <div className="rounded-2xl bg-white p-2 shadow-sm ring-1 ring-slate-200/60">
-              <div className="relative aspect-[4/5] w-full overflow-hidden rounded-xl">
-                {coverUrl ? (
-                  <img src={coverUrl} alt={event.name} className="h-full w-full object-cover" />
-                ) : (
-                  <div className="h-full w-full bg-gradient-to-br from-slate-200 to-slate-300" />
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
-                
-                {/* Poster Content */}
-                <div className="absolute bottom-6 left-6 right-6 text-left">
-                  <Suspense fallback={<StatsSkeleton />}>
-                    <LivePulseStats eventId={event.id} />
-                  </Suspense>
-                  
-                  <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.2em] text-white/70">
-                    {formattedDate}
-                  </p>
-                  <h2 className="text-3xl font-black leading-tight text-white tracking-tighter uppercase">
-                    {event.name}
-                  </h2>
-                </div>
-              </div>
-           </div>
+           <Suspense fallback={<PosterSkeleton />}>
+              <EventPoster event={event} formattedDate={formattedDate} />
+           </Suspense>
         </section>
 
         {/* ── Share / Invite Section ── */}
