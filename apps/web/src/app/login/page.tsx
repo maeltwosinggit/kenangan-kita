@@ -19,11 +19,15 @@ function LoginContent() {
     setGoogleLoading(true);
     setError(null);
     const supabase = getSupabaseBrowserClient();
-    const origin = window.location.origin;
+    
+    // Prefer NEXT_PUBLIC_SITE_URL if set (useful for production/preview), 
+    // otherwise fallback to current window origin.
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+    
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(nextPath)}`
+        redirectTo: `${siteUrl}/auth/callback?next=${encodeURIComponent(nextPath)}`
       }
     });
   };
