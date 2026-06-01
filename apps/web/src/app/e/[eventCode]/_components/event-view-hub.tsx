@@ -8,6 +8,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { QRCodeDisplay } from "@/components/qr-code-display";
 import { useSearchParams, useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
+import { getEventStats } from "@kenangan/lib";
 
 type Props = {
   event: any;
@@ -30,6 +32,18 @@ export function EventViewHub({
 }: Props) {
   const searchParams = useSearchParams();
   const router = useRouter();
+
+  // ── Stats Query ──
+  const statsQuery = useQuery({
+    queryKey: ["event-stats", eventCode],
+    queryFn: () => getEventStats(event.id),
+    initialData: initialStats,
+    refetchOnWindowFocus: true
+  });
+
+  const photoCount = statsQuery.data?.photoCount ?? initialStats.photoCount;
+  const guestCount = statsQuery.data?.guestCount ?? initialStats.guestCount;
+
   const initialTab = searchParams.get("tab") as "event" | "camera" | "gallery" | null;
   const [activeTab, setActiveTab] = useState<"event" | "camera" | "gallery">(initialTab || "event");
 
@@ -126,12 +140,12 @@ export function EventViewHub({
                     <div className="absolute bottom-6 left-6 right-6 text-left">
                       <div className="mb-4 flex items-center gap-4">
                          <div className="flex flex-col">
-                            <span className="text-2xl font-black text-white leading-none">{initialStats.photoCount}</span>
+                            <span className="text-2xl font-black text-white leading-none">{photoCount}</span>
                             <span className="text-[9px] font-bold uppercase tracking-widest text-white/50">Memories</span>
                          </div>
                          <div className="h-8 w-px bg-white/20" />
                          <div className="flex flex-col">
-                            <span className="text-2xl font-black text-white leading-none">{initialStats.guestCount}</span>
+                            <span className="text-2xl font-black text-white leading-none">{guestCount}</span>
                             <span className="text-[9px] font-bold uppercase tracking-widest text-white/50">Guests</span>
                          </div>
                       </div>
@@ -186,11 +200,11 @@ export function EventViewHub({
              <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between">
                 <div className="flex gap-4">
                   <div className="flex flex-col">
-                    <span className="text-2xl font-black text-white">{initialStats.photoCount}</span>
+                    <span className="text-2xl font-black text-white">{photoCount}</span>
                     <span className="text-[9px] font-bold uppercase tracking-widest text-white/60">Photos</span>
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-2xl font-black text-white">{initialStats.guestCount}</span>
+                    <span className="text-2xl font-black text-white">{guestCount}</span>
                     <span className="text-[9px] font-bold uppercase tracking-widest text-white/60">Guests</span>
                   </div>
                 </div>

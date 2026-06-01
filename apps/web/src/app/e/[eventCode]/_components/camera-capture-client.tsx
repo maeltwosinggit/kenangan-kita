@@ -1,7 +1,16 @@
 "use client";
 
-import { compressImage, getLatestUserPhotoUrl, uploadEventPhoto, checkUserUploadLimit, WebCameraAdapter, type CapturedPhoto, type UserUploadLimitStatus } from "@kenangan/lib";
+import { 
+  compressImage, 
+  getLatestUserPhotoUrl, 
+  uploadEventPhoto, 
+  checkUserUploadLimit, 
+  WebCameraAdapter, 
+  type CapturedPhoto, 
+  type UserUploadLimitStatus 
+} from "@kenangan/lib";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 type Props = {
@@ -10,6 +19,7 @@ type Props = {
 };
 
 export function CameraCaptureClient({ eventCode, onClose }: Props) {
+  const queryClient = useQueryClient();
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [adapter, setAdapter] = useState<WebCameraAdapter | null>(null);
@@ -204,6 +214,11 @@ export function CameraCaptureClient({ eventCode, onClose }: Props) {
 
       const thumbUrl = URL.createObjectURL(compressed.blob);
       setLastThumbUrl(thumbUrl);
+      
+      // Invalidate queries so that Gallery and Event Hub update instantly
+      queryClient.invalidateQueries({ queryKey: ["gallery", eventCode] });
+      queryClient.invalidateQueries({ queryKey: ["event-stats", eventCode] });
+
       if (captured?.previewUrl) URL.revokeObjectURL(captured.previewUrl);
       setCaptured(null);
       setShowSaved(true);
