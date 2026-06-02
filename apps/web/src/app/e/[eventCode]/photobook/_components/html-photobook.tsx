@@ -147,6 +147,31 @@ function PageContent({ page, eventName }: { page: PhotobookPage, eventName: stri
                 <p className="text-xs md:text-sm text-slate-500 mt-2 md:mt-4 px-4">with {page.stats.data?.count} photos taken in 60 minutes.</p>
               </>
             )}
+            {page.stats.type === "contributors" && (
+              <div className="w-full px-4 md:px-12">
+                <h3 className="text-[10px] md:text-sm font-bold text-slate-400 uppercase tracking-[0.3em] mb-6 md:mb-8">Top Contributors</h3>
+                <div className="space-y-4 md:space-y-5">
+                  {page.stats.data.map((c: any, i: number) => {
+                    const maxCount = page.stats.data[0].count;
+                    const percentage = (c.count / maxCount) * 100;
+                    return (
+                      <div key={i} className="flex flex-col gap-1">
+                        <div className="flex justify-between items-end">
+                          <span className="text-[10px] md:text-xs font-black text-slate-900 truncate pr-4 uppercase tracking-tight">{c.name}</span>
+                          <span className="text-[8px] md:text-[10px] font-bold text-slate-400">{c.count}</span>
+                        </div>
+                        <div className="h-1 md:h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-slate-900 rounded-full" 
+                            style={{ width: `${percentage}%` }}
+                          />
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
             {page.stats.type === "night-owl" && (
               <>
                 <h3 className="text-[10px] md:text-sm font-bold text-slate-400 uppercase tracking-[0.3em] mb-2 md:mb-4">The Night Owl</h3>

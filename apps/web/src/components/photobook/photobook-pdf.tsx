@@ -272,6 +272,31 @@ function renderStats(stats: any) {
     );
   }
 
+  if (stats.type === "contributors") {
+    return (
+      <View style={styles.statsPage}>
+        <Text style={styles.statsTitle}>Top Contributors</Text>
+        <View style={{ width: "70%", marginTop: 20 }}>
+          {stats.data.map((c: any, i: number) => {
+            const maxCount = stats.data[0].count;
+            const percentage = (c.count / maxCount) * 100;
+            return (
+              <View key={i} style={{ marginBottom: 12 }}>
+                <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 2 }}>
+                  <Text style={{ fontSize: 10, fontFamily: "Helvetica-Bold" }}>{c.name.toUpperCase()}</Text>
+                  <Text style={{ fontSize: 9, color: "#94a3b8" }}>{c.count}</Text>
+                </View>
+                <View style={{ height: 4, backgroundColor: "#e2e8f0", borderRadius: 2, overflow: "hidden" }}>
+                   <View style={{ height: 4, backgroundColor: "#0f172a", borderRadius: 2, width: `${percentage}%` }} />
+                </View>
+              </View>
+            );
+          })}
+        </View>
+      </View>
+    );
+  }
+
   if (stats.type === "summary") {
     return (
       <View style={styles.statsPage}>

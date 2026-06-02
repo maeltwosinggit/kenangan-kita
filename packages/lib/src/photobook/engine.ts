@@ -201,3 +201,16 @@ function calculatePeakHour(photos: PhotobookPhoto[]) {
   const peakHour = Array.from(hours.entries()).sort((a, b) => b[1] - a[1])[0];
   return { hour: peakHour?.[0] ?? 0, count: peakHour?.[1] ?? 0 };
 }
+
+function calculateContributors(photos: PhotobookPhoto[]) {
+  const counts = new Map<string, number>();
+  photos.forEach((p) => {
+    const name = p.nickname?.trim() || "Anonymous";
+    counts.set(name, (counts.get(name) ?? 0) + 1);
+  });
+  
+  return Array.from(counts.entries())
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
+}
