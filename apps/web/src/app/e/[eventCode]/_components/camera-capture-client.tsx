@@ -35,6 +35,7 @@ export function CameraCaptureClient({ eventCode, onClose, onGalleryClick }: Prop
   const [zoomRange, setZoomRange] = useState<{ min: number; max: number; step: number } | null>(null);
   const [zoom, setZoom] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showSaved, setShowSaved] = useState(false);
   const [lastThumbUrl, setLastThumbUrl] = useState<string | null>(null);
@@ -257,12 +258,20 @@ export function CameraCaptureClient({ eventCode, onClose, onGalleryClick }: Prop
     }
   };
 
-  const handleClose = () => {
-    if (onClose) onClose();
+  const handleExit = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      if (onClose) onClose();
+    }, 200); // Match duration-200
   };
 
   return (
-    <div className="relative h-full w-full max-w-[448px] mx-auto overflow-hidden bg-black">
+    <div 
+      className={[
+        "relative h-full w-full max-w-[448px] mx-auto overflow-hidden bg-black transition-all duration-200 ease-out",
+        isClosing ? "opacity-0 scale-95" : "opacity-100 scale-100 animate-in fade-in zoom-in-95"
+      ].join(" ")}
+    >
       <canvas ref={canvasRef} className="hidden" />
       <video
         ref={videoRef}
@@ -296,7 +305,7 @@ export function CameraCaptureClient({ eventCode, onClose, onGalleryClick }: Prop
       
       <header className="absolute left-0 right-0 top-0 z-50 flex h-16 items-center justify-between px-4">
         <button
-          onClick={handleClose}
+          onClick={handleExit}
           aria-label="Exit camera"
           className="flex h-10 w-10 items-center justify-center rounded-full bg-black/20 text-white backdrop-blur-md transition-all active:scale-90 hover:bg-black/40"
         >
