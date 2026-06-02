@@ -131,7 +131,7 @@ export default function DashboardClient({
                   </div>
                   <div className="pt-4 pb-1 text-center">
                     <p className="font-['DS-Digital'] text-2xl text-orange-500 opacity-80 leading-none tracking-widest">
-                      {new Date().toLocaleDateString('en-GB', { year: '2y', month: '2-digit', day: '2-digit' }).replace(/\//g, ' . ')}
+                      {new Date().toLocaleDateString('en-GB', { year: '2-digit', month: '2-digit', day: '2-digit' }).replace(/\//g, ' . ')}
                     </p>
                     <p className="mt-2 text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">
                       Recently Captured
