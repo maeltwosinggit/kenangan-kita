@@ -2,17 +2,20 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { generateDiscountCode, getSupabaseClient } from "@kenangan/lib";
+import { generateDiscountCode, getSupabaseClient, listPricingPlans } from "@kenangan/lib";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export function BillingAdmin() {
   const queryClient = useQueryClient();
   const supabase = getSupabaseBrowserClient();
+  
+  // Tab for regional plans view
+  const [pricingRegion, setPricingRegion] = useState<"MY" | "GLOBAL">("MY");
+
   const [code, setCode] = useState("");
   const [type, setType] = useState<"percentage" | "fixed">("percentage");
   const [value, setValue] = useState<number>(0);
   const [maxUses, setMaxUses] = useState<number | undefined>();
-  const [isGenerating, setIsGenerating] = useState(false);
 
   const discountCodesQuery = useQuery({
     queryKey: ["admin-discount-codes"],
@@ -25,6 +28,11 @@ export function BillingAdmin() {
       return data;
     },
     refetchInterval: 10000 // Poll every 10s
+  });
+
+  const pricingPlansQuery = useQuery({
+    queryKey: ["admin-pricing-plans", pricingRegion],
+    queryFn: () => listPricingPlans(supabase, pricingRegion),
   });
 
   const generateMutation = useMutation({
@@ -52,9 +60,52 @@ export function BillingAdmin() {
     });
   };
 
+  const getCurrencySymbol = (currency: string) => {
+    if (currency.toLowerCase() === 'myr') return 'RM';
+    return '$';
+  };
+
   return (
-    <div className="space-y-8">
-      {/* Generate Code Form */}
+    <div className="space-y-10">
+      {/* 1. PRICING PLANS VIEW */}
+      <section>
+        <div className="mb-4 flex items-end justify-between px-1">
+          <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900">Regional Pricing Plans</h2>
+          <div className="flex bg-slate-100 p-1 rounded-lg">
+             <button 
+               onClick={() => setPricingRegion("MY")}
+               className={["px-3 py-1 text-[10px] font-black rounded-md transition-all", pricingRegion === 'MY' ? "bg-white text-slate-900 shadow-sm" : "text-slate-400"].join(" ")}
+             >MY</button>
+             <button 
+               onClick={() => setPricingRegion("GLOBAL")}
+               className={["px-3 py-1 text-[10px] font-black rounded-md transition-all", pricingRegion === 'GLOBAL' ? "bg-white text-slate-900 shadow-sm" : "text-slate-400"].join(" ")}
+             >GLOBAL</button>
+          </div>
+        </div>
+        
+        <div className="space-y-3">
+          {pricingPlansQuery.data?.map((plan) => (
+            <div key={plan.id} className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+              <div className="flex justify-between items-start">
+                 <div>
+                    <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-1">{plan.region}</p>
+                    <h3 className="text-sm font-black uppercase text-slate-900">{plan.name}</h3>
+                    <p className="text-xs text-slate-500 mt-1">{plan.description}</p>
+                 </div>
+                 <div className="text-right">
+                    <p className="text-lg font-black text-slate-900">
+                      {getCurrencySymbol(plan.currency)}{plan.price_cents / 100}
+                    </p>
+                    <p className="text-[9px] font-bold text-slate-400 uppercase">{plan.currency}</p>
+                 </div>
+              </div>
+            </div>
+          ))}
+          {pricingPlansQuery.isLoading && <div className="py-10 text-center animate-pulse text-slate-300 font-bold uppercase text-xs">Loading Plans...</div>}
+        </div>
+      </section>
+
+      {/* 2. GENERATE CODE FORM */}
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="mb-4 text-sm font-bold uppercase tracking-wider text-slate-900">Generate Discount Code</h2>
         <form onSubmit={handleGenerate} className="space-y-4">
@@ -117,7 +168,7 @@ export function BillingAdmin() {
         </form>
       </section>
 
-      {/* Existing Codes List */}
+      {/* 3. EXISTING CODES LIST */}
       <section>
         <h2 className="mb-4 text-sm font-bold uppercase tracking-wider text-slate-900 px-1">Active Discount Codes</h2>
         <div className="space-y-3">

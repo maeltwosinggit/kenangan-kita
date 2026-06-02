@@ -57,21 +57,39 @@ export async function validateDiscountCode(
 
 /**
  * Lists all active pricing plans, optionally filtered by region.
+ * Falls back to GLOBAL if no regional plans are found.
  */
 export async function listPricingPlans(
   supabaseClient?: any,
   region: string = 'GLOBAL'
 ): Promise<PricingPlan[]> {
   const supabase = supabaseClient ?? getSupabaseClient();
-  const { data, error } = await supabase
+  
+  // Try fetching regional plans first
+  const { data: regionalData, error: regionalError } = await supabase
     .from("pricing_plans")
     .select("*")
     .eq("is_active", true)
-    .eq("region", region)
+    .eq("region", region.toUpperCase())
     .order("price_cents", { ascending: true });
 
-  if (error) throw error;
-  return (data as any[]).map(row => ({
+  if (!regionalError && regionalData && regionalData.length > 0) {
+    return (regionalData as any[]).map(row => ({
+      ...row,
+      features: Array.isArray(row.features) ? row.features : []
+    })) as PricingPlan[];
+  }
+
+  // Fallback to GLOBAL if region failed or returned empty
+  const { data: globalData, error: globalError } = await supabase
+    .from("pricing_plans")
+    .select("*")
+    .eq("is_active", true)
+    .eq("region", "GLOBAL")
+    .order("price_cents", { ascending: true });
+
+  if (globalError) throw globalError;
+  return (globalData as any[]).map(row => ({
     ...row,
     features: Array.isArray(row.features) ? row.features : []
   })) as PricingPlan[];

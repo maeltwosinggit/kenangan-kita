@@ -32,6 +32,7 @@ export default function CreateEventForm({
   const [discountInput, setDiscountInput] = useState("");
   const [appliedDiscount, setAppliedDiscount] = useState<DiscountCode | null>(null);
   const [isValidatingDiscount, setIsValidatingDiscount] = useState(false);
+  const [currentRegion, setCurrentRegion] = useState(country);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -44,11 +45,11 @@ export default function CreateEventForm({
 
   useEffect(() => {
     const supabase = getSupabaseBrowserClient();
-    listPricingPlans(supabase, country).then(p => {
+    listPricingPlans(supabase, currentRegion).then(p => {
       setPlans(p);
       if (p.length > 0) setSelectedPlan(p[0]);
     }).catch(console.error);
-  }, [country]);
+  }, [currentRegion]);
 
   const applyDiscount = async (rawCode: string) => {
     if (!rawCode.trim()) return null;
@@ -364,6 +365,26 @@ export default function CreateEventForm({
         </div>
       ) : (
         <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+          {/* Admin Region Toggle */}
+          <div className="flex items-center justify-between px-1">
+             <div className="flex flex-col">
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Detected Region</span>
+                <span className="text-xs font-bold text-slate-900">{currentRegion}</span>
+             </div>
+             <div className="flex bg-slate-100 p-1 rounded-lg">
+                <button 
+                  type="button"
+                  onClick={() => setCurrentRegion("MY")}
+                  className={["px-3 py-1 text-[8px] font-black rounded-md transition-all", currentRegion === 'MY' ? "bg-white text-slate-900 shadow-sm" : "text-slate-400"].join(" ")}
+                >MY</button>
+                <button 
+                  type="button"
+                  onClick={() => setCurrentRegion("GLOBAL")}
+                  className={["px-3 py-1 text-[8px] font-black rounded-md transition-all", currentRegion === 'GLOBAL' ? "bg-white text-slate-900 shadow-sm" : "text-slate-400"].join(" ")}
+                >GLOBAL</button>
+             </div>
+          </div>
+
           <div>
             <p className="mb-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 px-1">
               Select Your Plan
