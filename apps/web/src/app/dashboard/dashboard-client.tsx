@@ -160,7 +160,7 @@ export default function DashboardClient({
                       {new Date().toLocaleDateString('en-GB', { year: '2-digit', month: '2-digit', day: '2-digit' }).replace(/\//g, ' . ')}
                     </p>
                     <p className="mt-2 text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">
-                      Recently Captured
+                      {featuredPhoto ? "Recently Captured" : "Your Journey Awaits"}
                     </p>
                   </div>
                 </div>
