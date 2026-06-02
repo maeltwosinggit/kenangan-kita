@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { PDFDownloadLink } from "@react-pdf/renderer";
-import { listAllEventPhotos, generatePhotobookData, getEventStats } from "@kenangan/lib";
+import { listAllEventPhotos, generatePhotobookData, getEventStats, getEventById } from "@kenangan/lib";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { PhotobookPDF } from "@/components/photobook/photobook-pdf";
 
 type Props = {
@@ -19,16 +20,24 @@ export function PhotobookGenerator({ eventId, eventName }: Props) {
     setLoading(true);
     setError(null);
     try {
-      const [photos, stats] = await Promise.all([
+      const [photos, stats, event] = await Promise.all([
         listAllEventPhotos(eventId),
-        getEventStats(eventId)
+        getEventStats(eventId),
+        getEventById(eventId)
       ]);
 
       if (photos.length === 0) {
         throw new Error("No photos found for this event.");
       }
 
-      const bookData = generatePhotobookData(eventName, photos, stats.guestCount);
+      let coverUrl: string | null = null;
+      if (event?.cover_image_path) {
+        const supabase = getSupabaseBrowserClient();
+        const { data: urlData } = supabase.storage.from("event-covers").getPublicUrl(event.cover_image_path);
+        coverUrl = urlData.publicUrl;
+      }
+
+      const bookData = generatePhotobookData(eventName, photos, stats.guestCount, coverUrl);
       setData(bookData);
     } catch (err: any) {
       setError(err.message || "Failed to prepare photobook.");

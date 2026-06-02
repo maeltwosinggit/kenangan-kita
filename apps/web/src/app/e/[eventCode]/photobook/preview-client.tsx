@@ -5,7 +5,7 @@ import { listAllEventPhotos, generatePhotobookData, getEventStats, type Photoboo
 import Link from "next/link";
 import { HtmlPhotobook } from "./_components/html-photobook";
 
-export default function PreviewClient({ eventCode, eventId, eventName }: { eventCode: string, eventId: string, eventName: string }) {
+export default function PreviewClient({ eventCode, eventId, eventName, coverUrl }: { eventCode: string, eventId: string, eventName: string, coverUrl: string | null }) {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<PhotobookData | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -22,7 +22,7 @@ export default function PreviewClient({ eventCode, eventId, eventName }: { event
           throw new Error("No photos available for this event yet.");
         }
 
-        const bookData = generatePhotobookData(eventName, photos, stats.guestCount);
+        const bookData = generatePhotobookData(eventName, photos, stats.guestCount, coverUrl);
         setData(bookData);
       } catch (err: any) {
         setError(err.message || "Failed to generate photobook preview.");

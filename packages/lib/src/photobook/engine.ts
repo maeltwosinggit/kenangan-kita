@@ -25,7 +25,8 @@ export type PhotobookData = {
 export function generatePhotobookData(
   eventName: string,
   photos: PhotobookPhoto[],
-  guestCount: number
+  guestCount: number,
+  coverUrl?: string | null
 ): PhotobookData {
   if (photos.length === 0) {
     return { title: eventName, pages: [] };
@@ -55,10 +56,23 @@ export function generatePhotobookData(
 
   // ── CHAPTER 1: The Arrival / Cover ──
   // Cover Page
+  
+  // Use the dedicated event cover photo if it exists, otherwise fallback to the first taken photo.
+  const coverPhoto: PhotobookPhoto = coverUrl ? {
+    id: "event-cover-art",
+    storage_path: "",
+    captured_at: sortedPhotos[0].captured_at,
+    nickname: null,
+    uploader_id: null,
+    width: 2000,
+    height: 1500,
+    imageUrl: coverUrl,
+  } : takePhotos(1)[0];
+
   pages.push({
     id: "cover",
     template: "cover",
-    photos: takePhotos(1),
+    photos: [coverPhoto],
     title: eventName,
     subtitle: new Date(sortedPhotos[0].captured_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
   });
