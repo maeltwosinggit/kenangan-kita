@@ -2,7 +2,7 @@ import { EventPhoto } from "../domain/photos";
 
 export type PhotobookPhoto = EventPhoto & { imageUrl: string; score?: number };
 
-export type PhotobookTemplate = "cover" | "opening" | "hero" | "duo" | "trio" | "collage" | "stats" | "closing" | "back";
+export type PhotobookTemplate = "cover" | "opening" | "hero" | "duo" | "trio" | "collage" | "scrapbook" | "stats" | "closing" | "back";
 
 export type PhotobookPage = {
   id: string;
@@ -85,7 +85,7 @@ export function generatePhotobookData(
 
   // ── CHAPTER 2: The Main Event & Highlights ──
   // We'll alternate between different grid layouts and occasional hero shots.
-  const mainLayoutPool: PhotobookTemplate[] = ["collage", "trio", "duo"];
+  const mainLayoutPool: PhotobookTemplate[] = ["collage", "trio", "duo", "scrapbook"];
   let spreadCounter = 0;
 
   while (photoIndex < sortedPhotos.length) {
@@ -110,7 +110,7 @@ export function generatePhotobookData(
     
     let count = 0;
     if (template === "collage") count = 4;
-    else if (template === "trio") count = 3;
+    else if (template === "trio" || template === "scrapbook") count = 3;
     else if (template === "duo") count = 2;
 
     const pagePhotos = takePhotos(count);
