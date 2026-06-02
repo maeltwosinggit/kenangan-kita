@@ -102,6 +102,51 @@ export function EventViewHub({
 
   return (
     <div className="relative min-h-screen bg-slate-50 overflow-x-hidden">
+
+      {/* ── SHARED DYNAMIC HEADER ── */}
+      <header className="sticky top-0 z-30 mx-auto flex h-16 w-full items-center justify-between border-b border-slate-100 bg-white/80 px-4 backdrop-blur-md">
+        {activeTab === "gallery" ? (
+          <button onClick={() => handleTabChange("event")} className="transition-opacity hover:opacity-80">
+            <Image src="/logo.png" alt="Kenangan Kita" width={70} height={35} unoptimized className="object-contain" />
+          </button>
+        ) : (
+          <Link href="/dashboard" className="transition-opacity hover:opacity-80">
+            <Image src="/logo.png" alt="Kenangan Kita" width={70} height={35} unoptimized className="object-contain" />
+          </Link>
+        )}
+
+        <div className="flex items-center gap-3">
+          {/* Photobook link - only in Gallery for Admin/Creator */}
+          {activeTab === "gallery" && (isAdmin || currentUserId === event.created_by) && (
+            <Link 
+              href={`/e/${eventCode}/photobook`} 
+              className="flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 transition-colors hover:bg-slate-200"
+              aria-label="Generate Photobook"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4 text-slate-700">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+              </svg>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-700">Photobook</span>
+            </Link>
+          )}
+
+          <div className="flex items-center gap-1.5 rounded-full bg-green-50 px-2.5 py-1">
+            <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
+            <span className="text-[10px] font-bold uppercase tracking-wider text-green-700">
+              {activeTab === "gallery" ? "Live" : "Live Hub"}
+            </span>
+          </div>
+
+          {userMenuProps ? (
+            <UserMenu avatarUrl={userMenuProps.avatarUrl} displayName={userMenuProps.displayName} />
+          ) : (
+            <Link href="/login" className="rounded-full bg-slate-900 px-4 py-1.5 text-[11px] font-bold uppercase tracking-wider text-white transition-transform active:scale-95">
+              Sign In
+            </Link>
+          )}
+        </div>
+      </header>
       
       {/* ── MAIN CONTENT CONTAINER (Sliding) ── */}
       <div 
@@ -110,25 +155,6 @@ export function EventViewHub({
       >
         {/* 1. EVENT HUB TAB */}
         <div className={["w-1/2 min-h-screen", activeTab !== "event" ? "h-0 overflow-hidden" : ""].join(" ")}>
-          <header className="sticky top-0 z-30 mx-auto flex h-16 w-full items-center justify-between border-b border-slate-100 bg-white/80 px-4 backdrop-blur-md">
-            <Link href="/dashboard" className="transition-opacity hover:opacity-80">
-              <Image src="/logo.png" alt="Kenangan Kita" width={70} height={35} unoptimized className="object-contain" />
-            </Link>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1.5 rounded-full bg-green-50 px-2.5 py-1">
-                <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
-                <span className="text-[10px] font-bold uppercase tracking-wider text-green-700">Live Hub</span>
-              </div>
-              {userMenuProps ? (
-                <UserMenu avatarUrl={userMenuProps.avatarUrl} displayName={userMenuProps.displayName} />
-              ) : (
-                <Link href="/login" className="rounded-full bg-slate-900 px-4 py-1.5 text-[11px] font-bold uppercase tracking-wider text-white transition-transform active:scale-95">
-                  Sign In
-                </Link>
-              )}
-            </div>
-          </header>
-
           <main className="flex flex-col px-4 pb-32 pt-6">
             <section className="mb-8">
                <div className="rounded-2xl bg-white p-2 shadow-sm ring-1 ring-slate-200/60">
@@ -179,32 +205,6 @@ export function EventViewHub({
 
         {/* 3. GALLERY TAB */}
         <div className={["w-1/2 min-h-screen", activeTab !== "gallery" ? "h-0 overflow-hidden" : ""].join(" ")}>
-          <header className="sticky top-0 z-30 mx-auto flex h-16 w-full items-center justify-between border-b border-slate-100 bg-white/80 px-4 backdrop-blur-md">
-            <button onClick={() => handleTabChange("event")} className="transition-opacity hover:opacity-80">
-              <Image src="/logo.png" alt="Kenangan Kita" width={70} height={35} unoptimized className="object-contain" />
-            </button>
-            <div className="flex items-center gap-3">
-              {(isAdmin || currentUserId === event.created_by) && (
-                <Link 
-                  href={`/e/${eventCode}/photobook`} 
-                  className="flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 transition-colors hover:bg-slate-200"
-                  aria-label="Generate Photobook"
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4 text-slate-700">
-                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-                  </svg>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-700">Photobook</span>
-                </Link>
-              )}
-              <div className="flex items-center gap-1.5 rounded-full bg-green-50 px-2.5 py-1">
-                <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
-                <span className="text-[10px] font-bold uppercase tracking-wider text-green-700">Live</span>
-              </div>
-              {userMenuProps && <UserMenu avatarUrl={userMenuProps.avatarUrl} displayName={userMenuProps.displayName} />}
-            </div>
-          </header>
-
           <section className="relative h-[240px] w-full overflow-hidden bg-slate-100">
              {initialHeroUrl ? (
                <img src={initialHeroUrl} alt={event.name} className="h-full w-full object-cover" />
