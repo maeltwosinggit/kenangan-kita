@@ -16,11 +16,13 @@ export default function CreateEventForm({
   onSuccess,
   country = "GLOBAL",
   isAdmin = false,
+  debugCountry,
 }: {
   /** Called after successful creation. If omitted the component manages its own success state. */
   onSuccess?: (result: CreateEventResult) => void;
   country?: string;
   isAdmin?: boolean;
+  debugCountry?: { vercel: string | null; cloudflare: string | null };
 }) {
   const [step, setStep] = useState<Step>("details");
   const [name, setName] = useState("");
@@ -35,6 +37,7 @@ export default function CreateEventForm({
   const [appliedDiscount, setAppliedDiscount] = useState<DiscountCode | null>(null);
   const [isValidatingDiscount, setIsValidatingDiscount] = useState(false);
   const [currentRegion, setCurrentRegion] = useState(country);
+  const [customRegion, setCustomRegion] = useState("");
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -367,26 +370,61 @@ export default function CreateEventForm({
         </div>
       ) : (
         <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-          {/* Admin Region Toggle */}
+          {/* Admin Detection Diagnostics */}
           {isAdmin && (
-            <div className="flex items-center justify-between px-1">
-               <div className="flex flex-col">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Detected Region</span>
-                  <span className="text-xs font-bold text-slate-900">{currentRegion}</span>
+            <section className="rounded-2xl bg-indigo-50 border border-indigo-100 p-4 space-y-3">
+               <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400">System Diagnostics</span>
+                  <span className="rounded bg-indigo-600 px-1.5 py-0.5 text-[8px] font-black text-white uppercase">Admin Only</span>
                </div>
-               <div className="flex bg-slate-100 p-1 rounded-lg">
-                  <button 
-                    type="button"
-                    onClick={() => setCurrentRegion("MY")}
-                    className={["px-3 py-1 text-[8px] font-black rounded-md transition-all", currentRegion === 'MY' ? "bg-white text-slate-900 shadow-sm" : "text-slate-400"].join(" ")}
-                  >MY</button>
-                  <button 
-                    type="button"
-                    onClick={() => setCurrentRegion("GLOBAL")}
-                    className={["px-3 py-1 text-[8px] font-black rounded-md transition-all", currentRegion === 'GLOBAL' ? "bg-white text-slate-900 shadow-sm" : "text-slate-400"].join(" ")}
-                  >GLOBAL</button>
+               
+               <div className="grid grid-cols-2 gap-2">
+                  <div className="flex flex-col">
+                     <span className="text-[8px] font-bold text-indigo-300 uppercase">Vercel IP Country</span>
+                     <span className="text-xs font-black text-indigo-900">{debugCountry?.vercel || "null"}</span>
+                  </div>
+                  <div className="flex flex-col">
+                     <span className="text-[8px] font-bold text-indigo-300 uppercase">Cloudflare Country</span>
+                     <span className="text-xs font-black text-indigo-900">{debugCountry?.cloudflare || "null"}</span>
+                  </div>
                </div>
-            </div>
+
+               <div className="h-px bg-indigo-100" />
+
+               <div className="flex items-center justify-between gap-3">
+                  <div className="flex-1">
+                     <span className="text-[8px] font-bold text-indigo-300 uppercase">Active Pricing Region</span>
+                     <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-sm font-black text-indigo-900">{currentRegion}</span>
+                        {currentRegion !== country && (
+                           <span className="text-[8px] font-bold text-indigo-400 italic">(Overridden)</span>
+                        )}
+                     </div>
+                  </div>
+                  <div className="flex gap-1">
+                     <button 
+                       type="button"
+                       onClick={() => setCurrentRegion("MY")}
+                       className={["px-2.5 py-1 text-[9px] font-black rounded-lg transition-all", currentRegion === 'MY' ? "bg-indigo-600 text-white" : "bg-white text-indigo-400 border border-indigo-100"].join(" ")}
+                     >MY</button>
+                     <button 
+                       type="button"
+                       onClick={() => setCurrentRegion("GLOBAL")}
+                       className={["px-2.5 py-1 text-[9px] font-black rounded-lg transition-all", currentRegion === 'GLOBAL' ? "bg-indigo-600 text-white" : "bg-white text-indigo-400 border border-indigo-100"].join(" ")}
+                     >GLOBAL</button>
+                     <div className="relative">
+                        <input 
+                          type="text" 
+                          placeholder="Code"
+                          value={customRegion}
+                          onChange={(e) => setCustomRegion(e.target.value.toUpperCase())}
+                          onKeyDown={(e) => e.key === 'Enter' && customRegion && setCurrentRegion(customRegion)}
+                          className="w-12 px-2 py-1 text-[9px] font-black rounded-lg border border-indigo-100 bg-white uppercase focus:outline-none focus:ring-1 focus:ring-indigo-600"
+                        />
+                     </div>
+                  </div>
+               </div>
+            </section>
           )}
 
           <div>
@@ -410,7 +448,7 @@ export default function CreateEventForm({
                     <div>
                       <h4 className="text-lg font-black uppercase tracking-tight leading-none">{plan.name}</h4>
                       <p className={["text-[10px] font-bold mt-1 uppercase tracking-wider", selectedPlan?.id === plan.id ? "text-slate-400" : "text-slate-400"].join(" ")}>
-                        {plan.price_cents === 0 ? "Completely Free" : `$${(plan.price_cents / 100).toFixed(0)} One-time`}
+                        {plan.price_cents === 0 ? "Completely Free" : `${getCurrencySymbol(plan.currency)}${(plan.price_cents / 100).toFixed(0)} One-time`}
                       </p>
                     </div>
                     {selectedPlan?.id === plan.id && (
@@ -429,6 +467,11 @@ export default function CreateEventForm({
                   </div>
                 </button>
               ))}
+              {plans.length === 0 && (
+                <div className="py-12 text-center rounded-2xl border-2 border-dashed border-slate-100">
+                   <p className="text-xs font-bold text-slate-300 uppercase tracking-widest">No plans found for region {currentRegion}</p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -444,7 +487,7 @@ export default function CreateEventForm({
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-widest text-green-700">{appliedDiscount.code}</p>
                     <p className="text-[9px] font-bold text-green-600">
-                      {appliedDiscount.discount_type === 'percentage' ? `${appliedDiscount.value}% OFF Applied` : `$${(appliedDiscount.value/100).toFixed(2)} OFF Applied`}
+                      {appliedDiscount.discount_type === 'percentage' ? `${appliedDiscount.value}% OFF Applied` : `${getCurrencySymbol(selectedPlan?.currency || 'usd')}${(appliedDiscount.value/100).toFixed(2)} OFF Applied`}
                     </p>
                   </div>
                 </div>
@@ -482,18 +525,18 @@ export default function CreateEventForm({
              <div className="rounded-2xl bg-slate-50 p-5 space-y-2">
                 <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-slate-400">
                    <span>Subtotal</span>
-                   <span>${(selectedPlan.price_cents / 100).toFixed(2)}</span>
+                   <span>{getCurrencySymbol(selectedPlan.currency)}{(selectedPlan.price_cents / 100).toFixed(2)}</span>
                 </div>
                 {appliedDiscount && (
                    <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-green-600">
                       <span>Discount</span>
-                      <span>-${((selectedPlan.price_cents - calculateFinalPrice()) / 100).toFixed(2)}</span>
+                      <span>-{getCurrencySymbol(selectedPlan.currency)}{((selectedPlan.price_cents - calculateFinalPrice()) / 100).toFixed(2)}</span>
                    </div>
                 )}
                 <div className="h-px bg-slate-200 my-2" />
                 <div className="flex justify-between text-sm font-black uppercase tracking-widest text-slate-900">
                    <span>Total</span>
-                   <span>${(calculateFinalPrice() / 100).toFixed(2)}</span>
+                   <span>{getCurrencySymbol(selectedPlan.currency)}{(calculateFinalPrice() / 100).toFixed(2)}</span>
                 </div>
              </div>
           )}
@@ -532,7 +575,7 @@ export default function CreateEventForm({
         ) : calculateFinalPrice() === 0 ? (
           "Create Free Event"
         ) : (
-          `Pay $${(calculateFinalPrice() / 100).toFixed(2)} & Create`
+          `Pay ${getCurrencySymbol(selectedPlan?.currency || 'usd')}${(calculateFinalPrice() / 100).toFixed(2)} & Create`
         )}
       </button>
 

@@ -22,8 +22,9 @@ export default async function NewEventPage() {
   const isAdmin = profile?.role === "admin";
 
   const headersList = await headers();
-  // Check both Vercel and Cloudflare country headers
-  const country = headersList.get("x-vercel-ip-country") || headersList.get("cf-ipcountry") || "GLOBAL";
+  const vercelCountry = headersList.get("x-vercel-ip-country");
+  const cloudflareCountry = headersList.get("cf-ipcountry");
+  const country = vercelCountry || cloudflareCountry || "GLOBAL";
 
   return (
     <div className="relative min-h-screen bg-slate-50">
@@ -58,7 +59,14 @@ export default async function NewEventPage() {
           <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">Create Event</h1>
           <p className="mt-1 text-sm text-slate-500">Set up your event and share the link with guests.</p>
         </div>
-        <CreateEventForm country={country} isAdmin={isAdmin} />
+        <CreateEventForm 
+          country={country} 
+          isAdmin={isAdmin} 
+          debugCountry={{
+            vercel: vercelCountry,
+            cloudflare: cloudflareCountry
+          }}
+        />
       </main>
     </div>
   );
