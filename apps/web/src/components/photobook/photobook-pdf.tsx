@@ -133,9 +133,9 @@ export function PhotobookPDF({ data }: { data: PhotobookData }) {
 
             {page.template === "cover" && (
               <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-                <PDFImage src={page.photos[0].imageUrl} style={{ width: "80%", height: 350, objectFit: "cover", borderRadius: 8 }} />
-                <Text style={{ fontSize: 32, fontFamily: "Helvetica-Bold", color: "#0f172a", marginTop: 20 }}>{page.title?.toUpperCase()}</Text>
-                <Text style={{ fontSize: 14, color: "#64748b", marginTop: 10 }}>{page.subtitle}</Text>
+                <PDFImage src={page.photos[0].imageUrl} style={{ width: 280, height: 380, objectFit: "cover", borderRadius: 8, borderWidth: 8, borderColor: "#ffffff" }} />
+                <Text style={{ fontSize: 28, fontFamily: "Helvetica-Bold", color: "#0f172a", marginTop: 20 }}>{page.title?.toUpperCase()}</Text>
+                <Text style={{ fontSize: 12, color: "#64748b", marginTop: 10, letterSpacing: 2 }}>{page.subtitle}</Text>
               </View>
             )}
 

@@ -24,13 +24,13 @@ function PageContent({ page, eventName }: { page: PhotobookPage, eventName: stri
         {page.template === "cover" && (
           <div className="w-full h-full relative rounded-lg bg-slate-100 overflow-hidden flex flex-col items-center justify-center p-6 text-center shadow-inner">
             {page.photos[0] && (
-              <div className="w-4/5 h-3/5 relative mb-6">
+              <div className="h-[70%] aspect-[3/4] relative mb-4 md:mb-6">
                 <img src={page.photos[0].imageUrl} className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-40 scale-110" alt="" draggable={false} />
-                <img src={page.photos[0].imageUrl} className="relative z-10 w-full h-full object-contain rounded shadow-lg" alt="" draggable={false} />
+                <img src={page.photos[0].imageUrl} className="relative z-10 w-full h-full object-cover rounded shadow-lg border-4 border-white" alt="" draggable={false} />
               </div>
             )}
-            <h1 className="text-2xl md:text-4xl font-black text-slate-900 tracking-tighter uppercase">{page.title}</h1>
-            <p className="text-xs md:text-sm font-semibold text-slate-400 tracking-widest uppercase mt-4">{page.subtitle}</p>
+            <h1 className="text-xl md:text-3xl font-black text-slate-900 tracking-tighter uppercase leading-none">{page.title}</h1>
+            <p className="text-[10px] md:text-xs font-semibold text-slate-400 tracking-widest uppercase mt-2 md:mt-4">{page.subtitle}</p>
           </div>
         )}
 

@@ -146,6 +146,13 @@ export function generatePhotobookData(
         photos: [],
         stats: { type: "peak-hour", data: calculatePeakHour(sortedPhotos) }
       });
+
+      pages.push({
+        id: "stats-contributors",
+        template: "stats",
+        photos: [],
+        stats: { type: "contributors", data: calculateContributors(sortedPhotos) }
+      });
     }
   }
 
