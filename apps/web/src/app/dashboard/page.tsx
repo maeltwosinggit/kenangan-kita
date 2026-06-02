@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { getDashboardData } from "@/lib/data/dashboard";
 import DashboardClient from "./dashboard-client";
@@ -22,11 +23,22 @@ export default async function DashboardPage() {
 
   const data = await getDashboardData(user.id, supabase);
 
+  // Detect country for regional pricing
+  const headersList = await headers();
+  const vercelCountry = headersList.get("x-vercel-ip-country");
+  const cloudflareCountry = headersList.get("cf-ipcountry");
+  const country = vercelCountry || cloudflareCountry || "GLOBAL";
+
   return (
     <DashboardClient
       firstName={firstName}
       displayName={displayName}
       avatarUrl={avatarUrl}
+      country={country}
+      debugCountry={{
+        vercel: vercelCountry,
+        cloudflare: cloudflareCountry
+      }}
       {...data}
     />
   );

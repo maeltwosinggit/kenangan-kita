@@ -18,6 +18,8 @@ type Props = DashboardData & {
   firstName: string;
   displayName: string;
   avatarUrl: string | null;
+  country?: string;
+  debugCountry?: { vercel: string | null; cloudflare: string | null };
 };
 
 type Tab = "dashboard" | "create" | "events";
@@ -79,6 +81,8 @@ export default function DashboardClient({
   participatedEvents: initialParticipatedEvents,
   createdEvents: initialCreatedEvents,
   throwbackPhoto: initialThrowbackPhoto,
+  country = "GLOBAL",
+  debugCountry,
 }: Props) {
   const queryClient = useQueryClient();
   const supabase = getSupabaseBrowserClient();
@@ -336,10 +340,15 @@ export default function DashboardClient({
                 <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">Create Event</h1>
                 <p className="mt-1 text-sm text-slate-500">Set up a new event and share the link with guests.</p>
               </div>
-              <CreateEventForm onSuccess={(res) => {
-                queryClient.invalidateQueries({ queryKey: ["dashboard-data"] });
-                setTab("events");
-              }} />
+              <CreateEventForm 
+                country={country}
+                isAdmin={isAdmin}
+                debugCountry={debugCountry}
+                onSuccess={(res) => {
+                  queryClient.invalidateQueries({ queryKey: ["dashboard-data"] });
+                  setTab("events");
+                }} 
+              />
             </main>
           </div>
 
