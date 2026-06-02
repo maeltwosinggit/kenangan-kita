@@ -8,9 +8,11 @@ import { useState } from "react";
 export default function UserMenu({
   avatarUrl,
   displayName,
+  isAdmin = false,
 }: {
   avatarUrl: string | null;
   displayName: string;
+  isAdmin?: boolean;
 }) {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -66,6 +68,30 @@ export default function UserMenu({
           <p className="truncate text-sm font-semibold text-slate-900">{displayName}</p>
         </div>
         
+        {isAdmin && (
+          <>
+            <Link
+              href="/admin"
+              onClick={() => setMenuOpen(false)}
+              className="flex w-full items-center gap-3 px-4 py-3 text-sm font-semibold text-amber-700 hover:bg-amber-50 transition-colors"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-4 w-4 shrink-0 text-amber-500"
+              >
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg>
+              Admin Dashboard
+            </Link>
+            <div className="h-px bg-slate-100" />
+          </>
+        )}
+
         <Link
           href="/dashboard"
           onClick={() => setMenuOpen(false)}

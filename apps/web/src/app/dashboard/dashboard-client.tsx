@@ -75,7 +75,7 @@ export default function DashboardClient({
           <Link href="/dashboard">
             <Image src="/logo.png" alt="Kenangan Kita" width={80} height={40} unoptimized className="object-contain" />
           </Link>
-          <UserMenu avatarUrl={avatarUrl} displayName={displayName} />
+          <UserMenu avatarUrl={avatarUrl} displayName={displayName} isAdmin={isAdmin} />
         </div>
       </header>
 

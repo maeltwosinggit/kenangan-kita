@@ -152,7 +152,7 @@ export function EventViewHub({
           </div>
 
           {userMenuProps ? (
-            <UserMenu avatarUrl={userMenuProps.avatarUrl} displayName={userMenuProps.displayName} />
+            <UserMenu avatarUrl={userMenuProps.avatarUrl} displayName={userMenuProps.displayName} isAdmin={isAdmin} />
           ) : (
             <Link href="/login" className="rounded-full bg-slate-900 px-4 py-1.5 text-[11px] font-bold uppercase tracking-wider text-white transition-transform active:scale-95">
               Sign In
