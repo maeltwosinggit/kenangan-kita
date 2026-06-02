@@ -259,19 +259,11 @@ export function CameraCaptureClient({ eventCode, onClose, onGalleryClick }: Prop
   };
 
   const handleExit = () => {
-    setIsClosing(true);
-    setTimeout(() => {
-      if (onClose) onClose();
-    }, 200); // Match duration-200
+    if (onClose) onClose();
   };
 
   return (
-    <div 
-      className={[
-        "relative h-full w-full max-w-[448px] mx-auto overflow-hidden bg-black transition-all duration-200 ease-out",
-        isClosing ? "opacity-0 scale-95" : "opacity-100 scale-100 animate-in fade-in zoom-in-95"
-      ].join(" ")}
-    >
+    <div className="relative h-full w-full max-w-[448px] mx-auto overflow-hidden bg-black">
       <canvas ref={canvasRef} className="hidden" />
       <video
         ref={videoRef}

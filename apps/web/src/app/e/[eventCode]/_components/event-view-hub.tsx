@@ -48,6 +48,7 @@ export function EventViewHub({
 
   const initialTab = searchParams.get("tab") as "event" | "camera" | "gallery" | null;
   const [activeTab, setActiveTab] = useState<"event" | "camera" | "gallery">(initialTab || "event");
+  const [shouldMountCamera, setShouldMountCamera] = useState(activeTab === "camera");
 
   // Sync state if query param changes (browser back/forward)
   useEffect(() => {
@@ -58,6 +59,18 @@ export function EventViewHub({
       setActiveTab("event");
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    if (activeTab === "camera") {
+      setShouldMountCamera(true);
+    } else {
+      // Wait for slide-down animation (500ms) to finish before unmounting
+      const timer = setTimeout(() => {
+        setShouldMountCamera(false);
+      }, 550);
+      return () => clearTimeout(timer);
+    }
+  }, [activeTab]);
 
   const handleTabChange = (newTab: "event" | "camera" | "gallery") => {
     setActiveTab(newTab);
@@ -238,9 +251,9 @@ export function EventViewHub({
         style={{ transform: `translateY(${activeTab === "camera" ? "0%" : "100%"})` }}
       >
          {/* 
-            CRITICAL FIX: Only mount camera when active to kill the 'green dot' indicator
+            CRITICAL FIX: Only mount camera when active or during transition to allow slide animation
          */}
-         {activeTab === "camera" && (
+         {shouldMountCamera && (
            <div className="h-full w-full bg-black">
               <CameraCaptureClient 
                 eventCode={eventCode} 
