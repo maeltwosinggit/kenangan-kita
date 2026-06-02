@@ -28,19 +28,11 @@ function isPublicPath(pathname: string): boolean {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (isPublicPath(pathname)) {
-    // Set x-pathname on request headers so server components (ConditionalHeader)
-    // can read it via headers() and correctly skip rendering.
-    const requestHeaders = new Headers(request.headers);
-    requestHeaders.set("x-pathname", pathname);
-    return NextResponse.next({ request: { headers: requestHeaders } });
-  }
-
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    return NextResponse.redirect(makeRedirect(request, "/login"));
+    return NextResponse.next();
   }
 
   // Collect cookies the Supabase client wants to refresh — applied to the
@@ -58,32 +50,55 @@ export async function middleware(request: NextRequest) {
     },
   });
 
-  let user = null;
-  let appRole: string | null = null;
-  try {
-    const { data } = await supabase.auth.getUser();
-    user = data.user;
-    // If the custom_access_token_hook is active the role is embedded in the JWT
-    // and already available on the user object without a separate DB query.
-    appRole = (user?.app_metadata?.app_role as string | undefined)
-      ?? (user?.user_metadata?.app_role as string | undefined)
-      ?? null;
-  } catch {
-    // Auth check failed — redirect to login
-    return NextResponse.redirect(makeRedirect(request, "/login"));
+  // Get current user session
+  const { data: { user } } = await supabase.auth.getUser();
+
+  // ── AUTHENTICATED REDIRECTS (Root & Login) ──
+  // If user is signed in and on /, redirect to dashboard
+  if (user && pathname === "/") {
+    const response = NextResponse.redirect(makeRedirect(request, "/dashboard"));
+    pendingCookies.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
+    return response;
   }
 
+  // If user is signed in and on /login, redirect to dashboard
+  if (user && pathname === "/login") {
+    const response = NextResponse.redirect(makeRedirect(request, "/dashboard"));
+    pendingCookies.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
+    return response;
+  }
+
+  // ── GUEST ACCESS TO PUBLIC PATHS ──
+  if (isPublicPath(pathname)) {
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set("x-pathname", pathname);
+    
+    // If authenticated on a public path, still forward headers
+    if (user) {
+      requestHeaders.set("x-user-id", user.id);
+      requestHeaders.set("x-user-email", user.email ?? "");
+    }
+
+    const response = NextResponse.next({ request: { headers: requestHeaders } });
+    pendingCookies.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
+    return response;
+  }
+
+  // ── PROTECTED ROUTES (Non-public) ──
   if (!user) {
     return NextResponse.redirect(
       makeRedirect(request, "/login", `?next=${encodeURIComponent(pathname)}`)
     );
   }
 
-  // Authenticated — check admin role for /admin/* paths
+  // Authenticated — check roles/claims
+  const appRole = (user?.app_metadata?.app_role as string | undefined)
+    ?? (user?.user_metadata?.app_role as string | undefined)
+    ?? null;
+
   if (pathname.startsWith("/admin")) {
     let isAdmin = appRole === "admin";
 
-    // Fallback: JWT claim not present (hook not yet active) — query the DB once.
     if (!isAdmin && appRole === null) {
       try {
         const { data: profile } = await supabase
@@ -92,9 +107,7 @@ export async function middleware(request: NextRequest) {
           .eq("user_id", user.id)
           .maybeSingle();
         isAdmin = profile?.role === "admin";
-      } catch {
-        // Profile check failed — deny access
-      }
+      } catch { /* ignore */ }
     }
 
     if (!isAdmin) {
@@ -103,8 +116,6 @@ export async function middleware(request: NextRequest) {
   }
 
   // Forward validated user info to server components via request headers.
-  // This is safe: these headers are set server-side by middleware after
-  // getUser() validates the JWT — no client can forge them.
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-pathname", pathname);
   requestHeaders.set("x-user-id", user.id);
@@ -123,7 +134,6 @@ export async function middleware(request: NextRequest) {
     response.cookies.set(name, value, options);
   });
 
-  response.headers.set("x-pathname", pathname);
   return response;
 }
 
