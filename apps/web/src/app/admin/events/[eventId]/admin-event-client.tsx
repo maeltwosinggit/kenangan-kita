@@ -7,6 +7,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { EditEventForm } from "@/components/edit-event-form";
 import { EventGuestsList } from "@/components/event-guests-list";
+import { PhotobookGenerator } from "./photobook/photobook-generator";
 
 type Props = {
   event: EventRow;
@@ -20,7 +21,7 @@ export function AdminEventClient({ event }: Props) {
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const [eventState, setEventState] = useState(event);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [activeSection, setActiveSection] = useState<"overview" | "edit" | "guests" | "photos" | "danger">("overview");
+  const [activeSection, setActiveSection] = useState<"overview" | "edit" | "photobook" | "guests" | "photos" | "danger">("overview");
 
   const photosQuery = useInfiniteQuery({
     queryKey: ["admin-photos", event.id],
@@ -101,6 +102,7 @@ export function AdminEventClient({ event }: Props) {
       <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {sectionBtn("overview", "Overview")}
         {sectionBtn("edit", "Edit")}
+        {sectionBtn("photobook", "Photobook")}
         {sectionBtn("guests", "Guests")}
         {sectionBtn("photos", "Photos")}
         {sectionBtn("danger", "Danger")}
@@ -146,6 +148,10 @@ export function AdminEventClient({ event }: Props) {
             router.refresh();
           }} />
         </div>
+      )}
+
+      {activeSection === "photobook" && (
+        <PhotobookGenerator eventId={eventState.id} eventName={eventState.name} />
       )}
 
       {activeSection === "guests" && (
