@@ -39,15 +39,20 @@ export type DashboardData = {
   recentPhotos: RecentPhoto[];
   participatedEvents: ParticipatedEvent[];
   createdEvents: CreatedEvent[];
+  throwbackPhoto: RecentPhoto | null;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function getDashboardData(userId: string, supabase: SupabaseClient<any>): Promise<DashboardData> {
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
   const [
     { data: adminProfile },
     { count: photosTaken },
     { data: photoEventRows },
     { data: recentPhotoRows },
+    { data: throwbackPhotoRows },
     createdEventRows,
   ] = await Promise.all([
     supabase.from("admin_profiles").select("role").eq("user_id", userId).maybeSingle(),
@@ -55,6 +60,9 @@ export async function getDashboardData(userId: string, supabase: SupabaseClient<
     supabase.from("photos").select("event_id").eq("uploader_id", userId).eq("is_deleted", false),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     supabase.from("photos").select("id, storage_path, captured_at, events(name, event_code)").eq("uploader_id", userId).eq("is_deleted", false).order("captured_at", { ascending: false }).limit(10) as any,
+    // Random throwback from more than 7 days ago
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    supabase.from("photos").select("id, storage_path, captured_at, events(name, event_code)").eq("uploader_id", userId).eq("is_deleted", false).lt("captured_at", sevenDaysAgo.toISOString()).limit(1) as any,
     listEventsByCreator(userId),
   ]);
 
@@ -66,11 +74,15 @@ export async function getDashboardData(userId: string, supabase: SupabaseClient<
   // Resolve signed URLs for recent photos in one batch call
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const recentPaths = (recentPhotoRows ?? []).map((r: any) => r.storage_path as string);
+  const throwbackPath = (throwbackPhotoRows?.[0] as any)?.storage_path;
+  const allPaths = [...recentPaths];
+  if (throwbackPath) allPaths.push(throwbackPath);
+
   let signedUrlMap = new Map<string, string>();
-  if (recentPaths.length > 0) {
+  if (allPaths.length > 0) {
     const { data: signedData } = await supabase.storage
       .from("event-photos")
-      .createSignedUrls(recentPaths, 3600);
+      .createSignedUrls(allPaths, 3600);
     signedUrlMap = new Map(
       (signedData ?? [])
         .filter(
@@ -88,6 +100,13 @@ export async function getDashboardData(userId: string, supabase: SupabaseClient<
     eventName: r.events?.name ?? null,
     eventCode: r.events?.event_code ?? null,
   }));
+
+  const throwbackPhoto: RecentPhoto | null = throwbackPhotoRows?.[0] ? {
+    id: (throwbackPhotoRows[0] as any).id,
+    imageUrl: signedUrlMap.get(throwbackPath) ?? "",
+    eventName: (throwbackPhotoRows[0] as any).events?.name ?? null,
+    eventCode: (throwbackPhotoRows[0] as any).events?.event_code ?? null,
+  } : null;
 
   let participatedEvents: ParticipatedEvent[] = [];
   if (distinctEventIds.length > 0) {
@@ -132,5 +151,6 @@ export async function getDashboardData(userId: string, supabase: SupabaseClient<
     recentPhotos,
     participatedEvents,
     createdEvents,
+    throwbackPhoto,
   };
 }
