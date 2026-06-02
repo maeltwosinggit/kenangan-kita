@@ -3,9 +3,11 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { generateDiscountCode, getSupabaseClient } from "@kenangan/lib";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export function BillingAdmin() {
   const queryClient = useQueryClient();
+  const supabase = getSupabaseBrowserClient();
   const [code, setCode] = useState("");
   const [type, setType] = useState<"percentage" | "fixed">("percentage");
   const [value, setValue] = useState<number>(0);
@@ -15,7 +17,6 @@ export function BillingAdmin() {
   const discountCodesQuery = useQuery({
     queryKey: ["admin-discount-codes"],
     queryFn: async () => {
-      const supabase = getSupabaseClient();
       const { data, error } = await supabase
         .from("discount_codes")
         .select("*")
@@ -26,7 +27,7 @@ export function BillingAdmin() {
   });
 
   const generateMutation = useMutation({
-    mutationFn: generateDiscountCode,
+    mutationFn: (input: any) => generateDiscountCode(input, supabase),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-discount-codes"] });
       setCode("");

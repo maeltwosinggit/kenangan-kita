@@ -72,14 +72,17 @@ export async function listPricingPlans(): Promise<PricingPlan[]> {
 /**
  * Generates a new discount code (Admin only).
  */
-export async function generateDiscountCode(input: {
-  code: string;
-  type: 'percentage' | 'fixed';
-  value: number;
-  maxUses?: number;
-  expiresAt?: string;
-}): Promise<DiscountCode> {
-  const supabase = getSupabaseClient();
+export async function generateDiscountCode(
+  input: {
+    code: string;
+    type: 'percentage' | 'fixed';
+    value: number;
+    maxUses?: number;
+    expiresAt?: string;
+  },
+  supabaseClient?: any
+): Promise<DiscountCode> {
+  const supabase = supabaseClient ?? getSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   const { data, error } = await supabase
