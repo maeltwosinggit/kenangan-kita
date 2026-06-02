@@ -78,6 +78,7 @@ export default function DashboardClient({
   recentPhotos: initialRecentPhotos,
   participatedEvents: initialParticipatedEvents,
   createdEvents: initialCreatedEvents,
+  throwbackPhoto: initialThrowbackPhoto,
 }: Props) {
   const queryClient = useQueryClient();
   const supabase = getSupabaseBrowserClient();
@@ -97,6 +98,7 @@ export default function DashboardClient({
       recentPhotos: initialRecentPhotos,
       participatedEvents: initialParticipatedEvents,
       createdEvents: initialCreatedEvents,
+      throwbackPhoto: initialThrowbackPhoto,
     },
     refetchInterval: 10000, // Poll every 10s
   });
@@ -107,6 +109,7 @@ export default function DashboardClient({
     recentPhotos,
     participatedEvents,
     createdEvents,
+    throwbackPhoto,
   } = data;
 
   const [tab, setTab] = useState<Tab>("dashboard");
@@ -286,7 +289,7 @@ export default function DashboardClient({
               {recentPhotos.length > 0 && <PhotoStrip photos={recentPhotos} />}
 
               {/* ── THROWBACK: BLAST FROM THE PAST ── */}
-              {data.throwbackPhoto && (
+              {throwbackPhoto && (
                 <section className="space-y-4 px-2">
                   <div className="flex items-end justify-between">
                     <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Blast from the past</h2>
@@ -294,17 +297,17 @@ export default function DashboardClient({
                   </div>
                   
                   <Link 
-                    href={`/e/${data.throwbackPhoto.eventCode}?tab=gallery`}
+                    href={`/e/${throwbackPhoto.eventCode}?tab=gallery`}
                     className="block group relative bg-white p-4 shadow-xl ring-1 ring-slate-200 transition-all hover:shadow-2xl active:scale-[0.98] rounded-sm mx-4"
                   >
                     <div className="relative aspect-square overflow-hidden bg-slate-100 rounded-sm">
-                       <img src={data.throwbackPhoto.imageUrl} alt="Throwback" className="h-full w-full object-cover grayscale-[0.3] group-hover:grayscale-0 transition-all duration-700" />
+                       <img src={throwbackPhoto.imageUrl} alt="Throwback" className="h-full w-full object-cover grayscale-[0.3] group-hover:grayscale-0 transition-all duration-700" />
                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                     </div>
                     <div className="pt-4 flex items-center justify-between">
                       <div className="min-w-0">
-                        <p className="truncate text-xs font-black uppercase tracking-tight text-slate-900">{data.throwbackPhoto.eventName}</p>
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">#{data.throwbackPhoto.eventCode}</p>
+                        <p className="truncate text-xs font-black uppercase tracking-tight text-slate-900">{throwbackPhoto.eventName}</p>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">#{throwbackPhoto.eventCode}</p>
                       </div>
                       <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-white shadow-lg shadow-slate-200 opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0">
                         <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
