@@ -54,7 +54,7 @@ export async function getDashboardData(userId: string, supabase: SupabaseClient<
     supabase.from("photos").select("id", { count: "exact", head: true }).eq("uploader_id", userId).eq("is_deleted", false),
     supabase.from("photos").select("event_id").eq("uploader_id", userId).eq("is_deleted", false),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    supabase.from("photos").select("id, storage_path, captured_at, events(name, event_code)").eq("uploader_id", userId).eq("is_deleted", false).order("captured_at", { ascending: false }).limit(3) as any,
+    supabase.from("photos").select("id, storage_path, captured_at, events(name, event_code)").eq("uploader_id", userId).eq("is_deleted", false).order("captured_at", { ascending: false }).limit(10) as any,
     listEventsByCreator(userId),
   ]);
 
