@@ -14,7 +14,8 @@ export default async function NewEventPage() {
   if (!user) redirect("/login");
 
   const headersList = await headers();
-  const country = headersList.get("x-vercel-ip-country") || "GLOBAL";
+  // Check both Vercel and Cloudflare country headers
+  const country = headersList.get("x-vercel-ip-country") || headersList.get("cf-ipcountry") || "GLOBAL";
 
   return (
     <div className="relative min-h-screen bg-slate-50">
