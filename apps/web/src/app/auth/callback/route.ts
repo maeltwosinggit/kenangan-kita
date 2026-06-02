@@ -45,12 +45,11 @@ export async function GET(request: NextRequest) {
         role = inserted?.role ?? "user";
       }
 
-      // Admins go to requested next path; guests go to next if it's a safe
-      // event path (e.g. /e/xxx/camera after OAuth redirect), else /dashboard.
-      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+      // Use forwarded headers to detect the public origin.
+      // This is more reliable than NEXT_PUBLIC_SITE_URL in preview/multi-domain environments.
       const host = request.headers.get("x-forwarded-host") ?? request.nextUrl.host;
       const proto = request.headers.get("x-forwarded-proto") ?? request.nextUrl.protocol.replace(":", "");
-      const base = siteUrl ?? `${proto}://${host}`;
+      const base = `${proto}://${host}`;
       
       let destination: string;
       if (role === "admin") {
@@ -64,12 +63,9 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // Use forwarded headers so redirect goes to the public host (e.g. ngrok)
-  // not the internal bind address (0.0.0.0:3000)
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
   const host = request.headers.get("x-forwarded-host") ?? request.nextUrl.host;
   const proto = request.headers.get("x-forwarded-proto") ?? request.nextUrl.protocol.replace(":", "");
-  const base = siteUrl ?? `${proto}://${host}`;
+  const base = `${proto}://${host}`;
   
   return NextResponse.redirect(`${base}${next}`);
 }

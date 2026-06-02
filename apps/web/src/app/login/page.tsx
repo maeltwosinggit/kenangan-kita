@@ -20,9 +20,9 @@ function LoginContent() {
     setError(null);
     const supabase = getSupabaseBrowserClient();
     
-    // Prefer NEXT_PUBLIC_SITE_URL if set (useful for production/preview), 
-    // otherwise fallback to current window origin.
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+    // Use the current origin for the redirect URL. 
+    // This is the most reliable way to stay on the same domain (Vercel or Local).
+    const siteUrl = window.location.origin;
     
     await supabase.auth.signInWithOAuth({
       provider: "google",
