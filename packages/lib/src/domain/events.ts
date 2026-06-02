@@ -7,6 +7,8 @@ const createEventInputSchema = z.object({
   name: z.string().min(2),
   eventDate: z.string().min(8),
   coverImagePath: z.string().optional(),
+  upload_limit_enabled: z.boolean().optional(),
+  max_uploads_total: z.number().optional(),
 });
 
 const updateEventInputSchema = z.object({
@@ -73,6 +75,8 @@ export async function createEvent(
       event_code,
       created_by: user?.id ?? null,
       cover_image_path: parsed.coverImagePath ?? null,
+      upload_limit_enabled: parsed.upload_limit_enabled ?? false,
+      max_uploads_total: parsed.max_uploads_total ?? null,
     })
     .select("id,name,event_date,event_code,reveal_mode,gallery_visible,created_by,cover_image_path,upload_limit_enabled,max_uploads_per_user,max_uploads_total")
     .single();
