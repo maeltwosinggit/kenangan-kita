@@ -39,11 +39,18 @@ export default async function PhotobookPreviewPage({
     );
   }
 
+  let coverUrl: string | null = null;
+  if (event.cover_image_path) {
+    const { data } = supabase.storage.from("event-covers").getPublicUrl(event.cover_image_path);
+    coverUrl = data.publicUrl ?? null;
+  }
+
   return (
     <PreviewClient 
       eventCode={eventCode} 
       eventId={event.id} 
       eventName={event.name} 
+      coverUrl={coverUrl}
     />
   );
 }
