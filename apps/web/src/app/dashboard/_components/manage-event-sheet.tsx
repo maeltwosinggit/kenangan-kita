@@ -75,6 +75,7 @@ export function ManageEventSheet({ event: incomingEvent, isOpen, onClose, onDele
   const [copied, setCopied] = useState(false);
   const [galleryVisible, setGalleryVisible] = useState(event?.isOpen ?? false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [photoToDelete, setPhotoToDelete] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState<Section>("overview");
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
@@ -177,7 +178,13 @@ export function ManageEventSheet({ event: incomingEvent, isOpen, onClose, onDele
 
   const deletePhotoMutation = useMutation({
     mutationFn: (photoId: string) => softDeletePhoto(photoId),
-    onSuccess: () => photosQuery.refetch(),
+    onSuccess: () => {
+      photosQuery.refetch();
+      setPhotoToDelete(null);
+    },
+    onError: () => {
+      setPhotoToDelete(null);
+    }
   });
 
   const deleteEventMutation = useMutation({
@@ -683,6 +690,8 @@ export function ManageEventSheet({ event: incomingEvent, isOpen, onClose, onDele
                   <div className="grid grid-cols-2 gap-3">
                     {photos.map((photo) => {
                       const isDeleting = deletePhotoMutation.isPending && deletePhotoMutation.variables === photo.id;
+                      const isConfirming = photoToDelete === photo.id;
+
                       return (
                         <div key={photo.id} className="group relative overflow-hidden rounded-xl bg-slate-100 aspect-[4/5] ring-1 ring-slate-200/50 shadow-sm">
                           {photo.imageUrl ? (
@@ -702,27 +711,50 @@ export function ManageEventSheet({ event: incomingEvent, isOpen, onClose, onDele
                             </div>
                           )}
                           
-                          {/* Always visible delete button (top right) */}
-                          <div className="absolute right-2 top-2 z-10">
-                            <button
-                              type="button"
-                              onClick={() => deletePhotoMutation.mutate(photo.id)}
-                              disabled={deletePhotoMutation.isPending}
-                              aria-label="Delete photo"
-                              className="flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md transition-all hover:bg-red-600 active:scale-90 disabled:opacity-50"
-                            >
-                              {isDeleting ? (
-                                <svg className="h-4 w-4 animate-spin text-white" viewBox="0 0 24 24" fill="none">
-                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-                                </svg>
-                              ) : (
-                                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                              )}
-                            </button>
-                          </div>
+                          {/* Confirmation Overlay */}
+                          {isConfirming && !isDeleting && (
+                            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/80 px-2 text-center backdrop-blur-sm animate-in fade-in zoom-in-95 duration-200">
+                              <p className="text-[10px] font-bold text-white uppercase tracking-wider mb-2">Delete photo?</p>
+                              <div className="flex w-full gap-1.5 px-1">
+                                <button
+                                  onClick={() => deletePhotoMutation.mutate(photo.id)}
+                                  className="flex-1 rounded-lg bg-red-600 py-1.5 text-[10px] font-black text-white uppercase tracking-tighter"
+                                >
+                                  Delete
+                                </button>
+                                <button
+                                  onClick={() => setPhotoToDelete(null)}
+                                  className="flex-1 rounded-lg bg-white/20 py-1.5 text-[10px] font-black text-white uppercase tracking-tighter backdrop-blur-md"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Delete Trigger Button (top right) */}
+                          {!isConfirming && (
+                            <div className="absolute right-2 top-2 z-10">
+                              <button
+                                type="button"
+                                onClick={() => setPhotoToDelete(photo.id)}
+                                disabled={deletePhotoMutation.isPending}
+                                aria-label="Delete photo"
+                                className="flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md transition-all hover:bg-red-600 active:scale-90 disabled:opacity-50"
+                              >
+                                {isDeleting ? (
+                                  <svg className="h-4 w-4 animate-spin text-white" viewBox="0 0 24 24" fill="none">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                                  </svg>
+                                ) : (
+                                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                )}
+                              </button>
+                            </div>
+                          )}
 
                           {/* Bottom info gradient */}
                           <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent px-3 pb-2 pt-8 pointer-events-none">
