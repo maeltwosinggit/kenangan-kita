@@ -194,7 +194,7 @@ export function EventViewHub({
                         <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.2em] text-white/70">
                           {formattedDate}
                         </p>
-                        <h2 className="text-3xl font-black leading-tight text-white tracking-tighter uppercase">
+                        <h2 className="text-3xl font-black leading-tight text-white tracking-tighter">
                           {event.name}
                         </h2>
                       </div>
