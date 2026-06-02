@@ -139,7 +139,7 @@ export async function getEventById(eventId: string) {
   const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from("events")
-    .select("id,name,event_date,event_code,reveal_mode,gallery_visible,upload_limit_enabled,max_uploads_per_user,max_uploads_total")
+    .select("id,name,event_date,event_code,reveal_mode,gallery_visible,cover_image_path,upload_limit_enabled,max_uploads_per_user,max_uploads_total")
     .eq("id", eventId)
     .maybeSingle();
 
