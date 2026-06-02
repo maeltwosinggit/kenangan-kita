@@ -21,6 +21,31 @@ function PageContent({ page, eventName }: { page: PhotobookPage, eventName: stri
 
       {/* Body */}
       <div className="flex-1 relative min-h-0">
+        {page.template === "cover" && (
+          <div className="w-full h-full relative rounded-lg bg-slate-100 overflow-hidden flex flex-col items-center justify-center p-6 text-center shadow-inner">
+            {page.photos[0] && (
+              <div className="w-4/5 h-3/5 relative mb-6">
+                <img src={page.photos[0].imageUrl} className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-40 scale-110" alt="" draggable={false} />
+                <img src={page.photos[0].imageUrl} className="relative z-10 w-full h-full object-contain rounded shadow-lg" alt="" draggable={false} />
+              </div>
+            )}
+            <h1 className="text-2xl md:text-4xl font-black text-slate-900 tracking-tighter uppercase">{page.title}</h1>
+            <p className="text-xs md:text-sm font-semibold text-slate-400 tracking-widest uppercase mt-4">{page.subtitle}</p>
+          </div>
+        )}
+
+        {page.template === "opening" && (
+          <div className="w-full h-full flex flex-col items-center justify-center">
+            <h1 className="text-xl md:text-3xl font-black text-slate-900 tracking-tighter uppercase text-center mb-6">{page.title}</h1>
+            {page.photos[0] && (
+              <div className="w-full flex-1 relative rounded-lg bg-slate-100 overflow-hidden shadow-inner">
+                <img src={page.photos[0].imageUrl} className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-40 scale-110" alt="" draggable={false} />
+                <img src={page.photos[0].imageUrl} className="relative z-10 w-full h-full object-contain rounded shadow-lg" alt="" draggable={false} />
+              </div>
+            )}
+          </div>
+        )}
+
         {page.template === "hero" && (
           <div className="w-full h-full relative rounded-lg bg-slate-100 overflow-hidden flex items-center justify-center shadow-inner">
             <img src={page.photos[0].imageUrl} className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-40 scale-110" alt="" draggable={false} />
@@ -45,7 +70,27 @@ function PageContent({ page, eventName }: { page: PhotobookPage, eventName: stri
           </div>
         )}
 
-        {page.template === "mosaic" && (
+        {page.template === "trio" && (
+          <div className="flex gap-2 md:gap-4 h-full">
+            <div className="flex-[2] relative rounded-lg bg-slate-100 overflow-hidden flex items-center justify-center shadow-inner">
+               <img src={page.photos[0].imageUrl} className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-40 scale-110" alt="" draggable={false} />
+               <img src={page.photos[0].imageUrl} className="relative z-10 w-full h-full object-contain rounded shadow-md" alt="" draggable={false} />
+               <div className="absolute bottom-2 right-2 z-20 text-orange-600 font-mono text-[8px] md:text-xs font-bold bg-white/90 px-1.5 py-0.5 rounded shadow-sm backdrop-blur-sm border border-white/50">
+                 {formatFuji(page.photos[0])}
+               </div>
+            </div>
+            <div className="flex flex-1 flex-col gap-2 md:gap-4">
+               {page.photos.slice(1, 3).map((p) => (
+                 <div key={p.id} className="flex-1 relative rounded-lg bg-slate-100 overflow-hidden flex items-center justify-center shadow-inner">
+                   <img src={p.imageUrl} className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-40 scale-110" alt="" draggable={false} />
+                   <img src={p.imageUrl} className="relative z-10 w-full h-full object-contain rounded shadow-md" alt="" draggable={false} />
+                 </div>
+               ))}
+            </div>
+          </div>
+        )}
+
+        {page.template === "collage" && (
           <div className="grid grid-cols-2 gap-2 h-full content-start overflow-hidden rounded-lg">
             {page.photos.map((p) => (
               <div key={p.id} className="aspect-square relative bg-slate-100">
@@ -109,6 +154,28 @@ function PageContent({ page, eventName }: { page: PhotobookPage, eventName: stri
                 <p className="text-2xl md:text-4xl font-black text-slate-900 mt-1 md:mt-2 truncate w-full px-4">{page.stats.photo?.nickname || "A Guest"}</p>
               </>
             )}
+            {page.stats.type === "summary" && (
+              <>
+                <h3 className="text-[10px] md:text-sm font-bold text-slate-400 uppercase tracking-[0.3em] mb-2 md:mb-4">The Final Count</h3>
+                <div className="flex gap-8 md:gap-16 mt-6 md:mt-10">
+                  <div>
+                    <div className="text-4xl md:text-5xl font-black text-slate-900">{page.stats.totalPhotos}</div>
+                    <div className="text-[8px] md:text-[10px] text-slate-400 uppercase tracking-widest mt-2">Total Memories</div>
+                  </div>
+                  <div>
+                    <div className="text-4xl md:text-5xl font-black text-slate-900">{page.stats.guestCount}</div>
+                    <div className="text-[8px] md:text-[10px] text-slate-400 uppercase tracking-widest mt-2">Total Guests</div>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {page.template === "back" && (
+          <div className="w-full h-full flex flex-col items-center justify-center text-center p-6 bg-slate-50 rounded-lg shadow-inner">
+            <h1 className="text-xl md:text-2xl font-black text-slate-900 tracking-tighter uppercase leading-tight">{page.title}</h1>
+            <p className="text-xs md:text-sm font-semibold text-slate-400 tracking-[0.2em] uppercase mt-8">{page.subtitle}</p>
           </div>
         )}
       </div>
