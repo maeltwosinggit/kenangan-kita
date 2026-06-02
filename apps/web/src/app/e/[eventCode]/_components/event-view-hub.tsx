@@ -114,10 +114,10 @@ export function EventViewHub({
   );
 
   return (
-    <div className="relative min-h-screen bg-slate-50 overflow-x-hidden">
-
+    <div className="flex h-screen flex-col bg-slate-50 overflow-hidden relative">
+      
       {/* ── SHARED DYNAMIC HEADER ── */}
-      <header className="sticky top-0 z-30 mx-auto flex h-16 w-full items-center justify-between border-b border-slate-100 bg-white/80 px-4 backdrop-blur-md">
+      <header className="shrink-0 sticky top-0 z-30 mx-auto flex h-16 w-full items-center justify-between border-b border-slate-100 bg-white/80 px-4 backdrop-blur-md">
         {activeTab === "gallery" ? (
           <button onClick={() => handleTabChange("event")} className="transition-opacity hover:opacity-80">
             <Image src="/logo.png" alt="Kenangan Kita" width={70} height={35} unoptimized className="object-contain" />
@@ -162,86 +162,88 @@ export function EventViewHub({
       </header>
       
       {/* ── MAIN CONTENT CONTAINER (Sliding) ── */}
-      <div 
-        className="flex items-start min-h-[calc(100vh-4rem)] w-[200%] transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]"
-        style={{ transform: `translateX(${activeTab === "gallery" ? "-50%" : "0%"})` }}
-      >
-        {/* 1. EVENT HUB TAB */}
-        <div className={["w-1/2", activeTab === "event" ? "min-h-[calc(100vh-4rem)]" : "h-0 overflow-hidden"].join(" ")}>
-          <main className="flex flex-col px-4 pb-32 pt-6">
-            <section className="mb-8">
-               <div className="rounded-2xl bg-white p-2 shadow-sm ring-1 ring-slate-200/60">
-                  <div className="relative aspect-[4/5] w-full overflow-hidden rounded-xl">
-                    {initialHeroUrl ? (
-                      <img src={initialHeroUrl} alt={event.name} className="h-full w-full object-cover" />
-                    ) : (
-                      <div className="h-full w-full bg-gradient-to-br from-slate-200 to-slate-300" />
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
-                    <div className="absolute bottom-6 left-6 right-6 text-left">
-                      <div className="mb-4 flex items-center gap-4">
-                         <div className="flex flex-col">
-                            <span className="text-2xl font-black text-white leading-none">{photoCount}</span>
-                            <span className="text-[9px] font-bold uppercase tracking-widest text-white/50">Memories</span>
-                         </div>
-                         <div className="h-8 w-px bg-white/20" />
-                         <div className="flex flex-col">
-                            <span className="text-2xl font-black text-white leading-none">{guestCount}</span>
-                            <span className="text-[9px] font-bold uppercase tracking-widest text-white/50">Guests</span>
-                         </div>
+      <div className="flex-1 relative overflow-hidden">
+        <div 
+          className="flex h-full w-[200%] transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] items-start"
+          style={{ transform: `translateX(${activeTab === "gallery" ? "-50%" : "0%"})` }}
+        >
+          {/* 1. EVENT HUB TAB */}
+          <div className="w-1/2 h-full overflow-y-auto shrink-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <main className="flex flex-col px-4 pb-32 pt-6">
+              <section className="mb-8">
+                 <div className="rounded-2xl bg-white p-2 shadow-sm ring-1 ring-slate-200/60">
+                    <div className="relative aspect-[4/5] w-full overflow-hidden rounded-xl">
+                      {initialHeroUrl ? (
+                        <img src={initialHeroUrl} alt={event.name} className="h-full w-full object-cover" />
+                      ) : (
+                        <div className="h-full w-full bg-gradient-to-br from-slate-200 to-slate-300" />
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+                      <div className="absolute bottom-6 left-6 right-6 text-left">
+                        <div className="mb-4 flex items-center gap-4">
+                           <div className="flex flex-col">
+                              <span className="text-2xl font-black text-white leading-none">{photoCount}</span>
+                              <span className="text-[9px] font-bold uppercase tracking-widest text-white/50">Memories</span>
+                           </div>
+                           <div className="h-8 w-px bg-white/20" />
+                           <div className="flex flex-col">
+                              <span className="text-2xl font-black text-white leading-none">{guestCount}</span>
+                              <span className="text-[9px] font-bold uppercase tracking-widest text-white/50">Guests</span>
+                           </div>
+                        </div>
+                        <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.2em] text-white/70">
+                          {formattedDate}
+                        </p>
+                        <h2 className="text-3xl font-black leading-tight text-white tracking-tighter uppercase">
+                          {event.name}
+                        </h2>
                       </div>
-                      <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.2em] text-white/70">
-                        {formattedDate}
-                      </p>
-                      <h2 className="text-3xl font-black leading-tight text-white tracking-tighter uppercase">
-                        {event.name}
-                      </h2>
+                    </div>
+                 </div>
+              </section>
+
+              <section className="rounded-2xl bg-white p-8 text-center shadow-sm ring-1 ring-slate-200/50">
+                <h3 className="mb-2 text-sm font-black uppercase tracking-[0.2em] text-slate-900">Invite to Group</h3>
+                <p className="mb-8 text-xs text-slate-500 font-medium">Let others join by scanning your screen.</p>
+                <div className="mx-auto max-w-[200px]">
+                  <QRCodeDisplay url={shareUrl} size={200} />
+                </div>
+              </section>
+
+              <footer className="mt-16 pb-10 text-center opacity-40">
+                <Image src="/logo.png" alt="Kenangan Kita" width={60} height={30} unoptimized className="mx-auto object-contain mb-2" />
+                <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Digital Disposable Camera • {eventCode}</p>
+              </footer>
+            </main>
+          </div>
+
+          {/* 3. GALLERY TAB */}
+          <div className="w-1/2 h-full overflow-y-auto shrink-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <section className="relative h-[240px] w-full overflow-hidden bg-slate-100">
+               {initialHeroUrl ? (
+                 <img src={initialHeroUrl} alt={event.name} className="h-full w-full object-cover" />
+               ) : (
+                 <div className="h-full w-full bg-gradient-to-br from-slate-700 to-slate-950" />
+               )}
+               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+               <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between">
+                  <div className="flex gap-4">
+                    <div className="flex flex-col">
+                      <span className="text-2xl font-black text-white">{photoCount}</span>
+                      <span className="text-[9px] font-bold uppercase tracking-widest text-white/60">Photos</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-2xl font-black text-white">{guestCount}</span>
+                      <span className="text-[9px] font-bold uppercase tracking-widest text-white/60">Guests</span>
                     </div>
                   </div>
                </div>
             </section>
 
-            <section className="rounded-2xl bg-white p-8 text-center shadow-sm ring-1 ring-slate-200/50">
-              <h3 className="mb-2 text-sm font-black uppercase tracking-[0.2em] text-slate-900">Invite to Group</h3>
-              <p className="mb-8 text-xs text-slate-500 font-medium">Let others join by scanning your screen.</p>
-              <div className="mx-auto max-w-[200px]">
-                <QRCodeDisplay url={shareUrl} size={200} />
-              </div>
+            <section className="px-2 pt-3 pb-32">
+               <GalleryClient eventCode={eventCode} eventName={event.name} currentUserId={currentUserId} eventId={event.id} />
             </section>
-
-            <footer className="mt-16 pb-10 text-center opacity-40">
-              <Image src="/logo.png" alt="Kenangan Kita" width={60} height={30} unoptimized className="mx-auto object-contain mb-2" />
-              <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Digital Disposable Camera • {eventCode}</p>
-            </footer>
-          </main>
-        </div>
-
-        {/* 3. GALLERY TAB */}
-        <div className={["w-1/2", activeTab === "gallery" ? "min-h-[calc(100vh-4rem)]" : "h-0 overflow-hidden"].join(" ")}>
-          <section className="relative h-[240px] w-full overflow-hidden bg-slate-100">
-             {initialHeroUrl ? (
-               <img src={initialHeroUrl} alt={event.name} className="h-full w-full object-cover" />
-             ) : (
-               <div className="h-full w-full bg-gradient-to-br from-slate-700 to-slate-950" />
-             )}
-             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-             <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between">
-                <div className="flex gap-4">
-                  <div className="flex flex-col">
-                    <span className="text-2xl font-black text-white">{photoCount}</span>
-                    <span className="text-[9px] font-bold uppercase tracking-widest text-white/60">Photos</span>
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-2xl font-black text-white">{guestCount}</span>
-                    <span className="text-[9px] font-bold uppercase tracking-widest text-white/60">Guests</span>
-                  </div>
-                </div>
-             </div>
-          </section>
-
-          <section className="px-2 pt-3 pb-32">
-             <GalleryClient eventCode={eventCode} eventName={event.name} currentUserId={currentUserId} eventId={event.id} />
-          </section>
+          </div>
         </div>
       </div>
 
