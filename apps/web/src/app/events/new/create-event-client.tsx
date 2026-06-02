@@ -48,35 +48,41 @@ export default function CreateEventForm({
     }).catch(console.error);
   }, []);
 
-  const handleApplyDiscount = async () => {
-    if (!discountInput.trim()) return;
+  const applyDiscount = async (rawCode: string) => {
+    if (!rawCode.trim()) return null;
     setIsValidatingDiscount(true);
     setError(null);
     try {
       const supabase = getSupabaseBrowserClient();
-      const code = await validateDiscountCode(discountInput, supabase);
+      const code = await validateDiscountCode(rawCode, supabase);
       if (code) {
         setAppliedDiscount(code);
         setDiscountInput("");
+        return code;
       } else {
         setError("Invalid or expired discount code");
+        return null;
       }
     } catch (err) {
       setError("Failed to validate code");
+      return null;
     } finally {
       setIsValidatingDiscount(false);
     }
   };
 
-  const calculateFinalPrice = () => {
-    if (!selectedPlan) return 0;
-    if (!appliedDiscount) return selectedPlan.price_cents;
+  const handleApplyDiscount = () => applyDiscount(discountInput);
 
-    if (appliedDiscount.discount_type === 'percentage') {
-      const discount = Math.round(selectedPlan.price_cents * (appliedDiscount.value / 100));
+  const calculateFinalPrice = (tempDiscount?: DiscountCode | null) => {
+    const discountToUse = tempDiscount !== undefined ? tempDiscount : appliedDiscount;
+    if (!selectedPlan) return 0;
+    if (!discountToUse) return selectedPlan.price_cents;
+
+    if (discountToUse.discount_type === 'percentage') {
+      const discount = Math.round(selectedPlan.price_cents * (discountToUse.value / 100));
       return Math.max(0, selectedPlan.price_cents - discount);
     } else {
-      return Math.max(0, selectedPlan.price_cents - appliedDiscount.value);
+      return Math.max(0, selectedPlan.price_cents - discountToUse.value);
     }
   };
 
@@ -131,10 +137,21 @@ export default function CreateEventForm({
     setLoading(true);
     setError(null);
     try {
-      const finalPrice = calculateFinalPrice();
+      // Auto-apply discount if one is typed but not yet applied
+      let discountToValidate = appliedDiscount;
+      if (!appliedDiscount && discountInput.trim()) {
+        const validated = await applyDiscount(discountInput);
+        if (!validated) {
+          setLoading(false);
+          return; // Error already set by applyDiscount
+        }
+        discountToValidate = validated;
+      }
+
+      const finalPrice = calculateFinalPrice(discountToValidate);
       
       if (finalPrice > 0) {
-        setError("Online payment integration is coming soon. Use a 100% discount code for testing.");
+        setError(`Total is $${(finalPrice / 100).toFixed(2)}. Online payment is coming soon. Use a 100% discount code.`);
         setLoading(false);
         return;
       }
