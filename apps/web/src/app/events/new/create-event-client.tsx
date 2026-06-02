@@ -139,6 +139,7 @@ export default function CreateEventForm({
 
       const supabase = getSupabaseBrowserClient();
       let coverImagePath: string | undefined;
+      
       if (coverFile) {
         const ext = coverFile.type === "image/png" ? "png" : "jpg";
         const path = `covers/${crypto.randomUUID()}.${ext}`;
@@ -147,6 +148,10 @@ export default function CreateEventForm({
           .upload(path, coverFile, { contentType: coverFile.type, upsert: false });
         if (uploadError) throw uploadError;
         coverImagePath = path;
+      }
+
+      if (!coverImagePath) {
+        throw new Error("Cover photo upload failed. Please try again.");
       }
 
       const created = await createEvent({ 
