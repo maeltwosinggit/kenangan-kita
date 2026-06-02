@@ -28,6 +28,7 @@ Owner: Engineering
 - [x] Event cover photo support complete
 - [x] QR generation and scan flow complete
 - [ ] Upload limits complete
+- [ ] Phase 15 - Monetization & Payments complete
 
 ## Phase Breakdown
 
@@ -215,9 +216,21 @@ Owner: Engineering
 - [ ] Implement paginated flip-book UI for web
 - [ ] Add "Event Pulse" stats pages (Early Bird, Night Owl, Prolific Guest, Activity Heatmap)
 - [ ] Add "Memory Export" (High-quality PDF generation for physical printing)
-- [ ] Add admin toggle to "Generate Photobook" once event ends
+- [ ] Admin toggle to "Generate Photobook" once event ends
+
+### Phase 15 - Monetization & Payments
+
+- [ ] Define pricing tiers (Free, Pro, Wedding/Premium)
+- [ ] Create `plans` and `payment_transactions` tables in Supabase
+- [ ] Implement `discount_codes` table and logic (fixed/percentage)
+- [ ] Build Admin UI for discount code generation and management
+- [ ] Integrate Stripe Checkout flow for event creation
+- [ ] Implement Stripe Webhook handler to provision event features upon payment
+- [ ] Add "Apply Discount" field to the event creation/upgrade flow
+- [ ] Link plan features (e.g. higher upload limits) to event row upon successful payment
 
 ## Immediate Next Tasks
+
 
 1. Write migration for upload limit columns on `events` + `upload_count` on `event_guests`.
 2. Implement `getUploadCountForUser` and pre-upload gate in the camera flow.
@@ -232,6 +245,7 @@ Owner: Engineering
 4. Moderation workflow upgrades (Phase 11).
 5. Export/ZIP capability (Phase 12).
 6. Guest engagement features (Phase 13).
+7. Monetization & Payments (Phase 15).
 
 ## Risks / Notes
 
