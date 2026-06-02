@@ -118,6 +118,10 @@ export default function CreateEventForm({
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (step === "details") {
+      if (!coverFile) {
+        setError("A cover photo is required");
+        return;
+      }
       setStep("pricing");
       return;
     }
@@ -246,7 +250,7 @@ export default function CreateEventForm({
           {/* Cover photo */}
           <div>
             <p className="mb-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-              Cover Photo <span className="font-bold normal-case text-slate-300 ml-1">(Optional)</span>
+              Cover Photo
             </p>
 
             <button

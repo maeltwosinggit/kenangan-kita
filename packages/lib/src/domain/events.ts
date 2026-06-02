@@ -6,7 +6,7 @@ import { cache } from "react";
 const createEventInputSchema = z.object({
   name: z.string().min(2),
   eventDate: z.string().min(8),
-  coverImagePath: z.string().optional(),
+  coverImagePath: z.string(),
   upload_limit_enabled: z.boolean().optional(),
   max_uploads_total: z.number().optional(),
 });
