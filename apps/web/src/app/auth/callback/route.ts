@@ -4,11 +4,13 @@ import { getSupabaseServerClient } from "@/lib/supabase/server";
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const code = searchParams.get("code");
-  const next = searchParams.get("next") || "/admin/events";
+  const next = searchParams.get("next") || "/dashboard";
 
   if (code) {
     const supabase = await getSupabaseServerClient();
     await supabase.auth.exchangeCodeForSession(code);
+    
+    // ... rest of logic
 
     const {
       data: { user }
@@ -45,11 +47,10 @@ export async function GET(request: NextRequest) {
         role = inserted?.role ?? "user";
       }
 
-      // Use forwarded headers to detect the public origin.
-      // This is more reliable than NEXT_PUBLIC_SITE_URL in preview/multi-domain environments.
-      const host = request.headers.get("x-forwarded-host") ?? request.nextUrl.host;
-      const proto = request.headers.get("x-forwarded-proto") ?? request.nextUrl.protocol.replace(":", "");
-      const base = `${proto}://${host}`;
+      // Robust origin detection
+      const host = request.headers.get("x-forwarded-host");
+      const proto = request.headers.get("x-forwarded-proto") || "https";
+      const base = host ? `${proto}://${host}` : request.nextUrl.origin;
       
       let destination: string;
       if (role === "admin") {
@@ -63,9 +64,9 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  const host = request.headers.get("x-forwarded-host") ?? request.nextUrl.host;
-  const proto = request.headers.get("x-forwarded-proto") ?? request.nextUrl.protocol.replace(":", "");
-  const base = `${proto}://${host}`;
+  const host = request.headers.get("x-forwarded-host");
+  const proto = request.headers.get("x-forwarded-proto") || "https";
+  const base = host ? `${proto}://${host}` : request.nextUrl.origin;
   
   return NextResponse.redirect(`${base}${next}`);
 }

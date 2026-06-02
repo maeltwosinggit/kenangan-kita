@@ -1,12 +1,11 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-// When behind a reverse proxy (e.g. ngrok), request.nextUrl.origin may be the
-// internal bind address (0.0.0.0:3000). Use forwarded headers instead.
+// Robust origin detection for redirects.
 function getPublicOrigin(request: NextRequest): string {
-  const host = request.headers.get("x-forwarded-host") ?? request.nextUrl.host;
-  const proto = request.headers.get("x-forwarded-proto") ?? request.nextUrl.protocol.replace(":", "");
-  return `${proto}://${host}`;
+  const host = request.headers.get("x-forwarded-host");
+  const proto = request.headers.get("x-forwarded-proto") || "https";
+  return host ? `${proto}://${host}` : request.nextUrl.origin;
 }
 
 function makeRedirect(request: NextRequest, pathname: string, search = ""): URL {

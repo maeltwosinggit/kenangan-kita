@@ -45,7 +45,7 @@ export default async function UnifiedEventPage({
   }
 
   const headersList = await headers();
-  const host = headersList.get("host") ?? "localhost:3000";
+  const host = headersList.get("x-forwarded-host") ?? headersList.get("host") ?? "kenangan-kita-web.vercel.app";
   const protocol = host.startsWith("localhost") || host.startsWith("127.") ? "http" : "https";
   const shareUrl = `${protocol}://${host}/e/${eventCode}`;
 
