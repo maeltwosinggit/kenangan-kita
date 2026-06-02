@@ -27,8 +27,8 @@ Owner: Engineering
 - [x] User dashboard (self-service) complete
 - [x] Event cover photo support complete
 - [x] QR generation and scan flow complete
-- [ ] Upload limits complete
-- [ ] Phase 15 - Monetization & Payments complete
+- [x] Upload limits complete
+- [x] Phase 15 - Monetization & Payments (Core Logic) complete
 
 ## Phase Breakdown
 
@@ -220,22 +220,20 @@ Owner: Engineering
 
 ### Phase 15 - Monetization & Payments
 
-- [ ] Define pricing tiers (Free, Pro, Wedding/Premium)
-- [ ] Create `plans` and `payment_transactions` tables in Supabase
-- [ ] Implement `discount_codes` table and logic (fixed/percentage)
-- [ ] Build Admin UI for discount code generation and management
+- [x] Define pricing tiers (Free, Pro, Wedding/Premium)
+- [x] Create `plans` and `payment_transactions` tables in Supabase
+- [x] Implement `discount_codes` table and logic (fixed/percentage)
+- [x] Build Admin UI for discount code generation and management
 - [ ] Integrate Stripe Checkout flow for event creation
 - [ ] Implement Stripe Webhook handler to provision event features upon payment
-- [ ] Add "Apply Discount" field to the event creation/upgrade flow
-- [ ] Link plan features (e.g. higher upload limits) to event row upon successful payment
+- [x] Add "Apply Discount" field to the event creation/upgrade flow
+- [x] Link plan features (e.g. higher upload limits) to event row upon successful payment
 
 ## Immediate Next Tasks
 
-
-1. Write migration for upload limit columns on `events` + `upload_count` on `event_guests`.
-2. Implement `getUploadCountForUser` and pre-upload gate in the camera flow.
-3. Add limit config UI in `ManageEventSheet` Overview tab.
-4. Add total usage counter to admin event dashboard.
+1. Integrate Stripe Checkout API for real payments.
+2. Build Event Mode Presets (Wedding, Party, etc.).
+3. Implement Live Slideshow mode for TV displays.
 
 ## Product Enhancements Backlog (Mapped to Phases)
 
