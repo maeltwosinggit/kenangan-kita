@@ -31,7 +31,7 @@ export default function PreviewClient({ eventCode, eventId, eventName, coverUrl 
       }
     }
     load();
-  }, [eventId, eventName]);
+  }, [eventId, eventName, coverUrl]);
 
   return (
     <div className="fixed inset-0 z-[100] flex flex-col bg-slate-900">
