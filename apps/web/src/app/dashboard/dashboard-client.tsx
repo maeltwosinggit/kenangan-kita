@@ -177,29 +177,29 @@ export default function DashboardClient({
 
               {/* ── HERO: FEATURED MEMORY ── */}
               <section className="relative pt-2">
-                <div className="relative mx-auto w-[90%] rotate-[-2deg] bg-white p-3 shadow-xl ring-1 ring-slate-200 transition-transform hover:rotate-0">
-                  <div className="relative aspect-[4/5] overflow-hidden bg-slate-100">
+                <div className="relative mx-auto w-[60%] rotate-[-2deg] bg-white p-2.5 shadow-xl ring-1 ring-slate-200 transition-transform hover:rotate-0">
+                  <div className="relative aspect-[4/5] overflow-hidden bg-slate-100 rounded-[1px]">
                     {featuredPhoto?.imageUrl ? (
                       <img src={featuredPhoto.imageUrl} alt="Featured" className="h-full w-full object-cover" />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200">
-                        <span className="material-symbols-outlined text-slate-300 text-6xl">photo_camera</span>
+                        <span className="material-symbols-outlined text-slate-300 text-4xl">photo_camera</span>
                       </div>
                     )}
                     <div className="absolute inset-0 bg-black/5" />
                   </div>
-                  <div className="pt-4 pb-1 text-center">
-                    <p className="font-['DS-Digital'] text-2xl text-orange-500 opacity-80 leading-none tracking-widest">
+                  <div className="pt-3 pb-0.5 text-center">
+                    <p className="font-['DS-Digital'] text-xl text-orange-500 opacity-80 leading-none tracking-widest">
                       {new Date().toLocaleDateString('en-GB', { year: '2-digit', month: '2-digit', day: '2-digit' }).replace(/\//g, ' . ')}
                     </p>
-                    <p className="mt-2 text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">
+                    <p className="mt-1.5 text-[8px] font-black uppercase tracking-[0.3em] text-slate-400">
                       {featuredPhoto ? "Recently Captured" : "Your Journey Awaits"}
                     </p>
                   </div>
                 </div>
                 {/* Visual Accent */}
-                <div className="absolute -left-2 top-10 h-20 w-1 bg-slate-900/10 rounded-full" />
-                <div className="absolute -right-2 bottom-20 h-16 w-1 bg-slate-900/10 rounded-full" />
+                <div className="absolute left-4 top-10 h-16 w-1 bg-slate-900/10 rounded-full" />
+                <div className="absolute right-4 bottom-10 h-12 w-1 bg-slate-900/10 rounded-full" />
               </section>
 
               {/* ── GREETING ── */}
