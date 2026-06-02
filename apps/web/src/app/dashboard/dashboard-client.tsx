@@ -8,6 +8,8 @@ import { EventCard } from "./_components/event-card";
 import UserMenu from "@/components/user-menu";
 import CreateEventForm from "@/app/events/new/create-event-client";
 import { ManageEventSheet } from "./_components/manage-event-sheet";
+import { getEventByCode } from "@kenangan/lib";
+import { useRouter } from "next/navigation";
 
 type Props = DashboardData & {
   firstName: string;
@@ -77,7 +79,10 @@ export default function DashboardClient({
   const [tab, setTab] = useState<Tab>("dashboard");
   const [managingEvent, setManagingEvent] = useState<CreatedEvent | null>(null);
   const [joinCode, setJoinCode] = useState("");
+  const [isJoining, setIsJoining] = useState(false);
+  const [joinError, setJoinError] = useState<string | null>(null);
   const [eventFilter, setEventFilter] = useState<"all" | "hosted" | "joined">("all");
+  const router = useRouter();
 
   const getTabIndex = (t: Tab) => {
     if (t === "dashboard") return 0;
@@ -86,10 +91,27 @@ export default function DashboardClient({
     return 0;
   };
 
-  const handleJoin = (e: React.FormEvent) => {
+  const handleJoin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (joinCode.trim()) {
-      window.location.href = `/e/${joinCode.trim().toUpperCase()}`;
+    const code = joinCode.trim().toUpperCase();
+    if (!code) return;
+
+    setIsJoining(true);
+    setJoinError(null);
+
+    try {
+      const event = await getEventByCode(code);
+      if (event) {
+        router.push(`/e/${code}`);
+      } else {
+        setJoinError("Code not found");
+        // Clear error after a shake animation or 3 seconds
+        setTimeout(() => setJoinError(null), 3000);
+      }
+    } catch (err) {
+      setJoinError("Error joining group");
+    } finally {
+      setIsJoining(false);
     }
   };
 
@@ -161,16 +183,38 @@ export default function DashboardClient({
                     type="text" 
                     placeholder="CODE"
                     value={joinCode}
-                    onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-                    className="w-full h-14 rounded-2xl bg-white border border-slate-200 pl-4 pr-10 text-sm font-black tracking-[0.2em] focus:ring-2 focus:ring-slate-900 focus:outline-none shadow-sm transition-all"
+                    disabled={isJoining}
+                    onChange={(e) => {
+                      setJoinCode(e.target.value.toUpperCase());
+                      if (joinError) setJoinError(null);
+                    }}
+                    className={[
+                      "w-full h-14 rounded-2xl bg-white border pl-4 pr-10 text-sm font-black tracking-[0.2em] focus:ring-2 focus:outline-none shadow-sm transition-all",
+                      joinError 
+                        ? "border-red-500 ring-red-500 animate-shake" 
+                        : "border-slate-200 focus:ring-slate-900"
+                    ].join(" ")}
                   />
                   <button 
                     type="submit"
-                    className="absolute right-2 top-2 h-10 w-10 flex items-center justify-center rounded-xl bg-slate-900 text-white transition-transform active:scale-90"
+                    disabled={isJoining || !joinCode}
+                    className="absolute right-2 top-2 h-10 w-10 flex items-center justify-center rounded-xl bg-slate-900 text-white transition-transform active:scale-90 disabled:opacity-50"
                   >
-                    <span className="material-symbols-outlined">arrow_forward</span>
+                    {isJoining ? (
+                      <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                      </svg>
+                    ) : (
+                      <span className="material-symbols-outlined">arrow_forward</span>
+                    )}
                   </button>
-                  <label className="absolute -top-2 left-4 bg-white px-2 text-[8px] font-black text-slate-400 uppercase tracking-widest">Join Group</label>
+                  <label className={[
+                    "absolute -top-2 left-4 bg-white px-2 text-[8px] font-black uppercase tracking-widest transition-colors",
+                    joinError ? "text-red-500" : "text-slate-400"
+                  ].join(" ")}>
+                    {joinError || "Join Group"}
+                  </label>
                 </form>
 
                 <button 
