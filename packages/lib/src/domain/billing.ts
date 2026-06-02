@@ -25,8 +25,11 @@ export type DiscountCode = {
 /**
  * Validates a discount code and returns its details if valid.
  */
-export async function validateDiscountCode(code: string): Promise<DiscountCode | null> {
-  const supabase = getSupabaseClient();
+export async function validateDiscountCode(
+  code: string,
+  supabaseClient?: any
+): Promise<DiscountCode | null> {
+  const supabase = supabaseClient ?? getSupabaseClient();
   const { data, error } = await supabase
     .from("discount_codes")
     .select("*")
@@ -54,8 +57,8 @@ export async function validateDiscountCode(code: string): Promise<DiscountCode |
 /**
  * Lists all active pricing plans.
  */
-export async function listPricingPlans(): Promise<PricingPlan[]> {
-  const supabase = getSupabaseClient();
+export async function listPricingPlans(supabaseClient?: any): Promise<PricingPlan[]> {
+  const supabase = supabaseClient ?? getSupabaseClient();
   const { data, error } = await supabase
     .from("pricing_plans")
     .select("*")

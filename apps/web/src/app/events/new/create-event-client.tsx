@@ -41,7 +41,8 @@ export default function CreateEventForm({
   const cameraRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    listPricingPlans().then(p => {
+    const supabase = getSupabaseBrowserClient();
+    listPricingPlans(supabase).then(p => {
       setPlans(p);
       if (p.length > 0) setSelectedPlan(p[0]);
     }).catch(console.error);
@@ -52,7 +53,8 @@ export default function CreateEventForm({
     setIsValidatingDiscount(true);
     setError(null);
     try {
-      const code = await validateDiscountCode(discountInput);
+      const supabase = getSupabaseBrowserClient();
+      const code = await validateDiscountCode(discountInput, supabase);
       if (code) {
         setAppliedDiscount(code);
         setDiscountInput("");
