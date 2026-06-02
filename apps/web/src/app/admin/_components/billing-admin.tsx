@@ -23,7 +23,8 @@ export function BillingAdmin() {
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
-    }
+    },
+    refetchInterval: 10000 // Poll every 10s
   });
 
   const generateMutation = useMutation({

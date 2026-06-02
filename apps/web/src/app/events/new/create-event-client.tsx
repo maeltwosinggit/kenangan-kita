@@ -14,9 +14,11 @@ type Step = "details" | "pricing";
 
 export default function CreateEventForm({
   onSuccess,
+  country = "GLOBAL",
 }: {
   /** Called after successful creation. If omitted the component manages its own success state. */
   onSuccess?: (result: CreateEventResult) => void;
+  country?: string;
 }) {
   const [step, setStep] = useState<Step>("details");
   const [name, setName] = useState("");
@@ -42,11 +44,11 @@ export default function CreateEventForm({
 
   useEffect(() => {
     const supabase = getSupabaseBrowserClient();
-    listPricingPlans(supabase).then(p => {
+    listPricingPlans(supabase, country).then(p => {
       setPlans(p);
       if (p.length > 0) setSelectedPlan(p[0]);
     }).catch(console.error);
-  }, []);
+  }, [country]);
 
   const applyDiscount = async (rawCode: string) => {
     if (!rawCode.trim()) return null;
@@ -69,6 +71,11 @@ export default function CreateEventForm({
     } finally {
       setIsValidatingDiscount(false);
     }
+  };
+
+  const getCurrencySymbol = (currency: string) => {
+    if (currency.toLowerCase() === 'myr') return 'RM';
+    return '$';
   };
 
   const handleApplyDiscount = () => applyDiscount(discountInput);
@@ -179,7 +186,7 @@ export default function CreateEventForm({
         coverImagePath,
         upload_limit_enabled: selectedPlan?.photo_limit !== null,
         max_uploads_total: selectedPlan?.photo_limit ?? undefined,
-        discount_code_id: appliedDiscount?.id
+        discount_code_id: discountToValidate?.id
       }, supabase);
 
       const res: CreateEventResult = { eventCode: created.event_code, eventId: created.id };

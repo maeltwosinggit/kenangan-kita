@@ -9,6 +9,7 @@ export type PricingPlan = {
   photo_limit: number | null;
   storage_days: number;
   features: string[];
+  region: string;
 };
 
 export type DiscountCode = {
@@ -55,14 +56,18 @@ export async function validateDiscountCode(
 }
 
 /**
- * Lists all active pricing plans.
+ * Lists all active pricing plans, optionally filtered by region.
  */
-export async function listPricingPlans(supabaseClient?: any): Promise<PricingPlan[]> {
+export async function listPricingPlans(
+  supabaseClient?: any,
+  region: string = 'GLOBAL'
+): Promise<PricingPlan[]> {
   const supabase = supabaseClient ?? getSupabaseClient();
   const { data, error } = await supabase
     .from("pricing_plans")
     .select("*")
     .eq("is_active", true)
+    .eq("region", region)
     .order("price_cents", { ascending: true });
 
   if (error) throw error;

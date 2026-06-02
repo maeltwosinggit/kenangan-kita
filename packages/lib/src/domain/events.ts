@@ -87,8 +87,9 @@ export async function createEvent(
   // Increment discount code usage if provided
   if (parsed.discount_code_id) {
     const { error: discountError } = await supabase.rpc("increment_discount_use_count", { p_code_id: parsed.discount_code_id });
-    // Log error but don't block event creation if just the counter fails
-    if (discountError) console.error("Failed to increment discount count:", discountError);
+    if (discountError) {
+      console.error(`[Billing] Failed to increment discount ${parsed.discount_code_id}:`, discountError);
+    }
   }
 
   return data as EventRow;

@@ -166,6 +166,7 @@ export type Database = {
           storage_days: number;
           features: any;
           is_active: boolean;
+          region: string;
           created_at: string;
           updated_at: string;
         };
@@ -179,6 +180,7 @@ export type Database = {
           storage_days?: number;
           features?: any;
           is_active?: boolean;
+          region?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -192,6 +194,7 @@ export type Database = {
           storage_days?: number;
           features?: any;
           is_active?: boolean;
+          region?: string;
           created_at?: string;
           updated_at?: string;
         };

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import CreateEventForm from "./create-event-client";
 
@@ -11,6 +12,9 @@ export default async function NewEventPage() {
   } = await supabase.auth.getUser();
 
   if (!user) redirect("/login");
+
+  const headersList = await headers();
+  const country = headersList.get("x-vercel-ip-country") || "GLOBAL";
 
   return (
     <div className="relative min-h-screen bg-slate-50">
@@ -45,7 +49,7 @@ export default async function NewEventPage() {
           <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">Create Event</h1>
           <p className="mt-1 text-sm text-slate-500">Set up your event and share the link with guests.</p>
         </div>
-        <CreateEventForm />
+        <CreateEventForm country={country} />
       </main>
     </div>
   );
