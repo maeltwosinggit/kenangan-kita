@@ -179,5 +179,35 @@ export class WebCameraAdapter implements CameraAdapter {
       return false;
     }
   }
+
+  getZoomCapabilities(): { min: number; max: number; step: number } | null {
+    if (!this.stream) return null;
+    const track = this.stream.getVideoTracks()[0];
+    if (!track || typeof track.getCapabilities !== "function") return null;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caps = track.getCapabilities() as any;
+    if (caps.zoom) {
+      return {
+        min: caps.zoom.min,
+        max: caps.zoom.max,
+        step: caps.zoom.step || 0.1
+      };
+    }
+    return null;
+  }
+
+  async setZoom(value: number): Promise<void> {
+    if (!this.stream) return;
+    const track = this.stream.getVideoTracks()[0];
+    if (!track) return;
+
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await track.applyConstraints({ advanced: [{ zoom: value } as any] });
+    } catch (err) {
+      console.warn("Failed to apply zoom constraint:", err);
+    }
+  }
 }
 

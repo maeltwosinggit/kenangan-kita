@@ -32,6 +32,8 @@ export function CameraCaptureClient({ eventCode, onClose, onGalleryClick }: Prop
   const [flashOn, setFlashOn] = useState(false);
   const [flashActive, setFlashActive] = useState(false);
   const [isCameraReady, setIsCameraReady] = useState(false);
+  const [zoomRange, setZoomRange] = useState<{ min: number; max: number; step: number } | null>(null);
+  const [zoom, setZoom] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showSaved, setShowSaved] = useState(false);
@@ -88,7 +90,14 @@ export function CameraCaptureClient({ eventCode, onClose, onGalleryClick }: Prop
     const camera = new WebCameraAdapter(video, canvas);
     setAdapter(camera);
 
-    const onReady = () => setIsCameraReady(true);
+    const onReady = () => {
+      setIsCameraReady(true);
+      if (camera.getZoomCapabilities) {
+        const caps = camera.getZoomCapabilities();
+        setZoomRange(caps);
+        if (caps) setZoom(caps.min);
+      }
+    };
     video.addEventListener("playing", onReady);
     video.addEventListener("timeupdate", onReady);
 
@@ -130,14 +139,27 @@ export function CameraCaptureClient({ eventCode, onClose, onGalleryClick }: Prop
     const next = facingMode === "environment" ? "user" : "environment";
     setFlipPhase("out");
     setIsCameraReady(false);
+    setZoomRange(null);
     await new Promise((r) => setTimeout(r, 180));
     try {
       await adapter.switchCamera(next);
+      if (adapter.getZoomCapabilities) {
+        const caps = adapter.getZoomCapabilities();
+        setZoomRange(caps);
+        if (caps) setZoom(caps.min);
+      }
     } catch { /* ignore */ }
     setFacingMode(next);
     setFlipPhase("in");
     await new Promise((r) => setTimeout(r, 180));
     setFlipPhase("idle");
+  };
+
+  const onZoomChange = (val: number) => {
+    setZoom(val);
+    if (adapter?.setZoom) {
+      adapter.setZoom(val);
+    }
   };
 
   const onCapture = async () => {
@@ -296,6 +318,24 @@ export function CameraCaptureClient({ eventCode, onClose, onGalleryClick }: Prop
 
       {!captured && (
         <footer className="absolute bottom-0 left-0 right-0 z-50 flex flex-col items-center px-8 pb-12">
+          {zoomRange && zoomRange.max > zoomRange.min && (
+            <div className="mb-6 flex w-full max-w-[200px] flex-col items-center gap-2">
+              <div className="flex w-full justify-between px-1 text-[10px] font-bold text-white/60">
+                <span>{zoomRange.min}x</span>
+                <span className="text-white bg-black/40 px-1.5 py-0.5 rounded backdrop-blur-sm">{zoom.toFixed(1)}x</span>
+                <span>{zoomRange.max}x</span>
+              </div>
+              <input
+                type="range"
+                min={zoomRange.min}
+                max={zoomRange.max}
+                step={zoomRange.step}
+                value={zoom}
+                onChange={(e) => onZoomChange(parseFloat(e.target.value))}
+                className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-white/20 accent-white outline-none"
+              />
+            </div>
+          )}
           {limitStatus && limitStatus.userLimit !== null && (
             <div className="mb-5 flex flex-col items-center gap-2 w-full">
               <div className={["flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold backdrop-blur-sm", limitStatus.isUserLimitReached ? "bg-red-500/30 text-red-300 ring-1 ring-red-400/40" : "bg-white/10 text-white/90 ring-1 ring-white/20"].join(" ")}>
