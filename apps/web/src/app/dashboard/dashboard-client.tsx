@@ -77,6 +77,7 @@ export default function DashboardClient({
   const [tab, setTab] = useState<Tab>("dashboard");
   const [managingEvent, setManagingEvent] = useState<CreatedEvent | null>(null);
   const [joinCode, setJoinCode] = useState("");
+  const [eventFilter, setEventFilter] = useState<"all" | "hosted" | "joined">("all");
 
   const getTabIndex = (t: Tab) => {
     if (t === "dashboard") return 0;
@@ -199,13 +200,17 @@ export default function DashboardClient({
 
               {participatedEvents.length > 0 && (
                 <section className="space-y-4 px-2">
-                  <div className="flex items-center gap-2">
-                    <div className="h-px flex-1 bg-slate-200" />
-                    <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">My Memory Vault</h2>
-                    <div className="h-px flex-1 bg-slate-200" />
+                  <div className="flex items-end justify-between">
+                    <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Recent Highlights</h2>
+                    <button 
+                      onClick={() => setTab("events")}
+                      className="text-[10px] font-bold text-slate-900 uppercase tracking-wider underline-offset-4 hover:underline"
+                    >
+                      View All
+                    </button>
                   </div>
                   <div className="space-y-3">
-                    {participatedEvents.map((event) => {
+                    {participatedEvents.slice(0, 3).map((event) => {
                       const isCreator = createdEvents.some(ce => ce.id === event.id);
                       return (
                         <EventCard 
@@ -248,58 +253,74 @@ export default function DashboardClient({
 
           {/* Events tab */}
           <div className="w-1/3 h-full overflow-y-auto shrink-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden overscroll-none">
-            <main className="mx-auto max-w-[448px] px-4 pb-28 pt-6">
+            <main className="mx-auto max-w-[448px] px-4 pb-32 pt-6">
               {/* Page header */}
-              <div className="mb-8 flex items-end justify-between">
+              <div className="mb-6 flex items-end justify-between">
                 <div>
-                  <h1 className="text-3xl font-black tracking-tight text-slate-900">My Events</h1>
-                  <p className="mt-1 text-sm text-slate-500">Manage your shared memories</p>
+                  <h1 className="text-3xl font-black tracking-tight text-slate-900 uppercase">My Events</h1>
+                  <p className="mt-1 text-[10px] font-bold text-slate-400 uppercase tracking-widest">The Memory Vault</p>
                 </div>
                 {isAdmin && (
                   <button
                     type="button"
                     onClick={() => setTab("create")}
-                    className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-bold uppercase tracking-widest text-white transition-all active:scale-[0.97] hover:bg-slate-800"
+                    className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900 text-white shadow-lg shadow-slate-200 transition-all active:scale-90"
                   >
-                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <line x1="12" y1="5" x2="12" y2="19" />
-                      <line x1="5" y1="12" x2="19" y2="12" />
-                    </svg>
-                    New Event
+                    <span className="material-symbols-outlined text-[20px]">add</span>
                   </button>
                 )}
               </div>
 
+              {/* Segmented Filter */}
+              <div className="mb-6 flex p-1.5 bg-white border border-slate-200 rounded-2xl shadow-sm">
+                {(["all", "hosted", "joined"] as const).map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => setEventFilter(f)}
+                    className={[
+                      "flex-1 py-2 text-[10px] font-black uppercase tracking-widest transition-all rounded-xl",
+                      eventFilter === f ? "bg-slate-900 text-white shadow-md" : "text-slate-400 hover:text-slate-600"
+                    ].join(" ")}
+                  >
+                    {f}
+                  </button>
+                ))}
+              </div>
+
               {/* Events list */}
-              {createdEvents.length === 0 ? (
-                <div className="rounded-xl border border-slate-200 bg-white px-4 py-12 text-center">
-                  <svg className="mx-auto mb-3 h-10 w-10 text-slate-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="4" width="18" height="18" rx="2" />
-                    <line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
-                  </svg>
-                  <p className="text-sm font-medium text-slate-500">No events yet.</p>
-                  {isAdmin && (
-                    <button
-                      type="button"
-                      onClick={() => setTab("create")}
-                      className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-4 py-2 text-xs font-bold uppercase tracking-widest text-white"
-                    >
-                      Create your first event
-                    </button>
-                  )}
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {createdEvents.map((event) => (
-                    <EventCard
-                      key={event.id}
-                      event={event}
-                      isCreated
-                      onManage={() => setManagingEvent(event)}
-                    />
-                  ))}
-                </div>
-              )}
+              {(() => {
+                const filtered = participatedEvents.filter(event => {
+                  const isCreator = createdEvents.some(ce => ce.id === event.id);
+                  if (eventFilter === "hosted") return isCreator;
+                  if (eventFilter === "joined") return !isCreator;
+                  return true;
+                });
+
+                if (filtered.length === 0) {
+                  return (
+                    <div className="rounded-2xl border-2 border-dashed border-slate-100 px-4 py-20 text-center">
+                      <span className="material-symbols-outlined text-slate-200 text-5xl mb-4">folder_open</span>
+                      <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">No {eventFilter === "all" ? "" : eventFilter} events found</p>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="space-y-4">
+                    {filtered.map((event) => {
+                      const isCreator = createdEvents.some(ce => ce.id === event.id);
+                      return (
+                        <EventCard
+                          key={event.id}
+                          event={event}
+                          isCreated={isCreator}
+                          onManage={isCreator ? () => setManagingEvent(createdEvents.find(ce => ce.id === event.id) || null) : undefined}
+                        />
+                      );
+                    })}
+                  </div>
+                );
+              })()}
             </main>
           </div>
         </div>
