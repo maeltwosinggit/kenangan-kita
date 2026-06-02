@@ -91,24 +91,7 @@ export default function DashboardClient({
               <section className="space-y-1">
                 <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">Hello, {firstName}</h1>
                 <p className="text-sm text-slate-500">Welcome back to your memory hub.</p>
-                {isAdmin && (
-                  <div className="pt-2">
-                    <Link
-                      href="/admin"
-                      className="inline-flex items-center gap-1 rounded-lg border border-amber-500/20 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-100"
-                    >
-                      <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                      </svg>
-                      Admin Access Enabled
-                      <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="9 18 15 12 9 6" />
-                      </svg>
-                    </Link>
-                  </div>
-                )}
-              </section>
-
+                </section>
               <section className="grid grid-cols-2 gap-4">
                 {[
                   { value: photosTaken, label: "Photos Taken" },
@@ -250,7 +233,7 @@ export default function DashboardClient({
           </svg>
         </button>
 
-        <NavButton active={tab === "events"} onClick={() => setTab("events")} label="Events">
+        <NavButton active={tab === "events"} onClick={() => setTab("events")} label="My Events">
           {tab === "events" ? (
             <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="4" width="18" height="18" rx="2" fill="currentColor" opacity="0.15" />
