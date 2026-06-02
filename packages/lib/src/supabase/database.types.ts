@@ -324,6 +324,12 @@ export type Database = {
           limit_enabled: boolean;
         }[];
       };
+      increment_discount_use_count: {
+        Args: {
+          p_code_id: string;
+        };
+        Returns: void;
+      };
     };
     Enums: Record<string, never>;
   };
