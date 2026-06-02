@@ -121,17 +121,67 @@ function PageContent({ page, eventName }: { page: PhotobookPage, eventName: stri
 
 export function HtmlPhotobook({ data }: { data: PhotobookData }) {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [swipeOffset, setSwipeOffset] = useState(0);
   
-  const goNext = () => setCurrentIndex(i => Math.min(i + 1, data.pages.length - 1));
-  const goPrev = () => setCurrentIndex(i => Math.max(i - 1, 0));
+  const goNext = () => {
+    if (currentIndex < data.pages.length - 1) {
+      setCurrentIndex(i => i + 1);
+    }
+  };
+  
+  const goPrev = () => {
+    if (currentIndex > 0) {
+      setCurrentIndex(i => i - 1);
+    }
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.touches[0].clientX);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (touchStart === null) return;
+    const currentTouch = e.touches[0].clientX;
+    const diff = currentTouch - touchStart;
+    
+    // Optional: Add resistance at edges
+    if ((currentIndex === 0 && diff > 0) || (currentIndex === data.pages.length - 1 && diff < 0)) {
+      setSwipeOffset(diff * 0.3);
+    } else {
+      setSwipeOffset(diff);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (touchStart === null) return;
+    
+    if (swipeOffset > 50) {
+      goPrev();
+    } else if (swipeOffset < -50) {
+      goNext();
+    }
+    
+    setTouchStart(null);
+    setSwipeOffset(0);
+  };
 
   const page = data.pages[currentIndex];
 
   return (
-    <div className="flex flex-col items-center w-full max-w-4xl mx-auto h-full justify-center px-4 md:px-12 py-8">
+    <div className="flex flex-col items-center w-full max-w-4xl mx-auto h-full justify-between px-4 md:px-12 py-8 overflow-hidden">
       
-      {/* Book Container (Landscape aspect ratio) */}
-      <div className="relative w-full aspect-[1.414/1] max-h-[70vh] bg-white shadow-[0_20px_50px_rgba(0,0,0,0.5)] rounded-r-lg border-l-[12px] border-slate-300 overflow-hidden ring-1 ring-slate-200">
+      {/* Book Container (Landscape aspect ratio, responsive) */}
+      <div 
+        className="relative w-full bg-white shadow-[0_20px_50px_rgba(0,0,0,0.5)] rounded-r-lg border-l-[12px] border-slate-300 overflow-hidden ring-1 ring-slate-200 transition-transform duration-300 ease-out"
+        style={{ 
+          aspectRatio: '1.414 / 1', // A4 Landscape ratio
+          transform: `translateX(${swipeOffset}px)`
+        }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
          
          {/* Subtle inner spine shadow */}
          <div className="absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-black/20 to-transparent z-10 pointer-events-none" />
@@ -140,28 +190,28 @@ export function HtmlPhotobook({ data }: { data: PhotobookData }) {
       </div>
       
       {/* Controls */}
-      <div className="flex items-center justify-between w-full mt-8 md:px-10">
+      <div className="flex items-center justify-between w-full mt-6 md:mt-8 md:px-10 shrink-0">
         <button 
           onClick={goPrev} 
           disabled={currentIndex === 0}
-          className="flex h-14 w-14 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 active:scale-95 disabled:opacity-20"
+          className="flex h-12 w-12 md:h-14 md:w-14 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 active:scale-95 disabled:opacity-20"
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-6 w-6"><polyline points="15 18 9 12 15 6" /></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-5 w-5 md:h-6 md:w-6"><polyline points="15 18 9 12 15 6" /></svg>
         </button>
         
         <div className="flex flex-col items-center">
-            <span className="text-sm font-bold text-white tracking-widest font-mono">
+            <span className="text-sm md:text-base font-bold text-white tracking-widest font-mono">
               {currentIndex + 1} / {data.pages.length}
             </span>
-            <span className="text-[9px] uppercase tracking-widest text-white/50 mt-1">Page</span>
+            <span className="text-[9px] md:text-[10px] uppercase tracking-widest text-white/50 mt-1">Page</span>
         </div>
         
         <button 
           onClick={goNext} 
           disabled={currentIndex === data.pages.length - 1}
-          className="flex h-14 w-14 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 active:scale-95 disabled:opacity-20"
+          className="flex h-12 w-12 md:h-14 md:w-14 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 active:scale-95 disabled:opacity-20"
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-6 w-6"><polyline points="9 18 15 12 9 6" /></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-5 w-5 md:h-6 md:w-6"><polyline points="9 18 15 12 9 6" /></svg>
         </button>
       </div>
     </div>
