@@ -9,6 +9,7 @@ const createEventInputSchema = z.object({
   coverImagePath: z.string(),
   upload_limit_enabled: z.boolean().optional(),
   max_uploads_total: z.number().optional(),
+  discount_code_id: z.string().uuid().optional(),
 });
 
 const updateEventInputSchema = z.object({
@@ -82,6 +83,14 @@ export async function createEvent(
     .single();
 
   if (error) throw error;
+
+  // Increment discount code usage if provided
+  if (parsed.discount_code_id) {
+    const { error: discountError } = await supabase.rpc("increment_discount_use_count", { p_code_id: parsed.discount_code_id });
+    // Log error but don't block event creation if just the counter fails
+    if (discountError) console.error("Failed to increment discount count:", discountError);
+  }
+
   return data as EventRow;
 }
 

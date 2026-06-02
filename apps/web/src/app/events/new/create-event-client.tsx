@@ -178,7 +178,8 @@ export default function CreateEventForm({
         eventDate, 
         coverImagePath,
         upload_limit_enabled: selectedPlan?.photo_limit !== null,
-        max_uploads_total: selectedPlan?.photo_limit ?? undefined
+        max_uploads_total: selectedPlan?.photo_limit ?? undefined,
+        discount_code_id: appliedDiscount?.id
       }, supabase);
 
       const res: CreateEventResult = { eventCode: created.event_code, eventId: created.id };
