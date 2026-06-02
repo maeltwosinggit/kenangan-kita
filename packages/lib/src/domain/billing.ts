@@ -90,7 +90,7 @@ export async function generateDiscountCode(input: {
       value: input.value,
       max_uses: input.maxUses ?? null,
       expires_at: input.expiresAt ?? null,
-      created_by: user?.id
+      created_by: user?.id ?? null
     })
     .select("*")
     .single();
