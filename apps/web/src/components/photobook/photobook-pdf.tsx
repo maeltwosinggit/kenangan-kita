@@ -234,7 +234,9 @@ export function PhotobookPDF({ data }: { data: PhotobookData }) {
 }
 
 function formatFuji(photo: any) {
+  if (!photo || !photo.captured_at) return "";
   const d = new Date(photo.captured_at);
+  if (isNaN(d.getTime())) return "";
   return `${d.toLocaleDateString().replace(/\//g, ".")} ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}`;
 }
 
