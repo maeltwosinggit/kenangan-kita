@@ -81,6 +81,7 @@ export default function DashboardClient({
   const [joinCode, setJoinCode] = useState("");
   const [isJoining, setIsJoining] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
+  const [joinSuccess, setJoinSuccess] = useState(false);
   const [eventFilter, setEventFilter] = useState<"all" | "hosted" | "joined">("all");
   const router = useRouter();
 
@@ -98,10 +99,12 @@ export default function DashboardClient({
 
     setIsJoining(true);
     setJoinError(null);
+    setJoinSuccess(false);
 
     try {
       const event = await getEventByCode(code);
       if (event) {
+        setJoinSuccess(true);
         router.push(`/e/${code}`);
       } else {
         setJoinError("Code not found");
@@ -192,28 +195,35 @@ export default function DashboardClient({
                       "w-full h-14 rounded-2xl bg-white border pl-4 pr-10 text-sm font-black tracking-[0.2em] focus:ring-2 focus:outline-none shadow-sm transition-all",
                       joinError 
                         ? "border-red-500 ring-red-500 animate-shake" 
+                        : joinSuccess
+                        ? "border-green-500 ring-green-500"
                         : "border-slate-200 focus:ring-slate-900"
                     ].join(" ")}
                   />
                   <button 
                     type="submit"
                     disabled={isJoining || !joinCode}
-                    className="absolute right-2 top-2 h-10 w-10 flex items-center justify-center rounded-xl bg-slate-900 text-white transition-transform active:scale-90 disabled:opacity-50"
+                    className={[
+                      "absolute right-2 top-2 h-10 w-10 flex items-center justify-center rounded-xl transition-all active:scale-90 disabled:opacity-50",
+                      joinSuccess ? "bg-green-600 text-white" : "bg-slate-900 text-white"
+                    ].join(" ")}
                   >
-                    {isJoining ? (
+                    {isJoining && !joinSuccess ? (
                       <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
                       </svg>
+                    ) : joinSuccess ? (
+                      <span className="material-symbols-outlined">check</span>
                     ) : (
                       <span className="material-symbols-outlined">arrow_forward</span>
                     )}
                   </button>
                   <label className={[
                     "absolute -top-2 left-4 bg-white px-2 text-[8px] font-black uppercase tracking-widest transition-colors",
-                    joinError ? "text-red-500" : "text-slate-400"
+                    joinError ? "text-red-500" : joinSuccess ? "text-green-600" : "text-slate-400"
                   ].join(" ")}>
-                    {joinError || "Join Group"}
+                    {joinError || (joinSuccess ? "Joining Group..." : "Join Group")}
                   </label>
                 </form>
 
