@@ -1,13 +1,16 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { createEvent } from "@kenangan/lib";
+import { useState, useRef, useEffect } from "react";
+import { createEvent, listPricingPlans, validateDiscountCode, type PricingPlan, type DiscountCode } from "@kenangan/lib";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { QRCodeDisplay } from "@/components/qr-code-display";
+import Image from "next/image";
 
 const MAX_FILE_BYTES = 10 * 1024 * 1024; // 10 MB
 
 export type CreateEventResult = { eventCode: string; eventId: string };
+
+type Step = "details" | "pricing";
 
 export default function CreateEventForm({
   onSuccess,
@@ -15,10 +18,19 @@ export default function CreateEventForm({
   /** Called after successful creation. If omitted the component manages its own success state. */
   onSuccess?: (result: CreateEventResult) => void;
 }) {
+  const [step, setStep] = useState<Step>("details");
   const [name, setName] = useState("");
   const [eventDate, setEventDate] = useState("");
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
+  
+  // Billing states
+  const [plans, setPlans] = useState<PricingPlan[]>([]);
+  const [selectedPlan, setSelectedPlan] = useState<PricingPlan | null>(null);
+  const [discountInput, setDiscountInput] = useState("");
+  const [appliedDiscount, setAppliedDiscount] = useState<DiscountCode | null>(null);
+  const [isValidatingDiscount, setIsValidatingDiscount] = useState(false);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<CreateEventResult | null>(null);
@@ -27,6 +39,44 @@ export default function CreateEventForm({
 
   const galleryRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    listPricingPlans().then(p => {
+      setPlans(p);
+      if (p.length > 0) setSelectedPlan(p[0]);
+    }).catch(console.error);
+  }, []);
+
+  const handleApplyDiscount = async () => {
+    if (!discountInput.trim()) return;
+    setIsValidatingDiscount(true);
+    setError(null);
+    try {
+      const code = await validateDiscountCode(discountInput);
+      if (code) {
+        setAppliedDiscount(code);
+        setDiscountInput("");
+      } else {
+        setError("Invalid or expired discount code");
+      }
+    } catch (err) {
+      setError("Failed to validate code");
+    } finally {
+      setIsValidatingDiscount(false);
+    }
+  };
+
+  const calculateFinalPrice = () => {
+    if (!selectedPlan) return 0;
+    if (!appliedDiscount) return selectedPlan.price_cents;
+
+    if (appliedDiscount.discount_type === 'percentage') {
+      const discount = Math.round(selectedPlan.price_cents * (appliedDiscount.value / 100));
+      return Math.max(0, selectedPlan.price_cents - discount);
+    } else {
+      return Math.max(0, selectedPlan.price_cents - appliedDiscount.value);
+    }
+  };
 
   const handleFile = (file: File | null) => {
     if (!file) return;
@@ -44,19 +94,16 @@ export default function CreateEventForm({
     setOpeningPicker(type);
     ref.current?.click();
     
-    // The OS file picker causes the browser window to lose focus. 
-    // We clear the "opening" state once the window regains focus (when picker closes).
     const handleFocus = () => {
       setOpeningPicker(null);
       window.removeEventListener("focus", handleFocus);
     };
     window.addEventListener("focus", handleFocus);
-    
-    // Fallback in case focus event isn't reliable on some mobile browsers
     setTimeout(handleFocus, 2000);
   };
 
   const reset = () => {
+    setStep("details");
     setName("");
     setEventDate("");
     setCoverFile(null);
@@ -65,13 +112,27 @@ export default function CreateEventForm({
     setResult(null);
     setError(null);
     setCopied(false);
+    setAppliedDiscount(null);
   };
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (step === "details") {
+      setStep("pricing");
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
+      const finalPrice = calculateFinalPrice();
+      
+      if (finalPrice > 0) {
+        setError("Online payment integration is coming soon. Use a 100% discount code for testing.");
+        setLoading(false);
+        return;
+      }
+
       const supabase = getSupabaseBrowserClient();
       let coverImagePath: string | undefined;
       if (coverFile) {
@@ -84,7 +145,14 @@ export default function CreateEventForm({
         coverImagePath = path;
       }
 
-      const created = await createEvent({ name, eventDate, coverImagePath }, supabase);
+      const created = await createEvent({ 
+        name, 
+        eventDate, 
+        coverImagePath,
+        upload_limit_enabled: selectedPlan?.photo_limit !== null,
+        max_uploads_total: selectedPlan?.photo_limit ?? undefined
+      }, supabase);
+
       const res: CreateEventResult = { eventCode: created.event_code, eventId: created.id };
       setResult(res);
       onSuccess?.(res);
@@ -105,19 +173,19 @@ export default function CreateEventForm({
   /* ── Success state ── */
   if (result && guestUrl) {
     return (
-      <div className="flex flex-col items-center gap-6 px-4 py-10 text-center">
+      <div className="flex flex-col items-center gap-6 px-4 py-10 text-center animate-in fade-in zoom-in-95">
         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-3xl">
           🎉
         </div>
         <div>
-          <h2 className="text-xl font-bold text-slate-900">Event Created!</h2>
-          <p className="mt-1 text-sm text-slate-500">Share this link with your guests</p>
+          <h2 className="text-xl font-bold text-slate-900 uppercase">Event Created!</h2>
+          <p className="mt-1 text-sm text-slate-500 font-medium">Share this link with your guests</p>
         </div>
 
         <QRCodeDisplay url={guestUrl} size={180} />
 
-        <div className="w-full rounded-xl border border-slate-200 bg-slate-50 p-4">
-          <p className="break-all font-mono text-sm text-slate-700">{guestUrl}</p>
+        <div className="w-full rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <p className="break-all font-mono text-sm font-bold text-slate-700 tracking-tight mb-4">{guestUrl}</p>
           <button
             type="button"
             onClick={async () => {
@@ -125,9 +193,9 @@ export default function CreateEventForm({
               setCopied(true);
               setTimeout(() => setCopied(false), 2000);
             }}
-            className="mt-3 w-full rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-bold text-white transition-transform active:scale-[0.98]"
+            className="w-full rounded-xl bg-slate-900 px-4 py-3 text-xs font-black uppercase tracking-widest text-white transition-all active:scale-[0.98]"
           >
-            {copied ? "✓ Copied!" : "Copy Link"}
+            {copied ? "✓ Copied!" : "Copy Magic Link"}
           </button>
         </div>
 
@@ -136,22 +204,15 @@ export default function CreateEventForm({
             href={`/admin/events/${result.eventId}/print`}
             target="_blank"
             rel="noopener noreferrer"
-            className="block w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-center text-sm font-medium text-slate-700 hover:bg-slate-50"
+            className="flex items-center justify-center gap-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 transition-colors"
           >
-            Print QR Card 🖨️
-          </a>
-          <a
-            href={`/e/${result.eventCode}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-center text-sm font-medium text-slate-700 hover:bg-slate-50"
-          >
-            Open Event Page ↗
+            <span className="material-symbols-outlined text-[20px]">print</span>
+            Print QR Card
           </a>
           <button
             type="button"
             onClick={reset}
-            className="w-full rounded-lg px-4 py-2.5 text-sm text-slate-500 hover:text-slate-800"
+            className="w-full rounded-xl px-4 py-3 text-xs font-bold uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-colors"
           >
             Create Another Event
           </button>
@@ -160,143 +221,276 @@ export default function CreateEventForm({
     );
   }
 
-  /* ── Form ── */
   return (
-    <form onSubmit={onSubmit} className="space-y-5 px-4 py-6">
-      {/* Cover photo */}
-      <div>
-        <p className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-500">
-          Cover Photo <span className="font-normal normal-case text-slate-400">(optional)</span>
-        </p>
+    <form onSubmit={onSubmit} className="px-4 py-6 space-y-6">
+      
+      {/* ── PROGRESS INDICATOR ── */}
+      <div className="flex items-center gap-4 px-2 mb-2">
+        <div className="flex items-center gap-2">
+           <div className={["h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-black", step === 'details' ? "bg-slate-900 text-white" : "bg-green-500 text-white"].join(" ")}>
+              {step === 'details' ? "1" : "✓"}
+           </div>
+           <span className={["text-[10px] font-black uppercase tracking-widest", step === 'details' ? "text-slate-900" : "text-slate-400"].join(" ")}>Details</span>
+        </div>
+        <div className="h-px flex-1 bg-slate-200" />
+        <div className="flex items-center gap-2">
+           <div className={["h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-black", step === 'pricing' ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-400"].join(" ")}>
+              2
+           </div>
+           <span className={["text-[10px] font-black uppercase tracking-widest", step === 'pricing' ? "text-slate-900" : "text-slate-400"].join(" ")}>Pricing</span>
+        </div>
+      </div>
 
-        {/* Preview / placeholder */}
-        <button
-          type="button"
-          onClick={() => galleryRef.current?.click()}
-          className="relative flex h-44 w-full cursor-pointer items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 transition-colors hover:bg-slate-100"
-        >
-          {coverPreview ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={coverPreview} alt="Cover preview" className="h-full w-full object-cover" />
-          ) : (
-            <div className="flex flex-col items-center gap-2 text-slate-400">
-              <svg className="h-10 w-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="3" width="18" height="18" rx="2" />
-                <circle cx="8.5" cy="8.5" r="1.5" />
-                <polyline points="21 15 16 10 5 21" />
-              </svg>
-              <span className="text-xs font-medium">Tap to add cover photo</span>
-            </div>
-          )}
-          {coverPreview && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 transition-opacity hover:opacity-100">
-              <span className="text-xs font-bold text-white">Change Photo</span>
-            </div>
-          )}
-        </button>
+      {step === "details" ? (
+        <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+          {/* Cover photo */}
+          <div>
+            <p className="mb-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+              Cover Photo <span className="font-bold normal-case text-slate-300 ml-1">(Optional)</span>
+            </p>
 
-        {/* Camera / Gallery buttons */}
-        <div className="mt-2 flex gap-2">
-          <button
-            type="button"
-            onClick={() => openPicker("camera", cameraRef)}
-            disabled={openingPicker !== null}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white py-2.5 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-50 active:bg-slate-100 disabled:opacity-70"
-          >
-            {openingPicker === "camera" ? (
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-400 border-t-transparent" />
+            <button
+              type="button"
+              onClick={() => galleryRef.current?.click()}
+              className="relative flex h-44 w-full cursor-pointer items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-slate-200 bg-white transition-all hover:border-slate-300 group"
+            >
+              {coverPreview ? (
+                <img src={coverPreview} alt="Cover preview" className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex flex-col items-center gap-2 text-slate-300">
+                  <span className="material-symbols-outlined text-5xl">add_a_photo</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest">Tap to add</span>
+                </div>
+              )}
+              {coverPreview && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-white">Change Photo</span>
+                </div>
+              )}
+            </button>
+
+            <div className="mt-3 flex gap-3">
+              <button
+                type="button"
+                onClick={() => openPicker("camera", cameraRef)}
+                disabled={openingPicker !== null}
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-3 text-[10px] font-black uppercase tracking-widest text-slate-600 transition-all active:scale-95 disabled:opacity-50"
+              >
+                {openingPicker === "camera" ? (
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-400 border-t-transparent" />
+                ) : (
+                  <span className="material-symbols-outlined text-[18px]">photo_camera</span>
+                )}
+                Camera
+              </button>
+              <button
+                type="button"
+                onClick={() => openPicker("gallery", galleryRef)}
+                disabled={openingPicker !== null}
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-3 text-[10px] font-black uppercase tracking-widest text-slate-600 transition-all active:scale-95 disabled:opacity-50"
+              >
+                {openingPicker === "gallery" ? (
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-400 border-t-transparent" />
+                ) : (
+                  <span className="material-symbols-outlined text-[18px]">image</span>
+                )}
+                Gallery
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+              Event Name
+            </label>
+            <input
+              className="w-full rounded-2xl border border-slate-200 bg-white px-5 py-4 text-sm font-bold text-slate-900 outline-none transition focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
+              placeholder="e.g. Sarah's Wedding"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              minLength={2}
+            />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+              Event Date
+            </label>
+            <input
+              className="w-full rounded-2xl border border-slate-200 bg-white px-5 py-4 text-sm font-bold text-slate-900 outline-none transition focus:border-slate-900 focus:ring-1 focus:ring-slate-900 appearance-none"
+              type="date"
+              value={eventDate}
+              onChange={(e) => setEventDate(e.target.value)}
+              required
+            />
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+          <div>
+            <p className="mb-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 px-1">
+              Select Your Plan
+            </p>
+            <div className="space-y-3">
+              {plans.map((plan) => (
+                <button
+                  key={plan.id}
+                  type="button"
+                  onClick={() => setSelectedPlan(plan)}
+                  className={[
+                    "w-full relative overflow-hidden rounded-2xl border-2 p-5 text-left transition-all",
+                    selectedPlan?.id === plan.id 
+                      ? "border-slate-900 bg-slate-900 text-white shadow-xl translate-y-[-2px]" 
+                      : "border-slate-200 bg-white text-slate-900 hover:border-slate-300"
+                  ].join(" ")}
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <h4 className="text-lg font-black uppercase tracking-tight leading-none">{plan.name}</h4>
+                      <p className={["text-[10px] font-bold mt-1 uppercase tracking-wider", selectedPlan?.id === plan.id ? "text-slate-400" : "text-slate-400"].join(" ")}>
+                        {plan.price_cents === 0 ? "Completely Free" : `$${(plan.price_cents / 100).toFixed(0)} One-time`}
+                      </p>
+                    </div>
+                    {selectedPlan?.id === plan.id && (
+                      <span className="material-symbols-outlined text-white">check_circle</span>
+                    )}
+                  </div>
+                  <p className={["text-xs font-medium leading-relaxed mb-4", selectedPlan?.id === plan.id ? "text-slate-300" : "text-slate-500"].join(" ")}>
+                    {plan.description}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {plan.features.slice(0, 3).map((f, i) => (
+                      <span key={i} className={["text-[8px] font-black uppercase tracking-widest px-2 py-1 rounded-lg", selectedPlan?.id === plan.id ? "bg-white/10 text-white" : "bg-slate-50 text-slate-500"].join(" ")}>
+                        {f}
+                      </span>
+                    ))}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Discount Section */}
+          <div className="pt-2">
+             <p className="mb-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 px-1">
+              Promotional Code
+            </p>
+            {appliedDiscount ? (
+              <div className="flex items-center justify-between rounded-2xl bg-green-50 border border-green-200 p-4">
+                <div className="flex items-center gap-3">
+                  <span className="material-symbols-outlined text-green-600">sell</span>
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-green-700">{appliedDiscount.code}</p>
+                    <p className="text-[9px] font-bold text-green-600">
+                      {appliedDiscount.discount_type === 'percentage' ? `${appliedDiscount.value}% OFF Applied` : `$${(appliedDiscount.value/100).toFixed(2)} OFF Applied`}
+                    </p>
+                  </div>
+                </div>
+                <button 
+                  type="button" 
+                  onClick={() => setAppliedDiscount(null)}
+                  className="text-[10px] font-black uppercase tracking-widest text-green-700 opacity-60 hover:opacity-100"
+                >
+                  Remove
+                </button>
+              </div>
             ) : (
-              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                <circle cx="12" cy="13" r="4" />
-              </svg>
+              <div className="relative group">
+                <input 
+                  type="text" 
+                  placeholder="SAVE20"
+                  value={discountInput}
+                  onChange={(e) => setDiscountInput(e.target.value.toUpperCase())}
+                  className="w-full h-14 rounded-2xl bg-white border border-slate-200 pl-4 pr-12 text-sm font-black tracking-[0.2em] focus:border-slate-900 focus:outline-none transition-all shadow-sm"
+                />
+                <button 
+                  type="button"
+                  onClick={handleApplyDiscount}
+                  disabled={isValidatingDiscount || !discountInput}
+                  className="absolute right-2 top-2 h-10 px-4 flex items-center justify-center rounded-xl bg-slate-100 text-slate-900 text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50"
+                >
+                  {isValidatingDiscount ? "..." : "Apply"}
+                </button>
+              </div>
             )}
-            Camera
-          </button>
-          <button
-            type="button"
-            onClick={() => openPicker("gallery", galleryRef)}
-            disabled={openingPicker !== null}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white py-2.5 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-50 active:bg-slate-100 disabled:opacity-70"
+          </div>
+
+          {/* Price Summary */}
+          {selectedPlan && selectedPlan.price_cents > 0 && (
+             <div className="rounded-2xl bg-slate-50 p-5 space-y-2">
+                <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-slate-400">
+                   <span>Subtotal</span>
+                   <span>${(selectedPlan.price_cents / 100).toFixed(2)}</span>
+                </div>
+                {appliedDiscount && (
+                   <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-green-600">
+                      <span>Discount</span>
+                      <span>-${((selectedPlan.price_cents - calculateFinalPrice()) / 100).toFixed(2)}</span>
+                   </div>
+                )}
+                <div className="h-px bg-slate-200 my-2" />
+                <div className="flex justify-between text-sm font-black uppercase tracking-widest text-slate-900">
+                   <span>Total</span>
+                   <span>${(calculateFinalPrice() / 100).toFixed(2)}</span>
+                </div>
+             </div>
+          )}
+
+          <button 
+            type="button" 
+            onClick={() => setStep("details")}
+            className="w-full text-[10px] font-black uppercase tracking-[0.2em] text-slate-300 hover:text-slate-500 transition-colors"
           >
-            {openingPicker === "gallery" ? (
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-400 border-t-transparent" />
-            ) : (
-              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="3" width="18" height="18" rx="2" />
-                <circle cx="8.5" cy="8.5" r="1.5" />
-                <polyline points="21 15 16 10 5 21" />
-              </svg>
-            )}
-            Gallery
+            Go Back
           </button>
         </div>
-
-        {/* Hidden inputs */}
-        <input
-          ref={galleryRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={(e) => handleFile(e.target.files?.[0] ?? null)}
-        />
-        <input
-          ref={cameraRef}
-          type="file"
-          accept="image/*"
-          capture="environment"
-          className="hidden"
-          onChange={(e) => handleFile(e.target.files?.[0] ?? null)}
-        />
-      </div>
-
-      {/* Event name */}
-      <div>
-        <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">
-          Event Name
-        </label>
-        <input
-          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:ring-1 focus:ring-slate-400"
-          placeholder="e.g. Sarah's Wedding"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-          minLength={2}
-        />
-      </div>
-
-      {/* Event date */}
-      <div>
-        <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">
-          Event Date
-        </label>
-        <input
-          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:ring-1 focus:ring-slate-400"
-          type="date"
-          value={eventDate}
-          onChange={(e) => setEventDate(e.target.value)}
-          required
-        />
-      </div>
+      )}
 
       {error && (
-        <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">{error}</p>
+        <div className="rounded-2xl bg-red-50 border border-red-100 px-5 py-4 text-[11px] font-bold text-red-600 animate-in fade-in slide-in-from-top-2">
+          {error}
+        </div>
       )}
 
       <button
         type="submit"
-        disabled={loading}
-        className="w-full rounded-xl bg-slate-900 px-4 py-3.5 text-sm font-bold uppercase tracking-widest text-white transition-transform active:scale-[0.98] disabled:opacity-50"
+        disabled={loading || (step === 'pricing' && !selectedPlan)}
+        className={[
+          "w-full rounded-2xl py-4 text-xs font-black uppercase tracking-[0.3em] text-white shadow-xl transition-all active:scale-[0.98] disabled:opacity-50",
+          step === 'pricing' && calculateFinalPrice() > 0 ? "bg-indigo-600 shadow-indigo-100" : "bg-slate-900 shadow-slate-200"
+        ].join(" ")}
       >
         {loading ? (
           <span className="flex items-center justify-center gap-2">
             <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
             Creating…
           </span>
+        ) : step === "details" ? (
+          "Continue to Pricing"
+        ) : calculateFinalPrice() === 0 ? (
+          "Create Free Event"
         ) : (
-          "Create Event"
+          `Pay $${(calculateFinalPrice() / 100).toFixed(2)} & Create`
         )}
       </button>
+
+      {/* Hidden inputs */}
+      <input
+        ref={galleryRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => handleFile(e.target.files?.[0] ?? null)}
+      />
+      <input
+        ref={cameraRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={(e) => handleFile(e.target.files?.[0] ?? null)}
+      />
     </form>
   );
 }
