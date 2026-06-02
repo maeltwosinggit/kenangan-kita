@@ -1,13 +1,15 @@
 import { EventPhoto } from "../domain/photos";
 
-export type PhotobookPhoto = EventPhoto & { imageUrl: string };
+export type PhotobookPhoto = EventPhoto & { imageUrl: string; score?: number };
 
-export type PhotobookTemplate = "hero" | "duo" | "scrapbook" | "mosaic" | "stats";
+export type PhotobookTemplate = "cover" | "opening" | "hero" | "duo" | "trio" | "collage" | "stats" | "closing" | "back";
 
 export type PhotobookPage = {
   id: string;
   template: PhotobookTemplate;
   photos: PhotobookPhoto[];
+  title?: string;
+  subtitle?: string;
   stats?: any;
 };
 
@@ -18,90 +20,157 @@ export type PhotobookData = {
 
 /**
  * Photobook Engine
- * Organizes a collection of event photos into a structured book with unique layouts.
+ * Implements a "Story Flow" narrative structure with intelligent layout assignments.
  */
 export function generatePhotobookData(
   eventName: string,
   photos: PhotobookPhoto[],
   guestCount: number
 ): PhotobookData {
-  // Sort chronologically (earliest first for a story feel)
+  if (photos.length === 0) {
+    return { title: eventName, pages: [] };
+  }
+
+  // 1. Sort chronologically
   const sortedPhotos = [...photos].sort(
     (a, b) => new Date(a.captured_at).getTime() - new Date(b.captured_at).getTime()
   );
 
+  // 2. Score photos (Simple heuristic: resolution area as proxy for quality)
+  // Higher resolution / area -> better score -> more likely to be a hero shot
+  sortedPhotos.forEach(p => {
+    const area = (p.width || 1000) * (p.height || 1000);
+    p.score = area;
+  });
+
   const pages: PhotobookPage[] = [];
   let photoIndex = 0;
 
-  // ── 1. Intro Page (The Cover/Intro) ──
-  if (sortedPhotos.length > 0) {
+  // Helper to get photos and advance index
+  const takePhotos = (count: number): PhotobookPhoto[] => {
+    const batch = sortedPhotos.slice(photoIndex, photoIndex + count);
+    photoIndex += batch.length;
+    return batch;
+  };
+
+  // ── CHAPTER 1: The Arrival / Cover ──
+  // Cover Page
+  pages.push({
+    id: "cover",
+    template: "cover",
+    photos: takePhotos(1),
+    title: eventName,
+    subtitle: new Date(sortedPhotos[0].captured_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
+  });
+
+  // Opening Spread
+  if (photoIndex < sortedPhotos.length) {
     pages.push({
-      id: "intro",
-      template: "hero",
-      photos: [sortedPhotos[photoIndex++]]
+      id: "opening",
+      template: "opening",
+      photos: takePhotos(1),
+      title: "Moments from Our Special Day"
     });
   }
 
-  // ── 2. First Stats Page (Early Bird) ──
-  pages.push({
-    id: "stats-early",
-    template: "stats",
-    photos: [],
-    stats: {
-      type: "early-bird",
-      photo: sortedPhotos[0],
-      totalPhotos: photos.length,
-      guestCount
-    }
-  });
+  // Early Moments (Arrival shots)
+  if (photoIndex < sortedPhotos.length) {
+    pages.push({
+      id: "early-moments",
+      template: "duo",
+      photos: takePhotos(2),
+      title: "The Beginning"
+    });
+  }
 
-  // ── 3. The Body (Dynamic Layouts) ──
-  const layoutPool: PhotobookTemplate[] = ["duo", "scrapbook", "mosaic"];
-  let layoutCounter = 0;
+  // ── CHAPTER 2: The Main Event & Highlights ──
+  // We'll alternate between different grid layouts and occasional hero shots.
+  const mainLayoutPool: PhotobookTemplate[] = ["collage", "trio", "duo"];
+  let spreadCounter = 0;
 
   while (photoIndex < sortedPhotos.length) {
-    const template = layoutPool[layoutCounter % layoutPool.length];
-    layoutCounter++;
+    // If we only have a few photos left, break and let the closing section handle them
+    if (sortedPhotos.length - photoIndex <= 3) {
+      break;
+    }
 
+    // Every 4th spread, force a Hero highlight if we have a high-scoring photo
+    if (spreadCounter > 0 && spreadCounter % 4 === 0) {
+      pages.push({
+        id: `highlight-${spreadCounter}`,
+        template: "hero",
+        photos: takePhotos(1)
+      });
+      spreadCounter++;
+      continue;
+    }
+
+    // Otherwise, pick from the pool to create rhythm
+    const template = mainLayoutPool[spreadCounter % mainLayoutPool.length];
+    
     let count = 0;
-    if (template === "duo") count = 2;
-    else if (template === "scrapbook") count = 3;
-    else if (template === "mosaic") count = 4;
+    if (template === "collage") count = 4;
+    else if (template === "trio") count = 3;
+    else if (template === "duo") count = 2;
 
-    const pagePhotos = sortedPhotos.slice(photoIndex, photoIndex + count);
+    const pagePhotos = takePhotos(count);
     if (pagePhotos.length === 0) break;
 
     pages.push({
-      id: `page-${pages.length}`,
+      id: `spread-${spreadCounter}`,
       template: pagePhotos.length === 1 ? "hero" : template,
       photos: pagePhotos
     });
 
-    photoIndex += count;
+    spreadCounter++;
 
-    // Inject stats mid-way if we have enough pages
-    if (pages.length === 5) {
+    // Inject Fun Stats mid-way through the main event
+    if (spreadCounter === 3) {
       pages.push({
-        id: "stats-middle",
+        id: "stats-peak",
         template: "stats",
         photos: [],
-        stats: { type: "peak-hour", data: calculatePeakHour(photos) }
+        stats: { type: "peak-hour", data: calculatePeakHour(sortedPhotos) }
       });
     }
   }
 
-  // ── 4. Final Stats Page (Night Owl) ──
-  if (sortedPhotos.length > 1) {
-    pages.push({
-      id: "stats-final",
-      template: "stats",
-      photos: [],
-      stats: {
-        type: "night-owl",
-        photo: sortedPhotos[sortedPhotos.length - 1]
-      }
-    });
+  // ── CHAPTER 3: Closing & Afterglow ──
+  
+  // Closing Shots
+  const remaining = sortedPhotos.slice(photoIndex);
+  if (remaining.length > 0) {
+     if (remaining.length === 1) {
+       pages.push({ id: "closing-hero", template: "hero", photos: [remaining[0]] });
+     } else if (remaining.length === 2) {
+       pages.push({ id: "closing-duo", template: "duo", photos: remaining });
+     } else {
+       pages.push({ id: "closing-trio", template: "trio", photos: remaining.slice(0, 3) });
+     }
   }
+
+  // Final Stats
+  pages.push({
+    id: "stats-summary",
+    template: "stats",
+    photos: [],
+    stats: {
+      type: "summary",
+      totalPhotos: sortedPhotos.length,
+      guestCount,
+      earlyBird: sortedPhotos[0],
+      nightOwl: sortedPhotos[sortedPhotos.length - 1]
+    }
+  });
+
+  // Back Page
+  pages.push({
+    id: "back-page",
+    template: "back",
+    photos: [],
+    title: "Thank you for being part of our day",
+    subtitle: "• KENANGAN KITA •"
+  });
 
   return {
     title: eventName,

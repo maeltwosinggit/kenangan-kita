@@ -131,6 +131,21 @@ export function PhotobookPDF({ data }: { data: PhotobookData }) {
               </View>
             )}
 
+            {page.template === "cover" && (
+              <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+                <PDFImage src={page.photos[0].imageUrl} style={{ width: "80%", height: 350, objectFit: "cover", borderRadius: 8 }} />
+                <Text style={{ fontSize: 32, fontFamily: "Helvetica-Bold", color: "#0f172a", marginTop: 20 }}>{page.title?.toUpperCase()}</Text>
+                <Text style={{ fontSize: 14, color: "#64748b", marginTop: 10 }}>{page.subtitle}</Text>
+              </View>
+            )}
+
+            {page.template === "opening" && (
+              <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+                <Text style={{ fontSize: 28, fontFamily: "Helvetica-Bold", color: "#0f172a", marginBottom: 20 }}>{page.title?.toUpperCase()}</Text>
+                <PDFImage src={page.photos[0].imageUrl} style={{ width: "100%", height: 350, objectFit: "cover", borderRadius: 8 }} />
+              </View>
+            )}
+
             {page.template === "duo" && (
               <View style={styles.duoContainer}>
                 {page.photos.map((p, i) => (
@@ -142,10 +157,31 @@ export function PhotobookPDF({ data }: { data: PhotobookData }) {
               </View>
             )}
 
-            {page.template === "mosaic" && (
+            {page.template === "trio" && (
+              <View style={{ flexDirection: "row", gap: 10, height: 450 }}>
+                <View style={{ flex: 2 }}>
+                   <PDFImage src={page.photos[0].imageUrl} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 8 }} />
+                   <Text style={styles.fujiStamp}>{formatFuji(page.photos[0])}</Text>
+                </View>
+                <View style={{ flex: 1, flexDirection: "column", gap: 10 }}>
+                   <View style={{ flex: 1, position: "relative" }}>
+                     <PDFImage src={page.photos[1].imageUrl} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 8 }} />
+                   </View>
+                   {page.photos[2] && (
+                     <View style={{ flex: 1, position: "relative" }}>
+                       <PDFImage src={page.photos[2].imageUrl} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 8 }} />
+                     </View>
+                   )}
+                </View>
+              </View>
+            )}
+
+            {page.template === "collage" && (
               <View style={styles.mosaicContainer}>
                 {page.photos.map((p) => (
-                  <PDFImage key={p.id} src={p.imageUrl} style={styles.mosaicImage} />
+                  <View key={p.id} style={{ width: "48%", height: 200, position: "relative" }}>
+                    <PDFImage src={p.imageUrl} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 6 }} />
+                  </View>
                 ))}
               </View>
             )}
@@ -173,6 +209,13 @@ export function PhotobookPDF({ data }: { data: PhotobookData }) {
                     </View>
                   );
                 })}
+              </View>
+            )}
+
+            {page.template === "back" && (
+              <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+                <Text style={{ fontSize: 24, fontFamily: "Helvetica-Bold", color: "#0f172a" }}>{page.title?.toUpperCase()}</Text>
+                <Text style={{ fontSize: 12, color: "#94a3b8", marginTop: 20, letterSpacing: 4 }}>{page.subtitle}</Text>
               </View>
             )}
 
@@ -223,6 +266,24 @@ function renderStats(stats: any) {
         <Text style={styles.statsSub}>Most memories were made at</Text>
         <Text style={styles.statsValue}>{stats.data.hour}:00</Text>
         <Text style={styles.statsSub}>with {stats.data.count} photos taken in 60 minutes.</Text>
+      </View>
+    );
+  }
+
+  if (stats.type === "summary") {
+    return (
+      <View style={styles.statsPage}>
+        <Text style={styles.statsTitle}>The Final Count</Text>
+        <View style={{ marginTop: 20, flexDirection: "row", gap: 50 }}>
+           <View style={{ alignItems: "center" }}>
+              <Text style={{ fontSize: 36, fontFamily: "Helvetica-Bold" }}>{stats.totalPhotos}</Text>
+              <Text style={{ fontSize: 12, color: "#94a3b8", marginTop: 4 }}>MEMORIES</Text>
+           </View>
+           <View style={{ alignItems: "center" }}>
+              <Text style={{ fontSize: 36, fontFamily: "Helvetica-Bold" }}>{stats.guestCount}</Text>
+              <Text style={{ fontSize: 12, color: "#94a3b8", marginTop: 4 }}>GUESTS</Text>
+           </View>
+        </View>
       </View>
     );
   }
