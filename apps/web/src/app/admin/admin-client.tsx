@@ -7,6 +7,7 @@ import { useSearchParams } from "next/navigation";
 import AdminBottomNav from "./_components/admin-bottom-nav";
 import AdminEventsClient from "./events/admin-events-client";
 import { UsersClient } from "./users/users-client";
+import { BillingAdmin } from "./_components/billing-admin";
 import UserMenu from "@/components/user-menu";
 
 // Types
@@ -92,7 +93,7 @@ export default function AdminClient({
 }: Props) {
   const searchParams = useSearchParams();
   const queryTab = searchParams.get("tab") as any;
-  const [tab, setTab] = useState<"overview" | "events" | "users" | "analytics">(queryTab || initialTab);
+  const [tab, setTab] = useState<"overview" | "events" | "users" | "analytics" | "billing">(queryTab || initialTab);
 
   // Sync with browser history manually if we want to support back button, 
   // but for a pure SPA dashboard, simple state is usually fine.
@@ -284,6 +285,19 @@ export default function AdminClient({
             <p className="mt-1 text-sm text-slate-600">Toggle user roles between admin and standard user.</p>
             <div className="mt-4">
               <UsersClient />
+            </div>
+          </div>
+        </main>
+      )}
+
+      {/* ── BILLING TAB ── */}
+      {tab === "billing" && (
+        <main className="mx-auto max-w-[448px] px-4 pb-28 pt-6">
+          <div className="mt-4">
+            <h1 className="text-xl font-black uppercase tracking-tight text-slate-900">Billing & Promotions</h1>
+            <p className="mt-1 text-sm text-slate-500 font-medium">Manage pricing plans and discount codes.</p>
+            <div className="mt-8">
+              <BillingAdmin />
             </div>
           </div>
         </main>

@@ -136,12 +136,26 @@ const BarChartOutline = () => (
   </svg>
 );
 
+const BillingFilled = () => (
+  <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="1" y="4" width="22" height="16" rx="2" fill="currentColor" opacity="0.15" />
+    <rect x="1" y="4" width="22" height="16" rx="2" />
+    <line x1="1" y1="10" x2="23" y2="10" />
+  </svg>
+);
+const BillingOutline = () => (
+  <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="1" y="4" width="22" height="16" rx="2" />
+    <line x1="1" y1="10" x2="23" y2="10" />
+  </svg>
+);
+
 export default function AdminBottomNav({
   activeTab,
   onTabChange,
 }: {
-  activeTab?: "overview" | "events" | "users" | "analytics";
-  onTabChange?: (tab: "overview" | "events" | "users" | "analytics") => void;
+  activeTab?: "overview" | "events" | "users" | "analytics" | "billing";
+  onTabChange?: (tab: "overview" | "events" | "users" | "analytics" | "billing") => void;
 }) {
   const pathname = usePathname();
 
@@ -169,20 +183,20 @@ export default function AdminBottomNav({
         inactiveIcon={<CalendarOutline />}
       />
       <NavItem
+        href="/admin?tab=billing"
+        label="Billing"
+        isActive={getIsActive("billing", "/admin/billing")}
+        onClick={onTabChange ? () => onTabChange("billing") : undefined}
+        activeIcon={<BillingFilled />}
+        inactiveIcon={<BillingOutline />}
+      />
+      <NavItem
         href="/admin?tab=users"
         label="Users"
         isActive={getIsActive("users", "/admin/users")}
         onClick={onTabChange ? () => onTabChange("users") : undefined}
         activeIcon={<UsersFilled />}
         inactiveIcon={<UsersOutline />}
-      />
-      <NavItem
-        href="/admin?tab=analytics"
-        label="Analytics"
-        isActive={getIsActive("analytics", "/admin/analytics")}
-        onClick={onTabChange ? () => onTabChange("analytics") : undefined}
-        activeIcon={<BarChartFilled />}
-        inactiveIcon={<BarChartOutline />}
       />
     </nav>
   );
