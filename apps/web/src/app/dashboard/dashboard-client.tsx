@@ -285,37 +285,47 @@ export default function DashboardClient({
 
               {recentPhotos.length > 0 && <PhotoStrip photos={recentPhotos} />}
 
-              {participatedEvents.length > 0 && (
-                <section className="space-y-4 px-2">
-                  <div className="flex items-end justify-between">
-                    <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Recent Highlights</h2>
-                    <button 
-                      onClick={() => setTab("events")}
-                      className="text-[10px] font-bold text-slate-900 uppercase tracking-wider underline-offset-4 hover:underline"
-                    >
-                      View All
-                    </button>
-                  </div>
-                  <div className="space-y-3">
-                    {participatedEvents.slice(0, 3).map((event) => {
-                      const isCreator = createdEvents.some(ce => ce.id === event.id);
-                      return (
-                        <EventCard 
-                          key={event.id} 
-                          event={event} 
-                          isCreated={isCreator} 
-                          onManage={isCreator ? () => {
-                            setTab("events");
-                            setManagingEvent(createdEvents.find(ce => ce.id === event.id) || null);
-                          } : undefined}
-                        />
-                      );
-                    })}
-                  </div>
-                </section>
-              )}
+              {(() => {
+                // Merge and deduplicate for highlights too
+                const allIds = new Set([...createdEvents.map(e => e.id), ...participatedEvents.map(e => e.id)]);
+                const sortedAll = Array.from(allIds).map(id => {
+                  return createdEvents.find(e => e.id === id) || participatedEvents.find(e => e.id === id)!;
+                }).sort((a, b) => new Date(b.event_date).getTime() - new Date(a.event_date).getTime());
 
-              {participatedEvents.length === 0 && recentPhotos.length === 0 && (
+                if (sortedAll.length === 0) return null;
+
+                return (
+                  <section className="space-y-4 px-2">
+                    <div className="flex items-end justify-between">
+                      <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Recent Highlights</h2>
+                      <button 
+                        onClick={() => setTab("events")}
+                        className="text-[10px] font-bold text-slate-900 uppercase tracking-wider underline-offset-4 hover:underline"
+                      >
+                        View All
+                      </button>
+                    </div>
+                    <div className="space-y-3">
+                      {sortedAll.slice(0, 3).map((event) => {
+                        const isCreator = createdEvents.some(ce => ce.id === event.id);
+                        return (
+                          <EventCard 
+                            key={event.id} 
+                            event={event} 
+                            isCreated={isCreator} 
+                            onManage={isCreator ? () => {
+                              setTab("events");
+                              setManagingEvent(createdEvents.find(ce => ce.id === event.id) || null);
+                            } : undefined}
+                          />
+                        );
+                      })}
+                    </div>
+                  </section>
+                );
+              })()}
+
+              {participatedEvents.length === 0 && createdEvents.length === 0 && recentPhotos.length === 0 && (
                 <section className="rounded-2xl border-2 border-dashed border-slate-200 px-4 py-16 text-center mx-2">
                   <span className="material-symbols-outlined text-slate-300 text-5xl mb-4">auto_stories</span>
                   <p className="text-xs font-bold text-slate-400 uppercase tracking-widest leading-relaxed">
@@ -379,7 +389,20 @@ export default function DashboardClient({
 
               {/* Events list */}
               {(() => {
-                const filtered = participatedEvents.filter(event => {
+                // Merge owned and joined events into a unique list
+                const allEventIds = new Set([
+                  ...createdEvents.map(e => e.id),
+                  ...participatedEvents.map(e => e.id)
+                ]);
+
+                // Map IDs back to full event objects (prefer createdEvents metadata as it's more complete)
+                const mergedEvents = Array.from(allEventIds).map(id => {
+                  const owned = createdEvents.find(e => e.id === id);
+                  const joined = participatedEvents.find(e => e.id === id);
+                  return owned || joined!;
+                }).sort((a, b) => new Date(b.event_date).getTime() - new Date(a.event_date).getTime());
+
+                const filtered = mergedEvents.filter(event => {
                   const isCreator = createdEvents.some(ce => ce.id === event.id);
                   if (eventFilter === "hosted") return isCreator;
                   if (eventFilter === "joined") return !isCreator;
