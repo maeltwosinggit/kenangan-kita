@@ -15,10 +15,12 @@ type Step = "details" | "pricing";
 export default function CreateEventForm({
   onSuccess,
   country = "GLOBAL",
+  isAdmin = false,
 }: {
   /** Called after successful creation. If omitted the component manages its own success state. */
   onSuccess?: (result: CreateEventResult) => void;
   country?: string;
+  isAdmin?: boolean;
 }) {
   const [step, setStep] = useState<Step>("details");
   const [name, setName] = useState("");
@@ -366,24 +368,26 @@ export default function CreateEventForm({
       ) : (
         <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
           {/* Admin Region Toggle */}
-          <div className="flex items-center justify-between px-1">
-             <div className="flex flex-col">
-                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Detected Region</span>
-                <span className="text-xs font-bold text-slate-900">{currentRegion}</span>
-             </div>
-             <div className="flex bg-slate-100 p-1 rounded-lg">
-                <button 
-                  type="button"
-                  onClick={() => setCurrentRegion("MY")}
-                  className={["px-3 py-1 text-[8px] font-black rounded-md transition-all", currentRegion === 'MY' ? "bg-white text-slate-900 shadow-sm" : "text-slate-400"].join(" ")}
-                >MY</button>
-                <button 
-                  type="button"
-                  onClick={() => setCurrentRegion("GLOBAL")}
-                  className={["px-3 py-1 text-[8px] font-black rounded-md transition-all", currentRegion === 'GLOBAL' ? "bg-white text-slate-900 shadow-sm" : "text-slate-400"].join(" ")}
-                >GLOBAL</button>
-             </div>
-          </div>
+          {isAdmin && (
+            <div className="flex items-center justify-between px-1">
+               <div className="flex flex-col">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Detected Region</span>
+                  <span className="text-xs font-bold text-slate-900">{currentRegion}</span>
+               </div>
+               <div className="flex bg-slate-100 p-1 rounded-lg">
+                  <button 
+                    type="button"
+                    onClick={() => setCurrentRegion("MY")}
+                    className={["px-3 py-1 text-[8px] font-black rounded-md transition-all", currentRegion === 'MY' ? "bg-white text-slate-900 shadow-sm" : "text-slate-400"].join(" ")}
+                  >MY</button>
+                  <button 
+                    type="button"
+                    onClick={() => setCurrentRegion("GLOBAL")}
+                    className={["px-3 py-1 text-[8px] font-black rounded-md transition-all", currentRegion === 'GLOBAL' ? "bg-white text-slate-900 shadow-sm" : "text-slate-400"].join(" ")}
+                  >GLOBAL</button>
+               </div>
+            </div>
+          )}
 
           <div>
             <p className="mb-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 px-1">

@@ -13,6 +13,14 @@ export default async function NewEventPage() {
 
   if (!user) redirect("/login");
 
+  // Check admin status
+  const { data: profile } = await supabase
+    .from("admin_profiles")
+    .select("role")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  const isAdmin = profile?.role === "admin";
+
   const headersList = await headers();
   // Check both Vercel and Cloudflare country headers
   const country = headersList.get("x-vercel-ip-country") || headersList.get("cf-ipcountry") || "GLOBAL";
@@ -50,7 +58,7 @@ export default async function NewEventPage() {
           <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">Create Event</h1>
           <p className="mt-1 text-sm text-slate-500">Set up your event and share the link with guests.</p>
         </div>
-        <CreateEventForm country={country} />
+        <CreateEventForm country={country} isAdmin={isAdmin} />
       </main>
     </div>
   );
