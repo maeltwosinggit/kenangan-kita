@@ -5,7 +5,7 @@ import LandingNav from "@/components/landing-nav";
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen-fix bg-white">
       {/* Nav */}
       <LandingNav />
 

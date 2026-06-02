@@ -50,7 +50,7 @@ function LoginContent() {
   const anyLoading = googleLoading || emailLoading;
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col items-center px-4 py-12">
+    <main className="mx-auto flex min-h-screen-fix max-w-md flex-col items-center px-4 py-12">
       <Image
         src="/logo.png"
         alt="Kenangan Kita"

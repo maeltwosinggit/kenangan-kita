@@ -114,7 +114,7 @@ export function EventViewHub({
   );
 
   return (
-    <div className="flex h-screen flex-col bg-slate-50 overflow-hidden relative">
+    <div className="flex h-screen-fix flex-col bg-slate-50 overflow-hidden relative pt-safe">
       
       {/* ── SHARED DYNAMIC HEADER ── */}
       <header className="shrink-0 sticky top-0 z-30 mx-auto flex h-16 w-full items-center justify-between border-b border-slate-100 bg-white/80 px-4 backdrop-blur-md">
@@ -256,7 +256,7 @@ export function EventViewHub({
             CRITICAL FIX: Only mount camera when active or during transition to allow slide animation
          */}
          {shouldMountCamera && (
-           <div className="h-full w-full bg-black">
+           <div className="h-screen-fix w-full bg-black">
               <CameraCaptureClient 
                 eventCode={eventCode} 
                 onClose={() => handleTabChange("event")} 

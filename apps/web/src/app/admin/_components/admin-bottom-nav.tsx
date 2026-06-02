@@ -165,7 +165,7 @@ export default function AdminBottomNav({
   };
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-50 mx-auto flex h-20 max-w-[448px] items-center justify-around border-t border-slate-200 bg-white px-6">
+    <nav className="fixed inset-x-0 bottom-0 z-50 mx-auto flex h-20 max-w-[448px] items-center justify-around border-t border-slate-200 bg-white px-6 pb-safe">
       <NavItem
         href="/admin"
         label="Overview"

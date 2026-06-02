@@ -102,7 +102,7 @@ export default function AdminClient({
   }, [tab]);
 
   return (
-    <div className="relative min-h-screen bg-slate-50">
+    <div className="relative min-h-screen-fix bg-slate-50 pt-safe">
       
       {/* ── OVERVIEW TAB ── */}
       {tab === "overview" && (

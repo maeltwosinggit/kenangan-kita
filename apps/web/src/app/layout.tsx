@@ -1,12 +1,21 @@
 import "./globals.css";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import { QueryProvider } from "@/providers/query-provider";
 
 export const metadata: Metadata = {
   title: "Kenangan Kita",
   description: "Digital disposable camera for events",
-  icons: {
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
+};
+
     icon: "/logo.png",
   },
 };

@@ -34,7 +34,7 @@ export default function PreviewClient({ eventCode, eventId, eventName, coverUrl 
   }, [eventId, eventName, coverUrl]);
 
   return (
-    <div className="fixed inset-0 z-[100] flex flex-col bg-slate-900">
+    <div className="fixed inset-0 z-[100] flex h-screen-fix flex-col bg-slate-900 pt-safe">
       
       {/* Header */}
       <header className="flex h-16 shrink-0 items-center justify-between px-4 border-b border-slate-800 bg-slate-950">

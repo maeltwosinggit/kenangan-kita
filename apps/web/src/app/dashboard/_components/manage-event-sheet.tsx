@@ -276,7 +276,7 @@ export function ManageEventSheet({ event: incomingEvent, isOpen, onClose, onDele
         role="dialog"
         aria-modal="true"
         aria-label={`Manage ${event.name}`}
-        className={`fixed inset-x-0 bottom-0 z-[60] mx-auto max-w-[448px] rounded-t-2xl bg-white shadow-2xl ${
+        className={`fixed inset-x-0 bottom-0 z-[60] mx-auto max-w-[448px] rounded-t-2xl bg-white shadow-2xl pb-safe ${
           isClosing ? "animate-sheet-slide-down" : "animate-sheet-slide-up"
         }`}
         style={{ 

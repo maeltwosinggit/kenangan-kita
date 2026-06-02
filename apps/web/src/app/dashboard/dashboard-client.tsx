@@ -154,7 +154,7 @@ export default function DashboardClient({
   const featuredPhoto = recentPhotos[0];
 
   return (
-    <div className="flex h-screen flex-col bg-slate-50 overflow-hidden">
+    <div className="flex h-screen-fix flex-col bg-slate-50 overflow-hidden pt-safe">
       {/* Header */}
       <header className="shrink-0 border-b border-slate-200 bg-white z-40">
         <div className="mx-auto flex h-16 max-w-[448px] items-center justify-between px-4">
@@ -446,7 +446,7 @@ export default function DashboardClient({
         onClose={() => setManagingEvent(null)}
         onDeleted={() => { window.location.reload(); }}
       />
-      <nav className="fixed inset-x-0 bottom-0 z-50 mx-auto flex h-20 max-w-[448px] items-center justify-around border-t border-slate-200 bg-white/90 px-6 backdrop-blur-md">
+      <nav className="fixed inset-x-0 bottom-0 z-50 mx-auto flex h-20 max-w-[448px] items-center justify-around border-t border-slate-200 bg-white/90 px-6 pb-safe backdrop-blur-md">
         <NavButton active={tab === "dashboard"} onClick={() => setTab("dashboard")} label="Dashboard">
           {tab === "dashboard" ? (
             <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
