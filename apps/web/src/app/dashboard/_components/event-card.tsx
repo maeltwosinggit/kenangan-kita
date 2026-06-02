@@ -22,6 +22,19 @@ function StatusBadge({ isOpen }: { isOpen: boolean }) {
   );
 }
 
+function RoleBadge({ isCreated }: { isCreated: boolean }) {
+  return (
+    <div className="flex items-center gap-1 opacity-70">
+      <span className={["material-symbols-outlined text-[12px]", isCreated ? "text-indigo-500" : "text-slate-400"].join(" ")}>
+        {isCreated ? "stars" : "person"}
+      </span>
+      <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">
+        {isCreated ? "Host" : "Guest"}
+      </span>
+    </div>
+  );
+}
+
 function EventThumbnail({
   src,
   alt,
@@ -83,8 +96,11 @@ export function EventCard({ event, isCreated = false, onManage }: EventCardProps
             <StatusBadge isOpen={isOpen} />
           </div>
 
-          {/* Date — monospace style */}
-          <p className="mt-1.5 font-mono text-xs text-slate-500">{formattedDate}</p>
+          <div className="mt-1 flex items-center gap-3">
+             <RoleBadge isCreated={isCreated} />
+             <div className="h-2 w-px bg-slate-200" />
+             <p className="font-mono text-[10px] text-slate-400">{formattedDate}</p>
+          </div>
 
           {/* Event code with QR icon — indigo accent */}
           {isCreated && (

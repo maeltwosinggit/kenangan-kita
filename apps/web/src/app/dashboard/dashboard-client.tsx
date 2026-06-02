@@ -205,9 +205,20 @@ export default function DashboardClient({
                     <div className="h-px flex-1 bg-slate-200" />
                   </div>
                   <div className="space-y-3">
-                    {participatedEvents.map((event) => (
-                      <EventCard key={event.id} event={event} />
-                    ))}
+                    {participatedEvents.map((event) => {
+                      const isCreator = createdEvents.some(ce => ce.id === event.id);
+                      return (
+                        <EventCard 
+                          key={event.id} 
+                          event={event} 
+                          isCreated={isCreator} 
+                          onManage={isCreator ? () => {
+                            setTab("events");
+                            setManagingEvent(createdEvents.find(ce => ce.id === event.id) || null);
+                          } : undefined}
+                        />
+                      );
+                    })}
                   </div>
                 </section>
               )}
