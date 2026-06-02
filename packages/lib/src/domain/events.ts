@@ -189,8 +189,16 @@ export async function listEventsByCreator(userId: string) {
 
 
 export async function deleteEvent(supabase: SupabaseClient, eventId: string) {
+  // 1. Fetch event first to get cover_image_path
+  const { data: event, error: eventFetchError } = await supabase
+    .from("events")
+    .select("cover_image_path")
+    .eq("id", eventId)
+    .single();
 
-  // Collect all storage paths before the row (and its photos) are deleted.
+  if (eventFetchError) throw eventFetchError;
+
+  // 2. Collect all photo storage paths before the row (and its photos) are deleted.
   const { data: photos, error: photosError } = await supabase
     .from("photos")
     .select("storage_path")
@@ -198,16 +206,18 @@ export async function deleteEvent(supabase: SupabaseClient, eventId: string) {
 
   if (photosError) throw photosError;
 
-  // Delete storage objects in one batch call (max 1000 per call is fine for events).
+  // 3. Delete event photos from storage
   if (photos && photos.length > 0) {
     const paths = photos.map((p: { storage_path: string }) => p.storage_path);
-    const { error: storageError } = await supabase.storage
-      .from("event-photos")
-      .remove(paths);
-    if (storageError) throw storageError;
+    await supabase.storage.from("event-photos").remove(paths);
   }
 
-  // Delete the event row — photos cascade via FK.
+  // 4. Delete cover photo from storage if exists
+  if (event.cover_image_path) {
+    await supabase.storage.from("event-covers").remove([event.cover_image_path]);
+  }
+
+  // 5. Delete the event row — photos cascade via FK.
   const { error } = await supabase.from("events").delete().eq("id", eventId);
   if (error) throw error;
 }
