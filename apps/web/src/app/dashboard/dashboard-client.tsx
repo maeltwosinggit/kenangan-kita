@@ -82,11 +82,11 @@ export default function DashboardClient({
       {/* Swipeable Tabs Container */}
       <div className="flex-1 relative overflow-hidden">
         <div 
-          className="flex h-full w-[300%] transition-transform duration-300 ease-in-out items-start"
-          style={{ transform: `translateX(-${(getTabIndex(tab) * 100) / 3}%)` }}
+          className="flex h-full w-[300%] transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] will-change-transform"
+          style={{ transform: `translate3d(-${(getTabIndex(tab) * 100) / 3}%, 0, 0)` }}
         >
           {/* Dashboard tab */}
-          <div className="w-1/3 h-full overflow-y-auto shrink-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="w-1/3 h-full overflow-y-auto shrink-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden overscroll-none">
             <main className="mx-auto max-w-[448px] space-y-8 px-4 pb-28 pt-6">
               <section className="space-y-1">
                 <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">Hello, {firstName}</h1>
@@ -126,7 +126,7 @@ export default function DashboardClient({
           </div>
 
           {/* Create tab */}
-          <div className="w-1/3 h-full overflow-y-auto shrink-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="w-1/3 h-full overflow-y-auto shrink-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden overscroll-none">
             <main className="mx-auto max-w-[448px] pb-28">
               <div className="px-4 pt-6">
                 <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">Create Event</h1>
@@ -137,7 +137,7 @@ export default function DashboardClient({
           </div>
 
           {/* Events tab */}
-          <div className="w-1/3 h-full overflow-y-auto shrink-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="w-1/3 h-full overflow-y-auto shrink-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden overscroll-none">
             <main className="mx-auto max-w-[448px] px-4 pb-28 pt-6">
               {/* Page header */}
               <div className="mb-8 flex items-end justify-between">

@@ -164,11 +164,11 @@ export function EventViewHub({
       {/* ── MAIN CONTENT CONTAINER (Sliding) ── */}
       <div className="flex-1 relative overflow-hidden">
         <div 
-          className="flex h-full w-[200%] transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] items-start"
-          style={{ transform: `translateX(${activeTab === "gallery" ? "-50%" : "0%"})` }}
+          className="flex h-full w-[200%] transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] will-change-transform"
+          style={{ transform: `translate3d(${activeTab === "gallery" ? "-50%" : "0%"}, 0, 0)` }}
         >
           {/* 1. EVENT HUB TAB */}
-          <div className="w-1/2 h-full overflow-y-auto shrink-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="w-1/2 h-full overflow-y-auto shrink-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden overscroll-none">
             <main className="flex flex-col px-4 pb-32 pt-6">
               <section className="mb-8">
                  <div className="rounded-2xl bg-white p-2 shadow-sm ring-1 ring-slate-200/60">
@@ -218,7 +218,7 @@ export function EventViewHub({
           </div>
 
           {/* 3. GALLERY TAB */}
-          <div className="w-1/2 h-full overflow-y-auto shrink-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="w-1/2 h-full overflow-y-auto shrink-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden overscroll-none">
             <section className="relative h-[240px] w-full overflow-hidden bg-slate-100">
                {initialHeroUrl ? (
                  <img src={initialHeroUrl} alt={event.name} className="h-full w-full object-cover" />
