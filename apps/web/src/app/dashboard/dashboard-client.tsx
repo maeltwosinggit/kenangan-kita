@@ -3,6 +3,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { getDashboardData } from "@/lib/data/dashboard";
 import type { DashboardData, RecentPhoto, CreatedEvent } from "@/lib/data/dashboard";
 import { EventCard } from "./_components/event-card";
 import UserMenu from "@/components/user-menu";
@@ -70,12 +73,42 @@ export default function DashboardClient({
   displayName,
   avatarUrl,
   isAdmin,
-  photosTaken,
-  eventsAttended,
-  recentPhotos,
-  participatedEvents,
-  createdEvents,
+  photosTaken: initialPhotosTaken,
+  eventsAttended: initialEventsAttended,
+  recentPhotos: initialRecentPhotos,
+  participatedEvents: initialParticipatedEvents,
+  createdEvents: initialCreatedEvents,
 }: Props) {
+  const queryClient = useQueryClient();
+  const supabase = getSupabaseBrowserClient();
+  
+  // ── Dashboard Polling ──
+  const { data } = useQuery({
+    queryKey: ["dashboard-data"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No user");
+      return getDashboardData(user.id, supabase);
+    },
+    initialData: {
+      isAdmin,
+      photosTaken: initialPhotosTaken,
+      eventsAttended: initialEventsAttended,
+      recentPhotos: initialRecentPhotos,
+      participatedEvents: initialParticipatedEvents,
+      createdEvents: initialCreatedEvents,
+    },
+    refetchInterval: 10000, // Poll every 10s
+  });
+
+  const {
+    photosTaken,
+    eventsAttended,
+    recentPhotos,
+    participatedEvents,
+    createdEvents,
+  } = data;
+
   const [tab, setTab] = useState<Tab>("dashboard");
   const [managingEvent, setManagingEvent] = useState<CreatedEvent | null>(null);
   const [joinCode, setJoinCode] = useState("");
@@ -301,7 +334,10 @@ export default function DashboardClient({
                 <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">Create Event</h1>
                 <p className="mt-1 text-sm text-slate-500">Set up a new event and share the link with guests.</p>
               </div>
-              <CreateEventForm onSuccess={(res) => setTab("events")} />
+              <CreateEventForm onSuccess={(res) => {
+                queryClient.invalidateQueries({ queryKey: ["dashboard-data"] });
+                setTab("events");
+              }} />
             </main>
           </div>
 
