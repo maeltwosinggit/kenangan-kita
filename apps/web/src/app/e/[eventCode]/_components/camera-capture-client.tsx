@@ -95,7 +95,6 @@ export function CameraCaptureClient({ eventCode, onClose, onGalleryClick }: Prop
       if (camera.getZoomCapabilities) {
         const caps = camera.getZoomCapabilities();
         setZoomRange(caps);
-        if (caps) setZoom(caps.min);
       }
     };
     video.addEventListener("playing", onReady);
