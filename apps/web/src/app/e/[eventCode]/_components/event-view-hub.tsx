@@ -163,11 +163,11 @@ export function EventViewHub({
       
       {/* ── MAIN CONTENT CONTAINER (Sliding) ── */}
       <div 
-        className="flex items-start min-h-screen w-[200%] transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]"
+        className="flex items-start min-h-[calc(100vh-4rem)] w-[200%] transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]"
         style={{ transform: `translateX(${activeTab === "gallery" ? "-50%" : "0%"})` }}
       >
         {/* 1. EVENT HUB TAB */}
-        <div className={["w-1/2 min-h-screen", activeTab !== "event" ? "h-0 overflow-hidden" : ""].join(" ")}>
+        <div className={["w-1/2", activeTab === "event" ? "min-h-[calc(100vh-4rem)]" : "h-0 overflow-hidden"].join(" ")}>
           <main className="flex flex-col px-4 pb-32 pt-6">
             <section className="mb-8">
                <div className="rounded-2xl bg-white p-2 shadow-sm ring-1 ring-slate-200/60">
@@ -217,7 +217,7 @@ export function EventViewHub({
         </div>
 
         {/* 3. GALLERY TAB */}
-        <div className={["w-1/2 min-h-screen", activeTab !== "gallery" ? "h-0 overflow-hidden" : ""].join(" ")}>
+        <div className={["w-1/2", activeTab === "gallery" ? "min-h-[calc(100vh-4rem)]" : "h-0 overflow-hidden"].join(" ")}>
           <section className="relative h-[240px] w-full overflow-hidden bg-slate-100">
              {initialHeroUrl ? (
                <img src={initialHeroUrl} alt={event.name} className="h-full w-full object-cover" />

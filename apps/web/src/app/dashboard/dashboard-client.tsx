@@ -81,11 +81,11 @@ export default function DashboardClient({
 
       {/* Swipeable Tabs Container */}
       <div 
-        className="flex w-full transition-transform duration-300 ease-in-out"
-        style={{ transform: `translateX(-${getTabIndex(tab) * 100}%)` }}
+        className="flex items-start w-[300%] transition-transform duration-300 ease-in-out"
+        style={{ transform: `translateX(-${(getTabIndex(tab) * 100) / 3}%)` }}
       >
         {/* Dashboard tab */}
-        <div className="w-full shrink-0">
+        <div className={["w-1/3 shrink-0", tab === "dashboard" ? "min-h-[calc(100vh-4rem)]" : "h-0 overflow-hidden"].join(" ")}>
           <main className="mx-auto max-w-[448px] space-y-8 px-4 pb-28 pt-6">
             <section className="space-y-1">
               <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">Hello, {firstName}</h1>
@@ -142,7 +142,7 @@ export default function DashboardClient({
         </div>
 
         {/* Create tab */}
-        <div className="w-full shrink-0">
+        <div className={["w-1/3 shrink-0", tab === "create" ? "min-h-[calc(100vh-4rem)]" : "h-0 overflow-hidden"].join(" ")}>
           <main className="mx-auto max-w-[448px] pb-28">
             <div className="px-4 pt-6">
               <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">Create Event</h1>
@@ -153,7 +153,7 @@ export default function DashboardClient({
         </div>
 
         {/* Events tab */}
-        <div className="w-full shrink-0">
+        <div className={["w-1/3 shrink-0", tab === "events" ? "min-h-[calc(100vh-4rem)]" : "h-0 overflow-hidden"].join(" ")}>
           <main className="mx-auto max-w-[448px] px-4 pb-28 pt-6">
             {/* Page header */}
             <div className="mb-8 flex items-end justify-between">
