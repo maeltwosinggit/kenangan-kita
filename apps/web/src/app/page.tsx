@@ -35,16 +35,24 @@ export default function LandingPage() {
          </div>
       </section>
 
-      {/* Editorial Feature Image / Mockup (Placeholder) */}
+      {/* Editorial Feature Image / Mockup */}
       <section className="mx-auto max-w-5xl px-6 pb-24 md:pb-32 relative z-20 -mt-12 md:-mt-20">
-         <div className="w-full aspect-video md:aspect-[21/9] bg-slate-900 rounded-[2rem] shadow-2xl overflow-hidden relative border-8 border-white ring-1 ring-slate-200">
-            <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-950 flex items-center justify-center">
-               <div className="text-center space-y-6">
-                  <span className="material-symbols-outlined text-white/20 text-[120px]">photo_camera</span>
-               </div>
+         <div className="w-full aspect-video md:aspect-[21/9] bg-slate-900 rounded-[2rem] shadow-2xl overflow-hidden relative border-8 border-white ring-1 ring-slate-200 flex items-center justify-center">
+            {/* Abstract UI Mockup */}
+            <div className="relative w-full max-w-3xl aspect-[16/9] mx-auto flex items-center justify-center opacity-80">
+                <div className="absolute w-40 h-56 bg-slate-800 rounded-xl -rotate-6 shadow-2xl border-4 border-slate-700/50 flex flex-col items-center justify-center z-10 -translate-x-12">
+                   <span className="material-symbols-outlined text-slate-500 text-4xl">favorite</span>
+                </div>
+                <div className="absolute w-48 h-64 bg-slate-100 rounded-xl rotate-3 shadow-2xl border-8 border-white flex flex-col items-center justify-center z-20 translate-x-4 translate-y-4">
+                   <span className="material-symbols-outlined text-slate-300 text-5xl">photo_camera</span>
+                </div>
+                <div className="absolute w-32 h-48 bg-slate-800 rounded-xl rotate-12 shadow-2xl border-4 border-slate-700/50 flex flex-col items-center justify-center z-0 translate-x-32 -translate-y-8">
+                   <span className="material-symbols-outlined text-slate-500 text-3xl">auto_awesome</span>
+                </div>
             </div>
+            
             {/* Film Grain Overlay */}
-            <div className="absolute inset-0 opacity-20 mix-blend-overlay pointer-events-none" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.85\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E")' }} />
+            <div className="absolute inset-0 opacity-30 mix-blend-overlay pointer-events-none" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.85\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E")' }} />
          </div>
       </section>
 
@@ -58,8 +66,8 @@ export default function LandingPage() {
           
           <div className="grid gap-x-8 gap-y-16 md:grid-cols-3">
             {features.map((f, i) => (
-              <div key={f.title} className="relative group">
-                <div className="w-16 h-16 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center mb-6 transition-transform group-hover:-translate-y-1 duration-300">
+              <div key={f.title} className="relative group flex flex-col items-center text-center">
+                <div className="w-16 h-16 mx-auto rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center mb-6 transition-transform group-hover:-translate-y-1 duration-300">
                    <span className="material-symbols-outlined text-[28px] text-slate-800">{f.icon}</span>
                 </div>
                 <h3 className="text-xl font-bold text-slate-900 mb-3">{f.title}</h3>
@@ -69,6 +77,7 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
 
       {/* Pricing / Tiers */}
       <section className="bg-slate-900 py-24 md:py-32 text-white overflow-hidden relative">
@@ -151,7 +160,7 @@ const features = [
     icon: "qr_code_scanner",
     title: "Zero Friction",
     description:
-      "Guests scan the QR code and shoot instantly. No app downloads, no account creation required.",
+      "Guests scan the QR code and shoot instantly. A simple one-tap login keeps your gallery safe and private.",
   },
   {
     icon: "photo_library",
@@ -166,4 +175,5 @@ const features = [
       "Hide the gallery until the event ends, moderate photos, and download the entire collection in high-res.",
   },
 ];
+
 
