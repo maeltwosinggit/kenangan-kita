@@ -143,13 +143,13 @@ export function EventCard({ event, isCreated = false, onManage }: EventCardProps
         </div>
       ) : (
         <div className="flex gap-2">
-          {/* Camera — fills half width, dark */}
+          {/* Live Hub — fills half width, dark */}
           <Link
-            href={`/e/${event.event_code}?tab=camera`}
+            href={`/e/${event.event_code}`}
             className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-slate-900 py-3 text-sm font-semibold text-white transition-all active:scale-95 hover:bg-slate-800"
           >
-            <span className="material-symbols-outlined text-[20px]">photo_camera</span>
-            Camera
+            <span className="material-symbols-outlined text-[20px]">rocket_launch</span>
+            Live Hub
           </Link>
 
           {/* Share — small WhatsApp button */}
