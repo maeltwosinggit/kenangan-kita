@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import type { ParticipatedEvent, CreatedEvent } from "@/lib/data/dashboard";
 
 type EventCardProps = {
@@ -67,6 +69,8 @@ function EventThumbnail({
 // ── Main Component ────────────────────────────────────────────────────────────
 
 export function EventCard({ event, isCreated = false, onManage }: EventCardProps) {
+  const router = useRouter();
+  const [isNavigating, setIsNavigating] = useState(false);
   const isOpen = event.isOpen;
   const isArchived = !isOpen;
 
@@ -106,6 +110,11 @@ export function EventCard({ event, isCreated = false, onManage }: EventCardProps
         alert("Link copied to clipboard!");
       } catch (err) { /* ignore */ }
     }
+  };
+
+  const onLiveHubClick = () => {
+    setIsNavigating(true);
+    router.push(`/e/${event.event_code}`);
   };
 
   return (
@@ -176,13 +185,21 @@ export function EventCard({ event, isCreated = false, onManage }: EventCardProps
       ) : (
         <div className="flex gap-2">
           {/* Live Hub — fills half width, dark */}
-          <Link
-            href={`/e/${event.event_code}`}
-            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-slate-900 py-3 text-sm font-semibold text-white transition-all active:scale-95 hover:bg-slate-800"
+          <button
+            onClick={onLiveHubClick}
+            disabled={isNavigating}
+            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-slate-900 py-3 text-sm font-semibold text-white transition-all active:scale-95 hover:bg-slate-800 disabled:opacity-70"
           >
-            <span className="material-symbols-outlined text-[20px]">rocket_launch</span>
-            Live Hub
-          </Link>
+            {isNavigating ? (
+              <svg className="h-5 w-5 animate-spin text-white" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+              </svg>
+            ) : (
+              <span className="material-symbols-outlined text-[20px]">rocket_launch</span>
+            )}
+            {isNavigating ? "Entering..." : "Live Hub"}
+          </button>
 
           {/* Share — small WhatsApp button */}
           <button
