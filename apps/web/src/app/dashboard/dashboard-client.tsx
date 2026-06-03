@@ -412,7 +412,7 @@ export default function DashboardClient({
 
                 if (filtered.length === 0) {
                   return (
-                    <div className="rounded-2xl border-2 border-dashed border-slate-100 px-4 py-20 text-center animate-in fade-in zoom-in-95 duration-500">
+                    <div key={`empty-${eventFilter}`} className="rounded-2xl border-2 border-dashed border-slate-100 px-4 py-20 text-center animate-in fade-in zoom-in-95 duration-500">
                       <span className="material-symbols-outlined text-slate-200 text-5xl mb-4">folder_open</span>
                       <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">No {eventFilter === "all" ? "" : eventFilter} events found</p>
                     </div>
@@ -420,7 +420,7 @@ export default function DashboardClient({
                 }
 
                 return (
-                  <div className="space-y-4 animate-in fade-in slide-in-from-bottom-3 duration-500 fill-mode-both">
+                  <div key={`list-${eventFilter}`} className="space-y-4 animate-in fade-in slide-in-from-bottom-3 duration-500 fill-mode-both">
                     {filtered.map((event) => {
                       const isCreator = createdEvents.some(ce => ce.id === event.id);
                       return (
