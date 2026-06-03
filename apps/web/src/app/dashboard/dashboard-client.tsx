@@ -373,14 +373,22 @@ export default function DashboardClient({
               </div>
 
               {/* Segmented Filter */}
-              <div className="mb-6 flex p-1.5 bg-white border border-slate-200 rounded-2xl shadow-sm">
+              <div className="relative mb-6 flex p-1 bg-white border border-slate-200 rounded-2xl shadow-sm h-11">
+                {/* Sliding Background Pill */}
+                <div 
+                  className="absolute top-1 bottom-1 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] bg-slate-900 rounded-xl shadow-md"
+                  style={{ 
+                    left: eventFilter === 'all' ? '4px' : eventFilter === 'hosted' ? '33.33%' : '66.66%',
+                    width: 'calc(33.33% - 5px)'
+                  }}
+                />
                 {(["all", "hosted", "joined"] as const).map((f) => (
                   <button
                     key={f}
                     onClick={() => setEventFilter(f)}
                     className={[
-                      "flex-1 py-2 text-[10px] font-black uppercase tracking-widest transition-all rounded-xl",
-                      eventFilter === f ? "bg-slate-900 text-white shadow-md" : "text-slate-400 hover:text-slate-600"
+                      "relative z-10 flex-1 py-2 text-[10px] font-black uppercase tracking-widest transition-colors",
+                      eventFilter === f ? "text-white" : "text-slate-400 hover:text-slate-600"
                     ].join(" ")}
                   >
                     {f}
@@ -420,16 +428,21 @@ export default function DashboardClient({
                 }
 
                 return (
-                  <div key={`list-${eventFilter}`} className="space-y-4 animate-in fade-in slide-in-from-bottom-3 duration-500 fill-mode-both">
-                    {filtered.map((event) => {
+                  <div className="space-y-4 relative">
+                    {filtered.map((event, index) => {
                       const isCreator = createdEvents.some(ce => ce.id === event.id);
                       return (
-                        <EventCard
-                          key={event.id}
-                          event={event}
-                          isCreated={isCreator}
-                          onManage={isCreator ? () => setManagingEvent(createdEvents.find(ce => ce.id === event.id) || null) : undefined}
-                        />
+                        <div 
+                          key={`${eventFilter}-${event.id}`}
+                          className="animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both"
+                          style={{ animationDelay: `${index * 75}ms` }}
+                        >
+                          <EventCard
+                            event={event}
+                            isCreated={isCreator}
+                            onManage={isCreator ? () => setManagingEvent(createdEvents.find(ce => ce.id === event.id) || null) : undefined}
+                          />
+                        </div>
                       );
                     })}
                   </div>
