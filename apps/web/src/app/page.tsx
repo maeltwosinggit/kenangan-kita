@@ -37,8 +37,12 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-slate-100 py-8 text-center text-xs text-slate-400">
-        © {new Date().getFullYear()} Kenangan Kita. All rights reserved.
+      <footer className="border-t border-slate-100 py-10 text-center text-xs text-slate-400 space-y-4">
+        <div className="flex justify-center gap-6">
+           <Link href="/privacy" className="hover:text-slate-900 transition-colors uppercase font-bold tracking-widest">Privacy Policy</Link>
+           <Link href="#" className="hover:text-slate-900 transition-colors uppercase font-bold tracking-widest opacity-30">Terms of Service</Link>
+        </div>
+        <p>© {new Date().getFullYear()} Kenangan Kita by Foto Movement. All rights reserved.</p>
       </footer>
     </div>
   );
