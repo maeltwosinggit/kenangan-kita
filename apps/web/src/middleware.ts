@@ -17,7 +17,7 @@ function makeRedirect(request: NextRequest, pathname: string, search = ""): URL 
 // Paths that never require authentication.
 // /e/[code]/camera requires login — guests must sign in before capturing.
 function isPublicPath(pathname: string): boolean {
-  if (pathname === "/" || pathname === "/login" || pathname.startsWith("/auth/")) return true;
+  if (pathname === "/" || pathname === "/login" || pathname === "/privacy" || pathname.startsWith("/auth/")) return true;
   if (!pathname.startsWith("/e/")) return false;
   // Camera sub-path requires auth; landing and gallery are public
   const segments = pathname.split("/"); // ['', 'e', code, ...rest]
