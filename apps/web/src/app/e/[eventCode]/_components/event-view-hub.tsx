@@ -302,6 +302,7 @@ export function EventViewHub({
            <div className="h-screen-fix w-full bg-black">
               <CameraCaptureClient 
                 eventCode={eventCode} 
+                themeFilter={event.theme_filter}
                 onClose={() => handleTabChange("event")} 
                 onGalleryClick={() => handleTabChange("gallery")}
               />

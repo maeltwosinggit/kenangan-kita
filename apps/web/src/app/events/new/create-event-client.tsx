@@ -29,6 +29,7 @@ export default function CreateEventForm({
   const [eventDate, setEventDate] = useState("");
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
+  const [themeFilter, setThemeFilter] = useState<"normal" | "grain" | "monochrome">("normal");
   
   // Billing states
   const [plans, setPlans] = useState<PricingPlan[]>([]);
@@ -192,7 +193,8 @@ export default function CreateEventForm({
         coverImagePath,
         upload_limit_enabled: selectedPlan?.photo_limit !== null,
         max_uploads_total: selectedPlan?.photo_limit ?? undefined,
-        discount_code_id: discountToValidate?.id
+        discount_code_id: discountToValidate?.id,
+        theme_filter: themeFilter
       }, supabase);
 
       const res: CreateEventResult = { eventCode: created.event_code, eventId: created.id };
@@ -385,6 +387,32 @@ export default function CreateEventForm({
               onChange={(e) => setEventDate(e.target.value)}
               required
             />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+              Camera Theme / Filter
+            </label>
+            <div className="grid grid-cols-3 gap-3">
+              {(['normal', 'grain', 'monochrome'] as const).map((filter) => (
+                <button
+                  key={filter}
+                  type="button"
+                  onClick={() => setThemeFilter(filter)}
+                  className={[
+                    "flex flex-col items-center justify-center p-3 rounded-2xl border-2 transition-all active:scale-95",
+                    themeFilter === filter 
+                      ? "border-slate-900 bg-slate-900 text-white shadow-lg" 
+                      : "border-slate-200 bg-white text-slate-500 hover:border-slate-300"
+                  ].join(" ")}
+                >
+                  <span className="material-symbols-outlined mb-1">
+                    {filter === 'normal' ? 'photo_camera' : filter === 'grain' ? 'grain' : 'contrast'}
+                  </span>
+                  <span className="text-[10px] font-black uppercase tracking-widest">{filter}</span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       ) : (

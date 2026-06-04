@@ -15,11 +15,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 type Props = {
   eventCode: string;
+  themeFilter?: string;
   onClose?: () => void;
   onGalleryClick?: () => void;
 };
 
-export function CameraCaptureClient({ eventCode, onClose, onGalleryClick }: Props) {
+export function CameraCaptureClient({ eventCode, themeFilter = "normal", onClose, onGalleryClick }: Props) {
   const queryClient = useQueryClient();
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -177,7 +178,7 @@ export function CameraCaptureClient({ eventCode, onClose, onGalleryClick }: Prop
           await new Promise((r) => setTimeout(r, 200));
         }
       }
-      const photo = await adapter.capture(!isBackCamera);
+      const photo = await adapter.capture(!isBackCamera, themeFilter);
       if (flashOn) {
         if (isBackCamera) await adapter.setTorch(false);
         else {
@@ -262,6 +263,12 @@ export function CameraCaptureClient({ eventCode, onClose, onGalleryClick }: Prop
     if (onClose) onClose();
   };
 
+  const getFilterStyle = () => {
+    if (themeFilter === 'monochrome') return { filter: "grayscale(100%) contrast(1.2)" };
+    if (themeFilter === 'grain') return { filter: "sepia(0.2) contrast(1.1) brightness(0.9)" };
+    return {};
+  };
+
   return (
     <div className="relative h-full w-full max-w-[448px] mx-auto overflow-hidden bg-black">
       <canvas ref={canvasRef} className="hidden" />
@@ -272,6 +279,7 @@ export function CameraCaptureClient({ eventCode, onClose, onGalleryClick }: Prop
           willChange: "transform",
           transform: flipPhase === "out" ? "scaleX(0)" : facingMode === "user" ? "scaleX(-1)" : "scaleX(1)",
           transition: flipPhase !== "idle" ? "transform 0.18s ease-in-out" : undefined,
+          ...getFilterStyle(),
         }}
         playsInline muted autoPlay
       />

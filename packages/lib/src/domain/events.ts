@@ -10,6 +10,7 @@ const createEventInputSchema = z.object({
   upload_limit_enabled: z.boolean().optional(),
   max_uploads_total: z.number().optional(),
   discount_code_id: z.string().uuid().optional(),
+  theme_filter: z.string().optional(),
 });
 
 const updateEventInputSchema = z.object({
@@ -78,8 +79,9 @@ export async function createEvent(
       cover_image_path: parsed.coverImagePath ?? null,
       upload_limit_enabled: parsed.upload_limit_enabled ?? false,
       max_uploads_total: parsed.max_uploads_total ?? null,
+      theme_filter: parsed.theme_filter ?? 'normal',
     })
-    .select("id,name,event_date,event_code,reveal_mode,gallery_visible,created_by,cover_image_path,upload_limit_enabled,max_uploads_per_user,max_uploads_total")
+    .select("id,name,event_date,event_code,reveal_mode,gallery_visible,created_by,cover_image_path,upload_limit_enabled,max_uploads_per_user,max_uploads_total,theme_filter")
     .single();
 
   if (error) throw error;
@@ -99,7 +101,7 @@ export const getEventByCode = cache(async (eventCode: string) => {
   const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from("events")
-    .select("id,name,event_date,event_code,reveal_mode,gallery_visible,cover_image_path,upload_limit_enabled,max_uploads_per_user,max_uploads_total")
+    .select("id,name,event_date,event_code,reveal_mode,gallery_visible,cover_image_path,upload_limit_enabled,max_uploads_per_user,max_uploads_total,theme_filter")
     .eq("event_code", eventCode)
     .maybeSingle();
 
@@ -142,7 +144,7 @@ export async function updateEvent(input: z.infer<typeof updateEventInputSchema>)
       reveal_mode: parsed.revealMode,
     })
     .eq("id", parsed.id)
-    .select("id,name,event_date,event_code,reveal_mode,gallery_visible,cover_image_path,upload_limit_enabled,max_uploads_per_user,max_uploads_total")
+    .select("id,name,event_date,event_code,reveal_mode,gallery_visible,cover_image_path,upload_limit_enabled,max_uploads_per_user,max_uploads_total,theme_filter")
     .single();
 
   if (error) throw error;
@@ -153,7 +155,7 @@ export async function getEventById(eventId: string) {
   const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from("events")
-    .select("id,name,event_date,event_code,reveal_mode,gallery_visible,cover_image_path,upload_limit_enabled,max_uploads_per_user,max_uploads_total")
+    .select("id,name,event_date,event_code,reveal_mode,gallery_visible,cover_image_path,upload_limit_enabled,max_uploads_per_user,max_uploads_total,theme_filter")
     .eq("id", eventId)
     .maybeSingle();
 
@@ -167,7 +169,7 @@ export async function setEventGalleryVisibility(eventId: string, galleryVisible:
     .from("events")
     .update({ gallery_visible: galleryVisible })
     .eq("id", eventId)
-    .select("id,name,event_date,event_code,reveal_mode,gallery_visible,upload_limit_enabled,max_uploads_per_user,max_uploads_total")
+    .select("id,name,event_date,event_code,reveal_mode,gallery_visible,upload_limit_enabled,max_uploads_per_user,max_uploads_total,theme_filter")
     .single();
 
   if (error) throw error;
@@ -178,7 +180,7 @@ export async function listAllEvents() {
   const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from("events")
-    .select("id,name,event_date,event_code,reveal_mode,gallery_visible,created_by,cover_image_path,upload_limit_enabled,max_uploads_per_user,max_uploads_total")
+    .select("id,name,event_date,event_code,reveal_mode,gallery_visible,created_by,cover_image_path,upload_limit_enabled,max_uploads_per_user,max_uploads_total,theme_filter")
     .order("created_at", { ascending: false });
 
   if (error) throw error;
@@ -189,7 +191,7 @@ export async function listEventsByCreator(userId: string) {
   const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from("events")
-    .select("id,name,event_date,event_code,reveal_mode,gallery_visible,created_by,cover_image_path,upload_limit_enabled,max_uploads_per_user,max_uploads_total")
+    .select("id,name,event_date,event_code,reveal_mode,gallery_visible,created_by,cover_image_path,upload_limit_enabled,max_uploads_per_user,max_uploads_total,theme_filter")
     .eq("created_by", userId)
     .order("created_at", { ascending: false });
 
@@ -387,7 +389,7 @@ export async function updateEventUploadLimits(
       max_uploads_total:    config.maxUploadsTotal,
     })
     .eq("id", eventId)
-    .select("id,name,event_date,event_code,reveal_mode,gallery_visible,created_by,cover_image_path,upload_limit_enabled,max_uploads_per_user,max_uploads_total")
+    .select("id,name,event_date,event_code,reveal_mode,gallery_visible,created_by,cover_image_path,upload_limit_enabled,max_uploads_per_user,max_uploads_total,theme_filter")
     .single();
 
   if (error) throw error;

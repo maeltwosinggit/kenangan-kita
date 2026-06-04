@@ -81,7 +81,7 @@ export class WebCameraAdapter implements CameraAdapter {
     return Promise.resolve();
   }
 
-  async capture(mirror?: boolean): Promise<CapturedPhoto> {
+  async capture(mirror?: boolean, themeFilter?: string): Promise<CapturedPhoto> {
     const width = this.video.videoWidth;
     const height = this.video.videoHeight;
     if (!width || !height) {
@@ -96,12 +96,33 @@ export class WebCameraAdapter implements CameraAdapter {
     }
 
     ctx.save();
+    
+    // Apply basic CSS filters based on theme
+    if (themeFilter === 'monochrome') {
+      ctx.filter = "grayscale(100%) contrast(1.2)";
+    } else if (themeFilter === 'grain') {
+      ctx.filter = "sepia(0.2) contrast(1.1) brightness(0.9)";
+    }
+    
     if (mirror) {
       ctx.translate(width, 0);
       ctx.scale(-1, 1);
     }
     ctx.drawImage(this.video, 0, 0, width, height);
     ctx.restore();
+    
+    // For 'grain', manually add noise to the pixel data
+    if (themeFilter === 'grain') {
+      const imgData = ctx.getImageData(0, 0, width, height);
+      const data = imgData.data;
+      for (let i = 0; i < data.length; i += 4) {
+        const noise = (Math.random() - 0.5) * 40;
+        data[i] = Math.min(255, Math.max(0, data[i] + noise));
+        data[i + 1] = Math.min(255, Math.max(0, data[i + 1] + noise));
+        data[i + 2] = Math.min(255, Math.max(0, data[i + 2] + noise));
+      }
+      ctx.putImageData(imgData, 0, 0);
+    }
     
     const blob = await new Promise<Blob>((resolve, reject) => {
       this.canvas.toBlob((nextBlob) => {
