@@ -13,7 +13,12 @@ export function getSupabaseBrowserClient() {
     throw new Error("Supabase environment variables are missing");
   }
 
-  _client = createBrowserClient(url, anonKey);
+  const client = createBrowserClient(url, anonKey);
+  if (!client) {
+    throw new Error("Supabase client failed to initialize.");
+  }
+  
+  _client = client;
   return _client;
 }
 
