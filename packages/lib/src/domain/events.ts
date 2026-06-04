@@ -102,7 +102,7 @@ export const getEventByCode = cache(async (eventCode: string) => {
   const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from("events")
-    .select("id,name,event_date,event_code,reveal_mode,gallery_visible,cover_image_path,upload_limit_enabled,max_uploads_per_user,max_uploads_total,theme_filter")
+    .select("id,name,event_date,event_code,reveal_mode,gallery_visible,created_by,cover_image_path,upload_limit_enabled,max_uploads_per_user,max_uploads_total,theme_filter")
     .eq("event_code", eventCode)
     .maybeSingle();
 
@@ -152,7 +152,7 @@ export async function updateEvent(input: z.infer<typeof updateEventInputSchema>)
     .from("events")
     .update(updateData)
     .eq("id", parsed.id)
-    .select("id,name,event_date,event_code,reveal_mode,gallery_visible,cover_image_path,upload_limit_enabled,max_uploads_per_user,max_uploads_total,theme_filter")
+    .select("id,name,event_date,event_code,reveal_mode,gallery_visible,created_by,cover_image_path,upload_limit_enabled,max_uploads_per_user,max_uploads_total,theme_filter")
     .single();
 
   if (error) throw error;
@@ -163,7 +163,7 @@ export async function getEventById(eventId: string) {
   const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from("events")
-    .select("id,name,event_date,event_code,reveal_mode,gallery_visible,cover_image_path,upload_limit_enabled,max_uploads_per_user,max_uploads_total,theme_filter")
+    .select("id,name,event_date,event_code,reveal_mode,gallery_visible,created_by,cover_image_path,upload_limit_enabled,max_uploads_per_user,max_uploads_total,theme_filter")
     .eq("id", eventId)
     .maybeSingle();
 
