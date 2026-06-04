@@ -177,7 +177,7 @@ export async function setEventGalleryVisibility(eventId: string, galleryVisible:
     .from("events")
     .update({ gallery_visible: galleryVisible })
     .eq("id", eventId)
-    .select("id,name,event_date,event_code,reveal_mode,gallery_visible,upload_limit_enabled,max_uploads_per_user,max_uploads_total,theme_filter")
+    .select("id,name,event_date,event_code,reveal_mode,gallery_visible,created_by,cover_image_path,upload_limit_enabled,max_uploads_per_user,max_uploads_total,theme_filter")
     .single();
 
   if (error) throw error;
