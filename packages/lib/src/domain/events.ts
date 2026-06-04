@@ -18,6 +18,7 @@ const updateEventInputSchema = z.object({
   name: z.string().min(2),
   eventDate: z.string().min(8),
   revealMode: z.enum(["instant", "after_event"]),
+  themeFilter: z.string().optional(),
 });
 
 export type EventRow = {
@@ -136,13 +137,20 @@ export const getEventStats = cache(async (eventId: string) => {
 export async function updateEvent(input: z.infer<typeof updateEventInputSchema>) {
   const parsed = updateEventInputSchema.parse(input);
   const supabase = getSupabaseClient();
+  
+  const updateData: any = {
+    name: parsed.name,
+    event_date: parsed.eventDate,
+    reveal_mode: parsed.revealMode,
+  };
+
+  if (parsed.themeFilter) {
+    updateData.theme_filter = parsed.themeFilter;
+  }
+
   const { data, error } = await supabase
     .from("events")
-    .update({
-      name: parsed.name,
-      event_date: parsed.eventDate,
-      reveal_mode: parsed.revealMode,
-    })
+    .update(updateData)
     .eq("id", parsed.id)
     .select("id,name,event_date,event_code,reveal_mode,gallery_visible,cover_image_path,upload_limit_enabled,max_uploads_per_user,max_uploads_total,theme_filter")
     .single();

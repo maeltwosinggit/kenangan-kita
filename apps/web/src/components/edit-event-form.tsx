@@ -10,6 +10,7 @@ type Props = {
     name: string;
     event_date: string;
     reveal_mode: "instant" | "after_event";
+    theme_filter?: string;
   };
   onSuccess?: () => void;
 };
@@ -19,9 +20,10 @@ export function EditEventForm({ event, onSuccess }: Props) {
   const [name, setName] = useState(event.name);
   const [eventDate, setEventDate] = useState(event.event_date);
   const [revealMode, setRevealMode] = useState(event.reveal_mode);
+  const [themeFilter, setThemeFilter] = useState(event.theme_filter || "normal");
 
   const mutation = useMutation({
-    mutationFn: () => updateEvent({ id: event.id, name, eventDate, revealMode }),
+    mutationFn: () => updateEvent({ id: event.id, name, eventDate, revealMode, themeFilter }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       queryClient.invalidateQueries({ queryKey: ["admin-event", event.id] });
@@ -73,6 +75,32 @@ export function EditEventForm({ event, onSuccess }: Props) {
           <option value="instant">Instant (Photos visible immediately)</option>
           <option value="after_event">After Event (Photos hidden until event ends)</option>
         </select>
+      </div>
+
+      <div>
+        <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-slate-500">
+          Camera Theme / Filter
+        </label>
+        <div className="grid grid-cols-3 gap-2">
+          {(['normal', 'grain', 'monochrome'] as const).map((filter) => (
+            <button
+              key={filter}
+              type="button"
+              onClick={() => setThemeFilter(filter)}
+              className={[
+                "flex flex-col items-center justify-center p-2.5 rounded-xl border-2 transition-all active:scale-95",
+                themeFilter === filter 
+                  ? "border-slate-900 bg-slate-900 text-white shadow-md" 
+                  : "border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300"
+              ].join(" ")}
+            >
+              <span className="material-symbols-outlined mb-1 text-[20px]">
+                {filter === 'normal' ? 'photo_camera' : filter === 'grain' ? 'grain' : 'contrast'}
+              </span>
+              <span className="text-[9px] font-black uppercase tracking-widest">{filter}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
       {mutation.isError && (
