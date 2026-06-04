@@ -33,6 +33,7 @@ export type EventRow = {
   upload_limit_enabled: boolean;
   max_uploads_per_user: number | null;
   max_uploads_total: number | null;
+  theme_filter: string;
 };
 
 export type EventUploadStats = {
