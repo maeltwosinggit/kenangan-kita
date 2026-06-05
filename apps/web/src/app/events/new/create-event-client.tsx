@@ -495,7 +495,7 @@ export default function CreateEventForm({
                     <div>
                       <h4 className="text-lg font-black uppercase tracking-tight leading-none">{plan.name}</h4>
                       <p className={["text-[10px] font-bold mt-1 uppercase tracking-wider", selectedPlan?.id === plan.id ? "text-slate-400" : "text-slate-400"].join(" ")}>
-                        {plan.price_cents === 0 ? "Completely Free" : `${getCurrencySymbol(plan.currency)}${(plan.price_cents / 100).toFixed(0)} One-time`}
+                        {plan.price_cents === 0 ? "Completely Free" : `${getCurrencySymbol(plan.currency)}${(plan.price_cents / 100).toFixed(0)}`}
                       </p>
                     </div>
                     {selectedPlan?.id === plan.id && (
