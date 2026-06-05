@@ -22,8 +22,8 @@ export class WebCameraAdapter implements CameraAdapter {
         audio: false,
         video: {
           facingMode: { ideal: "environment" },
-          width: { min: 720, ideal: 1280 },
-          height: { min: 960, ideal: 1280 }
+          width: { min: 1280, ideal: 4032 },
+          height: { min: 720, ideal: 3024 }
         }
       });
 
@@ -131,7 +131,7 @@ export class WebCameraAdapter implements CameraAdapter {
           return;
         }
         resolve(nextBlob);
-      }, "image/jpeg");
+      }, "image/jpeg", 1.0); // Use 100% quality for the intermediate capture
     });
 
     return {
@@ -163,8 +163,8 @@ export class WebCameraAdapter implements CameraAdapter {
         audio: false,
         video: {
           facingMode: { exact: facingMode },
-          width: { min: 720, ideal: 1280 },
-          height: { min: 960, ideal: 1280 }
+          width: { min: 1280, ideal: 4032 },
+          height: { min: 720, ideal: 3024 }
         }
       });
     } catch {
@@ -172,8 +172,8 @@ export class WebCameraAdapter implements CameraAdapter {
         audio: false,
         video: {
           facingMode: { ideal: facingMode },
-          width: { min: 720, ideal: 1280 },
-          height: { min: 960, ideal: 1280 }
+          width: { min: 1280, ideal: 4032 },
+          height: { min: 720, ideal: 3024 }
         }
       });
     }
