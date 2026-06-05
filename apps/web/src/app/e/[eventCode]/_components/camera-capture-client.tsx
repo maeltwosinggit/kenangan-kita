@@ -42,13 +42,13 @@ export function CameraCaptureClient({ eventCode, themeFilter = "normal", onClose
   const [lastThumbUrl, setLastThumbUrl] = useState<string | null>(null);
   const [limitStatus, setLimitStatus] = useState<UserUploadLimitStatus | null>(null);
 
-  const isLimitReached = !!limitStatus && (limitStatus.isUserLimitReached || limitStatus.isEventLimitReached);
+  const isLimitReached = !!limitStatus && (limitStatus.isUserLimitReached || limitStatus.isEventLimitReached || limitStatus.isEventExpired);
   const shotsLeft = limitStatus && limitStatus.userLimit !== null
     ? Math.max(0, limitStatus.userLimit - limitStatus.uploadCount)
     : null;
   const canCapture = useMemo(
-    () => !!adapter && isCameraReady && !captured && !loading && !isLimitReached,
-    [adapter, isCameraReady, captured, loading, isLimitReached]
+    () => !!adapter && isCameraReady && !captured && !loading && !isLimitReached && !limitStatus?.isEventExpired,
+    [adapter, isCameraReady, captured, loading, isLimitReached, limitStatus?.isEventExpired]
   );
   const canUpload = useMemo(() => !!captured && !loading, [captured, loading]);
 
@@ -208,13 +208,22 @@ export function CameraCaptureClient({ eventCode, themeFilter = "normal", onClose
     try {
       const supabase = getSupabaseBrowserClient();
       const freshStatus = await checkUserUploadLimit(eventCode, userId, supabase);
+      
+      // Client-side persistence check for guests
       if (!userId && freshStatus.userLimit !== null) {
         const guestCountStr = localStorage.getItem(`guest_uploads_${eventCode}`);
         const guestCount = guestCountStr ? parseInt(guestCountStr, 10) : 0;
         freshStatus.uploadCount = guestCount;
         freshStatus.isUserLimitReached = guestCount >= freshStatus.userLimit;
       }
+      
       setLimitStatus(freshStatus);
+
+      if (freshStatus.isEventExpired) {
+        setError("This event has closed for uploads.");
+        setLoading(false);
+        return;
+      }
       if (freshStatus.isUserLimitReached) {
         setError("You've reached your photo limit.");
         setLoading(false);
@@ -326,7 +335,14 @@ export function CameraCaptureClient({ eventCode, themeFilter = "normal", onClose
 
       {!captured && (
         <footer className="absolute bottom-0 left-0 right-0 z-50 flex flex-col items-center px-8 pb-12">
-          {zoomRange && zoomRange.max > zoomRange.min && (
+          {limitStatus?.isEventExpired && (
+            <div className="mb-6 flex w-full flex-col items-center gap-2 rounded-2xl bg-amber-500/20 p-4 backdrop-blur-md ring-1 ring-amber-400/30 animate-in fade-in zoom-in-95 duration-300">
+               <span className="material-symbols-outlined text-amber-400 text-3xl mb-1">event_busy</span>
+               <p className="text-sm font-black text-white uppercase tracking-wider">Event Closed</p>
+               <p className="text-[10px] text-amber-200 text-center font-medium leading-tight">This camera is no longer accepting new memories as the event has ended.</p>
+            </div>
+          )}
+          {zoomRange && zoomRange.max > zoomRange.min && !limitStatus?.isEventExpired && (
             <div className="mb-6 flex w-full max-w-[200px] flex-col items-center gap-2">
               <div className="flex w-full justify-between px-1 text-[10px] font-bold text-white/60">
                 <span>{zoomRange.min}x</span>
@@ -361,7 +377,13 @@ export function CameraCaptureClient({ eventCode, themeFilter = "normal", onClose
             </button>
             <div className="relative flex items-center justify-center">
               <div className="pointer-events-none absolute h-24 w-24 rounded-full border-4 border-white/30" />
-              <button onClick={onCapture} disabled={!canCapture} className="flex h-20 w-20 items-center justify-center rounded-full bg-white shadow-lg transition-all duration-200 active:scale-90 disabled:opacity-50"><div className="h-[72px] w-[72px] rounded-full border border-slate-200" /></button>
+              <button 
+                onClick={onCapture} 
+                disabled={!canCapture} 
+                className={["flex h-20 w-20 items-center justify-center rounded-full bg-white shadow-lg transition-all duration-200 active:scale-90 disabled:opacity-50", limitStatus?.isEventExpired ? "opacity-20 grayscale" : ""].join(" ")}
+              >
+                <div className="h-[72px] w-[72px] rounded-full border border-slate-200" />
+              </button>
             </div>
             <div className="h-14 w-14" />
           </div>

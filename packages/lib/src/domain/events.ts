@@ -54,6 +54,8 @@ export type UserUploadLimitStatus = {
   isUserLimitReached: boolean;
   /** Whether the event-wide total cap has been reached */
   isEventLimitReached: boolean;
+  /** Whether the event date has passed (closed for uploads) */
+  isEventExpired: boolean;
 };
 
 function randomEventCode(length = 6) {
@@ -97,6 +99,21 @@ export async function createEvent(
   }
 
   return data as EventRow;
+}
+
+/**
+ * Returns true if the current time is within the event window.
+ * Buffer: We allow uploads until 6 AM the morning AFTER the event date 
+ * to accommodate parties that go past midnight.
+ */
+export function isEventActive(eventDateStr: string): boolean {
+  const eventDate = new Date(eventDateStr);
+  // Set to end of day (23:59:59)
+  eventDate.setHours(23, 59, 59, 999);
+  
+  // Add 6 hour buffer for late-night uploads
+  const cutoffTime = eventDate.getTime() + (6 * 60 * 60 * 1000);
+  return Date.now() < cutoffTime;
 }
 
 export const getEventByCode = cache(async (eventCode: string) => {
@@ -343,7 +360,7 @@ export async function checkUserUploadLimit(
   // First resolve the event code to an event ID
   const { data: eventData, error: eventError } = await supabase
     .from("events")
-    .select("id")
+    .select("id, event_date")
     .eq("event_code", eventCode)
     .single();
 
@@ -351,6 +368,7 @@ export async function checkUserUploadLimit(
     throw new Error("Event not found");
   }
   const eventId = eventData.id;
+  const eventDate = eventData.event_date;
 
   const [countResult, statsResult] = await Promise.all([
     userId 
@@ -379,6 +397,7 @@ export async function checkUserUploadLimit(
     totalLimit,
     isUserLimitReached:  isPerGuestLimitEnabled && userLimit  !== null && uploadCount  >= userLimit,
     isEventLimitReached: totalLimit !== null && totalUploads >= totalLimit,
+    isEventExpired: !isEventActive(eventDate),
   };
 }
 

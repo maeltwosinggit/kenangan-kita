@@ -1,3 +1,4 @@
+import { isEventActive } from "@kenangan/lib";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -11,7 +12,14 @@ type EventCardProps = {
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
-function StatusBadge({ isOpen }: { isOpen: boolean }) {
+function StatusBadge({ isOpen, isExpired }: { isOpen: boolean; isExpired?: boolean }) {
+  if (isExpired) {
+    return (
+      <span className="shrink-0 rounded-lg px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700">
+        Ended
+      </span>
+    );
+  }
   return (
     <span
       className={[
@@ -72,7 +80,8 @@ export function EventCard({ event, isCreated = false, onManage }: EventCardProps
   const router = useRouter();
   const [isNavigating, setIsNavigating] = useState(false);
   const isOpen = event.isOpen;
-  const isArchived = !isOpen;
+  const isExpired = !isEventActive(event.event_date);
+  const isArchived = !isOpen || isExpired;
 
   const formattedDate = new Date(event.event_date).toLocaleDateString("en-US", {
     month: "short",
@@ -134,7 +143,7 @@ export function EventCard({ event, isCreated = false, onManage }: EventCardProps
             <h3 className="flex-1 truncate text-[17px] font-semibold leading-tight text-slate-900">
               {event.name}
             </h3>
-            <StatusBadge isOpen={isOpen} />
+            <StatusBadge isOpen={isOpen} isExpired={isExpired} />
           </div>
 
           <div className="mt-1 flex items-center gap-3">

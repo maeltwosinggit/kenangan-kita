@@ -9,7 +9,7 @@ import Link from "next/link";
 import { QRCodeDisplay } from "@/components/qr-code-display";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { getEventStats } from "@kenangan/lib";
+import { getEventStats, isEventActive } from "@kenangan/lib";
 
 type Props = {
   event: any;
@@ -45,6 +45,7 @@ export function EventViewHub({
 
   const photoCount = statsQuery.data?.photoCount ?? initialStats.photoCount;
   const guestCount = statsQuery.data?.guestCount ?? initialStats.guestCount;
+  const isExpired = !isEventActive(event.event_date);
 
   const initialTab = searchParams.get("tab") as "event" | "camera" | "gallery" | null;
   const [activeTab, setActiveTab] = useState<"event" | "camera" | "gallery">(initialTab || "event");
@@ -325,10 +326,19 @@ export function EventViewHub({
         </button>
 
         <button
-          onClick={() => handleTabChange("camera")}
-          className={`relative -top-4 flex h-16 w-16 items-center justify-center rounded-2xl shadow-xl transition-all active:scale-95 ${activeTab === "camera" ? "bg-slate-900" : "bg-white border border-slate-100"}`}
+          onClick={() => !isExpired && handleTabChange("camera")}
+          disabled={isExpired}
+          className={`relative -top-4 flex h-16 w-16 flex-col items-center justify-center rounded-2xl shadow-xl transition-all active:scale-95 ${activeTab === "camera" ? "bg-slate-900" : "bg-white border border-slate-100"} ${isExpired ? "opacity-40 grayscale" : ""}`}
         >
-          <CameraIcon active={activeTab === "camera"} />
+          {isExpired ? (
+            <svg className="h-6 w-6 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+          ) : (
+            <CameraIcon active={activeTab === "camera"} />
+          )}
+          {isExpired && <span className="absolute -bottom-5 text-[8px] font-black uppercase tracking-tighter text-slate-400">Closed</span>}
         </button>
 
         <button
