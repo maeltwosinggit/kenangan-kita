@@ -12,8 +12,8 @@ type UploadPhotoInput = {
   height?: number;
 };
 
-export async function uploadEventPhoto(input: UploadPhotoInput) {
-  const supabase = getSupabaseClient();
+export async function uploadEventPhoto(input: UploadPhotoInput, supabaseClient?: SupabaseClient) {
+  const supabase = supabaseClient ?? getSupabaseClient();
   const event = await getEventByCode(input.eventCode);
 
   if (!event) {

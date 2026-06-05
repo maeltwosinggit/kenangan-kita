@@ -18,11 +18,12 @@ import Link from "next/link";
 type Props = {
   eventCode: string;
   themeFilter?: string;
+  guestNickname?: string;
   onClose?: () => void;
   onGalleryClick?: () => void;
 };
 
-export function CameraCaptureClient({ eventCode, themeFilter = "normal", onClose, onGalleryClick }: Props) {
+export function CameraCaptureClient({ eventCode, themeFilter = "normal", guestNickname, onClose, onGalleryClick }: Props) {
   const queryClient = useQueryClient();
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -201,7 +202,7 @@ export function CameraCaptureClient({ eventCode, themeFilter = "normal", onClose
     if (!captured || loading) return;
     setLoading(true);
     setError(null);
-    const nameToUse = loggedInName ?? undefined;
+    const nameToUse = loggedInName ?? guestNickname;
     try {
       const supabase = getSupabaseBrowserClient();
       const guestId = getGuestId();
@@ -234,7 +235,7 @@ export function CameraCaptureClient({ eventCode, themeFilter = "normal", onClose
         guestId: !userId ? guestId : undefined,
         width: compressed.width,
         height: compressed.height
-      });
+      }, supabase);
 
       const thumbUrl = URL.createObjectURL(compressed.blob);
       setLastThumbUrl(thumbUrl);

@@ -35,6 +35,10 @@ export function EventViewHub({
   const searchParams = useSearchParams();
   const router = useRouter();
 
+  const [guestNickname, setGuestNickname] = useState<string | null>(null);
+  const [showNamePrompt, setShowNamePrompt] = useState(false);
+  const [tempName, setTempName] = useState("");
+
   // ── Stats Query ──
   const statsQuery = useQuery({
     queryKey: ["event-stats", eventCode],
@@ -46,6 +50,28 @@ export function EventViewHub({
   const photoCount = statsQuery.data?.photoCount ?? initialStats.photoCount;
   const guestCount = statsQuery.data?.guestCount ?? initialStats.guestCount;
   const isExpired = !isEventActive(event.event_date);
+
+  // ── Guest Onboarding ──
+  useEffect(() => {
+    if (currentUserId) return; // Authenticated users don't need prompt
+    
+    const saved = localStorage.getItem("kenangan_guest_nickname");
+    if (saved) {
+      setGuestNickname(saved);
+    } else {
+      setShowNamePrompt(true);
+    }
+  }, [currentUserId]);
+
+  const handleNameSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!tempName.trim()) return;
+    
+    const name = tempName.trim();
+    localStorage.setItem("kenangan_guest_nickname", name);
+    setGuestNickname(name);
+    setShowNamePrompt(false);
+  };
 
   const initialTab = searchParams.get("tab") as "event" | "camera" | "gallery" | null;
   const [activeTab, setActiveTab] = useState<"event" | "camera" | "gallery">(initialTab || "event");
@@ -304,12 +330,45 @@ export function EventViewHub({
               <CameraCaptureClient 
                 eventCode={eventCode} 
                 themeFilter={event.theme_filter}
+                guestNickname={guestNickname || undefined}
                 onClose={() => handleTabChange("event")} 
                 onGalleryClick={() => handleTabChange("gallery")}
               />
            </div>
          )}
       </div>
+
+      {/* ── Guest Name Prompt Modal ── */}
+      {showNamePrompt && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/90 p-6 backdrop-blur-md animate-in fade-in duration-300">
+           <div className="w-full max-sm:max-w-none max-w-sm rounded-[2.5rem] bg-white p-8 shadow-2xl animate-in zoom-in-95 slide-in-from-bottom-4 duration-500 delay-100 fill-mode-both">
+              <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-50 text-3xl">👋</div>
+              <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight leading-none mb-3">Join the Event</h2>
+              <p className="text-sm font-medium text-slate-500 leading-relaxed mb-8">
+                Welcome to <strong>{event.name}</strong>! Enter your name so others know who took the photos.
+              </p>
+              
+              <form onSubmit={handleNameSubmit} className="space-y-4">
+                 <input 
+                   type="text" 
+                   placeholder="Your Nickname"
+                   required
+                   autoFocus
+                   value={tempName}
+                   onChange={(e) => setTempName(e.target.value)}
+                   className="w-full h-16 rounded-2xl border-2 border-slate-100 bg-slate-50 px-6 text-lg font-bold text-slate-900 focus:border-slate-900 focus:bg-white focus:outline-none transition-all placeholder:text-slate-300"
+                 />
+                 <button
+                   type="submit"
+                   disabled={!tempName.trim()}
+                   className="w-full h-16 rounded-2xl bg-slate-900 text-xs font-black uppercase tracking-widest text-white shadow-xl shadow-slate-200 transition-all active:scale-[0.98] disabled:opacity-30"
+                 >
+                   Start Capturing
+                 </button>
+              </form>
+           </div>
+        </div>
+      )}
 
       {/* ── SHARED BOTTOM NAV ── */}
       <nav 
