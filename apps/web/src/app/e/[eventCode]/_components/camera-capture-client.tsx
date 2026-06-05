@@ -13,6 +13,7 @@ import {
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 
 type Props = {
   eventCode: string;
