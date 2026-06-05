@@ -89,45 +89,55 @@ export default function LandingPage() {
              <p className="text-slate-400 font-medium">Whether it's a small dinner or a grand wedding, we have a plan that fits your memory vault.</p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6">
-             <div className="rounded-3xl bg-slate-800/50 border border-slate-700 p-8 flex flex-col">
+          <div className="grid md:grid-cols-4 gap-4">
+             <div className="rounded-3xl bg-slate-800/50 border border-slate-700 p-6 flex flex-col">
                 <h3 className="text-lg font-bold text-white mb-2">Free</h3>
                 <div className="flex items-baseline gap-1 mb-6">
                    <span className="text-4xl font-black">RM0</span>
                 </div>
-                <ul className="space-y-4 mb-8 flex-1">
-                   <li className="flex gap-3 text-slate-300 text-sm font-medium"><span className="material-symbols-outlined text-[18px] text-slate-500">check_circle</span> 25 Guest Uploads</li>
-                   <li className="flex gap-3 text-slate-300 text-sm font-medium"><span className="material-symbols-outlined text-[18px] text-slate-500">check_circle</span> 7 Days Storage</li>
-                   <li className="flex gap-3 text-slate-300 text-sm font-medium"><span className="material-symbols-outlined text-[18px] text-slate-500">check_circle</span> Web Gallery</li>
-                </ul>
-             </div>
-             
-             <div className="rounded-3xl bg-white p-8 flex flex-col relative transform md:-translate-y-4 shadow-2xl">
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full">Most Popular</div>
-                <h3 className="text-lg font-bold text-slate-900 mb-2">Pro</h3>
-                <div className="flex items-baseline gap-1 mb-6">
-                   <span className="text-4xl font-black text-slate-900">RM79</span>
-                   <span className="text-sm font-bold text-slate-400">/event</span>
-                </div>
-                <ul className="space-y-4 mb-8 flex-1">
-                   <li className="flex gap-3 text-slate-600 text-sm font-medium"><span className="material-symbols-outlined text-[18px] text-indigo-600">check_circle</span> Unlimited Uploads</li>
-                   <li className="flex gap-3 text-slate-600 text-sm font-medium"><span className="material-symbols-outlined text-[18px] text-indigo-600">check_circle</span> 30 Days Storage</li>
-                   <li className="flex gap-3 text-slate-600 text-sm font-medium"><span className="material-symbols-outlined text-[18px] text-indigo-600">check_circle</span> Digital Photobook</li>
-                   <li className="flex gap-3 text-slate-600 text-sm font-medium"><span className="material-symbols-outlined text-[18px] text-indigo-600">check_circle</span> High-Res Downloads</li>
+                <ul className="space-y-3 mb-8 flex-1">
+                   <li className="flex gap-2 text-slate-300 text-xs font-medium"><span className="material-symbols-outlined text-[16px] text-slate-500">check_circle</span> 20 Guest Uploads</li>
+                   <li className="flex gap-2 text-slate-300 text-xs font-medium"><span className="material-symbols-outlined text-[16px] text-slate-500">check_circle</span> 7 Days Storage</li>
+                   <li className="flex gap-2 text-slate-300 text-xs font-medium"><span className="material-symbols-outlined text-[16px] text-slate-500">check_circle</span> Web Gallery</li>
                 </ul>
              </div>
 
-             <div className="rounded-3xl bg-slate-800/50 border border-slate-700 p-8 flex flex-col">
-                <h3 className="text-lg font-bold text-white mb-2">Wedding</h3>
+             <div className="rounded-3xl bg-slate-800/50 border border-slate-700 p-6 flex flex-col">
+                <h3 className="text-lg font-bold text-white mb-2">Starter</h3>
                 <div className="flex items-baseline gap-1 mb-6">
-                   <span className="text-4xl font-black">RM199</span>
-                   <span className="text-sm font-bold text-slate-400">/event</span>
+                   <span className="text-4xl font-black">RM60</span>
                 </div>
-                <ul className="space-y-4 mb-8 flex-1">
-                   <li className="flex gap-3 text-slate-300 text-sm font-medium"><span className="material-symbols-outlined text-[18px] text-slate-500">check_circle</span> Everything in Pro</li>
-                   <li className="flex gap-3 text-slate-300 text-sm font-medium"><span className="material-symbols-outlined text-[18px] text-slate-500">check_circle</span> 1 Year Storage</li>
-                   <li className="flex gap-3 text-slate-300 text-sm font-medium"><span className="material-symbols-outlined text-[18px] text-slate-500">check_circle</span> Custom Event Cover</li>
-                   <li className="flex gap-3 text-slate-300 text-sm font-medium"><span className="material-symbols-outlined text-[18px] text-slate-500">check_circle</span> All-Access ZIP Export</li>
+                <ul className="space-y-3 mb-8 flex-1">
+                   <li className="flex gap-2 text-slate-300 text-xs font-medium"><span className="material-symbols-outlined text-[16px] text-slate-500">check_circle</span> 250 Guest Uploads</li>
+                   <li className="flex gap-2 text-slate-300 text-xs font-medium"><span className="material-symbols-outlined text-[16px] text-slate-500">check_circle</span> 30 Days Storage</li>
+                   <li className="flex gap-2 text-slate-300 text-xs font-medium"><span className="material-symbols-outlined text-[16px] text-slate-500">check_circle</span> High-Res Downloads</li>
+                </ul>
+             </div>
+             
+             <div className="rounded-3xl bg-white p-6 flex flex-col relative transform md:-translate-y-2 shadow-2xl">
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-indigo-600 text-white text-[8px] font-black uppercase tracking-widest px-3 py-1 rounded-full whitespace-nowrap">Most Popular</div>
+                <h3 className="text-lg font-bold text-slate-900 mb-2">Pro</h3>
+                <div className="flex items-baseline gap-1 mb-6">
+                   <span className="text-4xl font-black text-slate-900">RM100</span>
+                </div>
+                <ul className="space-y-3 mb-8 flex-1">
+                   <li className="flex gap-2 text-slate-600 text-xs font-medium"><span className="material-symbols-outlined text-[16px] text-indigo-600">check_circle</span> 500 Guest Uploads</li>
+                   <li className="flex gap-2 text-slate-600 text-xs font-medium"><span className="material-symbols-outlined text-[16px] text-indigo-600">check_circle</span> 60 Days Storage</li>
+                   <li className="flex gap-2 text-slate-600 text-xs font-medium"><span className="material-symbols-outlined text-[16px] text-indigo-600">check_circle</span> Digital Photobook</li>
+                   <li className="flex gap-2 text-slate-600 text-xs font-medium"><span className="material-symbols-outlined text-[16px] text-indigo-600">check_circle</span> High-Res Downloads</li>
+                </ul>
+             </div>
+
+             <div className="rounded-3xl bg-slate-800/50 border border-slate-700 p-6 flex flex-col">
+                <h3 className="text-lg font-bold text-white mb-2">Elite</h3>
+                <div className="flex items-baseline gap-1 mb-6">
+                   <span className="text-4xl font-black">RM175</span>
+                </div>
+                <ul className="space-y-3 mb-8 flex-1">
+                   <li className="flex gap-2 text-slate-300 text-xs font-medium"><span className="material-symbols-outlined text-[16px] text-slate-500">check_circle</span> 1000 Guest Uploads</li>
+                   <li className="flex gap-2 text-slate-300 text-xs font-medium"><span className="material-symbols-outlined text-[16px] text-slate-500">check_circle</span> 1 Year Storage</li>
+                   <li className="flex gap-2 text-slate-300 text-xs font-medium"><span className="material-symbols-outlined text-[16px] text-slate-500">check_circle</span> All Pro Features</li>
+                   <li className="flex gap-2 text-slate-300 text-xs font-medium"><span className="material-symbols-outlined text-[16px] text-slate-500">check_circle</span> Custom Event Cover</li>
                 </ul>
              </div>
           </div>
