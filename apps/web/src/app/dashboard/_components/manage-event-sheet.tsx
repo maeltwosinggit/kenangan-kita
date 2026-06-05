@@ -232,15 +232,28 @@ export function ManageEventSheet({ event: incomingEvent, isOpen, onClose, onDele
     mutationFn: () =>
       updateEventUploadLimits(event!.id, {
         uploadLimitEnabled: limitEnabled,
-        maxUploadsPerUser:  maxPerUser  ? parseInt(maxPerUser,  10) : null,
-        maxUploadsTotal:    maxTotal    ? parseInt(maxTotal,    10) : null,
+        maxUploadsPerUser:  maxPerUser ? parseInt(maxPerUser, 10) : null,
+        maxUploadsTotal:    maxTotal   ? parseInt(maxTotal, 10)   : null,
       }),
-    onSuccess: () => {
-      // Refresh both the stats widget and the parent dashboard list
-      // so incomingEvent carries the new values next time the sheet opens.
+    onSuccess: (updated) => {
+      // Update local state immediately
+      setEvent(prev => prev ? ({
+        ...prev,
+        upload_limit_enabled: updated.upload_limit_enabled,
+        max_uploads_per_user: updated.max_uploads_per_user,
+        max_uploads_total: updated.max_uploads_total
+      }) : null);
+      
+      // Invalidate queries to sync with other parts of the app
       queryClient.invalidateQueries({ queryKey: ["upload-stats", event!.id] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => uploadLimitsMutation.reset(), 3000);
     },
+    onError: (err) => {
+      console.error("Failed to save limits:", err);
+    }
   });
 
   const statsQuery = useQuery({
@@ -655,10 +668,21 @@ export function ManageEventSheet({ event: incomingEvent, isOpen, onClose, onDele
                   type="button"
                   disabled={uploadLimitsMutation.isPending}
                   onClick={() => uploadLimitsMutation.mutate()}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 py-2.5 text-xs font-bold uppercase tracking-widest text-white transition-colors hover:bg-slate-800 disabled:opacity-60"
+                  className={[
+                    "flex w-full items-center justify-center gap-2 rounded-xl py-3 text-xs font-black uppercase tracking-widest text-white transition-all active:scale-[0.98] disabled:opacity-60",
+                    uploadLimitsMutation.isSuccess ? "bg-green-600 shadow-lg shadow-green-100" : "bg-slate-900 shadow-xl"
+                  ].join(" ")}
                 >
-                  {uploadLimitsMutation.isPending ? <Spinner /> : null}
-                  {uploadLimitsMutation.isPending ? "Saving…" : "Save Limits"}
+                  {uploadLimitsMutation.isPending ? (
+                    <Spinner />
+                  ) : uploadLimitsMutation.isSuccess ? (
+                    <span className="material-symbols-outlined text-[18px]">check_circle</span>
+                  ) : null}
+                  {uploadLimitsMutation.isPending 
+                    ? "Saving…" 
+                    : uploadLimitsMutation.isSuccess 
+                      ? "Limits Updated" 
+                      : "Save Limits"}
                 </button>
               </section>
 
