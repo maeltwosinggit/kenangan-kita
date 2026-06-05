@@ -458,6 +458,7 @@ export default function DashboardClient({
         event={managingEvent}
         isOpen={managingEvent !== null}
         onClose={() => setManagingEvent(null)}
+        isAdmin={isAdmin}
         onDeleted={() => { window.location.reload(); }}
       />
       <nav className="fixed inset-x-0 bottom-0 z-50 mx-auto flex h-20 max-w-[448px] items-center justify-around border-t border-slate-200 bg-white/90 px-6 pb-safe backdrop-blur-md">

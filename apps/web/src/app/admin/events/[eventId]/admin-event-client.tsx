@@ -1,6 +1,6 @@
 "use client";
 
-import { listEventPhotosForAdmin, setEventGalleryVisibility, softDeletePhoto, deleteEvent, type EventRow } from "@kenangan/lib";
+import { listEventPhotosForAdmin, setEventGalleryVisibility, softDeletePhoto, deleteEvent, updateEventUploadLimits, type EventRow } from "@kenangan/lib";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -22,6 +22,23 @@ export function AdminEventClient({ event }: Props) {
   const [eventState, setEventState] = useState(event);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [activeSection, setActiveSection] = useState<"overview" | "edit" | "photobook" | "guests" | "photos" | "danger">("overview");
+
+  // Upload limits state
+  const [limitEnabled, setLimitEnabled] = useState(event.upload_limit_enabled);
+  const [maxPerUser, setMaxPerUser] = useState(event.max_uploads_per_user ? String(event.max_uploads_per_user) : "");
+  const [maxTotal, setMaxTotal] = useState(event.max_uploads_total ? String(event.max_uploads_total) : "");
+
+  const uploadLimitsMutation = useMutation({
+    mutationFn: () => updateEventUploadLimits(event.id, {
+      uploadLimitEnabled: limitEnabled,
+      maxUploadsPerUser: maxPerUser ? parseInt(maxPerUser, 10) : null,
+      maxUploadsTotal: maxTotal ? parseInt(maxTotal, 10) : null,
+    }),
+    onSuccess: (updated) => {
+      setEventState(updated);
+      queryClient.invalidateQueries({ queryKey: ["admin-event", event.id] });
+    }
+  });
 
   const photosQuery = useInfiniteQuery({
     queryKey: ["admin-photos", event.id],
@@ -109,34 +126,94 @@ export function AdminEventClient({ event }: Props) {
       </div>
 
       {activeSection === "overview" && (
-      <div className="rounded border border-slate-200 bg-white p-4">
-        <h2 className="text-sm font-semibold">Gallery Visibility</h2>
-        <p className="mt-1 text-xs text-slate-600">
-          Current status:{" "}
-          <span className={eventState.gallery_visible ? "text-green-700" : "text-amber-700"}>
-            {eventState.gallery_visible ? "Visible to guests" : "Hidden from guests"}
-          </span>
-        </p>
-        {visibilityMutation.isError && (
-          <p className="mt-2 rounded border border-red-200 bg-red-50 px-2 py-1 text-xs text-red-700">
-            Failed to update gallery visibility. Please try again.
+      <div className="space-y-4">
+        <div className="rounded border border-slate-200 bg-white p-4 shadow-sm">
+          <h2 className="text-sm font-semibold text-slate-900 uppercase tracking-tight">Gallery Visibility</h2>
+          <p className="mt-1 text-xs text-slate-600">
+            Current status:{" "}
+            <span className={eventState.gallery_visible ? "text-green-700 font-bold" : "text-amber-700 font-bold"}>
+              {eventState.gallery_visible ? "Visible to guests" : "Hidden from guests"}
+            </span>
           </p>
-        )}
-        <button
-          type="button"
-          className="mt-3 rounded bg-slate-900 px-3 py-2 text-xs font-medium text-white disabled:opacity-50 hover:bg-slate-800 transition-colors"
-          disabled={visibilityMutation.isPending}
-          onClick={() => {
-            console.log('Toggling gallery visibility from:', eventState.gallery_visible, 'to:', !eventState.gallery_visible);
-            visibilityMutation.mutate(!eventState.gallery_visible);
-          }}
-        >
-          {visibilityMutation.isPending
-            ? "Updating..."
-            : eventState.gallery_visible
-              ? "Hide Gallery"
-              : "Show Gallery"}
-        </button>
+          {visibilityMutation.isError && (
+            <p className="mt-2 rounded border border-red-200 bg-red-50 px-2 py-1 text-xs text-red-700 font-medium">
+              Failed to update gallery visibility. Please try again.
+            </p>
+          )}
+          <button
+            type="button"
+            className="mt-4 w-full rounded-lg bg-slate-900 py-2.5 text-xs font-black uppercase tracking-widest text-white disabled:opacity-50 hover:bg-slate-800 transition-all active:scale-[0.98]"
+            disabled={visibilityMutation.isPending}
+            onClick={() => {
+              visibilityMutation.mutate(!eventState.gallery_visible);
+            }}
+          >
+            {visibilityMutation.isPending
+              ? "Updating..."
+              : eventState.gallery_visible
+                ? "Hide Gallery"
+                : "Show Gallery"}
+          </button>
+        </div>
+
+        <div className="rounded border border-slate-200 bg-white p-4 space-y-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-slate-900 uppercase tracking-tight">Upload Limits</h2>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={limitEnabled}
+              onClick={() => setLimitEnabled(!limitEnabled)}
+              className={[
+                "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200",
+                limitEnabled ? "bg-indigo-600" : "bg-slate-200",
+              ].join(" ")}
+            >
+              <span className={["pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200", limitEnabled ? "translate-x-5" : "translate-x-0"].join(" ")} />
+            </button>
+          </div>
+
+          {limitEnabled && (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="mb-1 block text-[10px] font-black uppercase tracking-widest text-slate-400 font-bold">Per Guest</label>
+                <input
+                  type="number"
+                  value={maxPerUser}
+                  onChange={(e) => setMaxPerUser(e.target.value)}
+                  className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-900 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                  placeholder="Unlimited"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-[10px] font-black uppercase tracking-widest text-slate-400 font-bold">Total Event</label>
+                <input
+                  type="number"
+                  value={maxTotal}
+                  onChange={(e) => setMaxTotal(e.target.value)}
+                  className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-900 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                  placeholder="Unlimited"
+                />
+              </div>
+            </div>
+          )}
+
+          {uploadLimitsMutation.isError && (
+             <p className="text-[11px] text-red-600 font-black uppercase tracking-tighter bg-red-50 p-2 rounded">Failed to save limits.</p>
+          )}
+          {uploadLimitsMutation.isSuccess && (
+             <p className="text-[11px] text-green-600 font-black uppercase tracking-tighter bg-green-50 p-2 rounded">Limits updated ✓</p>
+          )}
+
+          <button
+            type="button"
+            onClick={() => uploadLimitsMutation.mutate()}
+            disabled={uploadLimitsMutation.isPending}
+            className="w-full rounded-lg bg-indigo-600 py-2.5 text-xs font-black uppercase tracking-widest text-white hover:bg-indigo-700 disabled:opacity-50 transition-all active:scale-[0.98]"
+          >
+            {uploadLimitsMutation.isPending ? "Saving..." : "Save Limits"}
+          </button>
+        </div>
       </div>
       )}
 
