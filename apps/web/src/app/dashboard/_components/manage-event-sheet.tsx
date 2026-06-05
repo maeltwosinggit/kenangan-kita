@@ -28,6 +28,15 @@ type Props = {
 
 const PAGE_SIZE = 12;
 
+function getTierName(maxTotal: number | null): string {
+  if (maxTotal === 20) return "Free";
+  if (maxTotal === 250) return "Starter";
+  if (maxTotal === 500) return "Pro";
+  if (maxTotal === 1000) return "Elite";
+  if (!maxTotal) return "Custom (No Limit)";
+  return `Custom (${maxTotal})`;
+}
+
 function useEventUrl(eventCode: string) {
   const [url, setUrl] = useState("");
   useEffect(() => {
@@ -84,6 +93,7 @@ export function ManageEventSheet({ event: incomingEvent, isOpen, onClose, onDele
   const [limitEnabled, setLimitEnabled]   = useState(false);
   const [maxPerUser,   setMaxPerUser]     = useState<string>("");
   const [maxTotal,     setMaxTotal]       = useState<string>("");
+  const [isCustomLimit, setIsCustomLimit] = useState(false);
 
   // Cover photo local state
   const coverFileRef  = useRef<HTMLInputElement>(null);
@@ -136,8 +146,13 @@ export function ManageEventSheet({ event: incomingEvent, isOpen, onClose, onDele
       setActiveSection("overview");
       // Seed limit fields from saved DB values
       setLimitEnabled(incomingEvent.upload_limit_enabled ?? false);
-      setMaxPerUser(incomingEvent.max_uploads_per_user != null ? String(incomingEvent.max_uploads_per_user) : "");
+      const perUser = incomingEvent.max_uploads_per_user;
+      setMaxPerUser(perUser != null ? String(perUser) : "");
       setMaxTotal(incomingEvent.max_uploads_total    != null ? String(incomingEvent.max_uploads_total)    : "");
+
+      // Check if current perUser limit is one of the "quick" options
+      setIsCustomLimit(perUser !== null && ![5, 10, 25].includes(perUser));
+
       // Reset cover photo picker
       if (coverPreview) URL.revokeObjectURL(coverPreview);
       setCoverFile(null);
@@ -361,6 +376,18 @@ export function ManageEventSheet({ event: incomingEvent, isOpen, onClose, onDele
           >
             {/* ── OVERVIEW ── */}
             <div className="w-full shrink-0 overflow-y-auto px-4 py-4 space-y-4">
+              {/* Plan Tier Indicator */}
+              <section className="rounded-xl border-2 border-indigo-100 bg-indigo-50/50 p-4 flex items-center justify-between shadow-sm">
+                 <div>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400 leading-none mb-1 block">Current Event Tier</span>
+                    <h4 className="text-xl font-black text-indigo-900 uppercase tracking-tight leading-none">{getTierName(event.max_uploads_total)}</h4>
+                 </div>
+                 <div className="flex flex-col items-end border-l border-indigo-100 pl-4">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400 leading-none mb-1 block">Total Quota</span>
+                    <span className="text-xs font-bold text-indigo-700 bg-white border border-indigo-100 px-2 py-0.5 rounded-full">{event.max_uploads_total ? `${event.max_uploads_total} Photos` : "Unlimited"}</span>
+                 </div>
+              </section>
+
               {/* Guest link + QR */}
               <section className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3">
                 <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500">Guest Link & QR</h3>
@@ -502,9 +529,9 @@ export function ManageEventSheet({ event: incomingEvent, isOpen, onClose, onDele
               </section>
 
               {/* Upload Limits */}
-              <section className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
+              <section className="rounded-xl border border-slate-200 bg-white p-4 space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500">Upload Limits</h3>
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500">Guest Upload Limits</h3>
                   {/* Toggle — Admin Only */}
                   <button
                     type="button"
@@ -528,23 +555,66 @@ export function ManageEventSheet({ event: incomingEvent, isOpen, onClose, onDele
                 </div>
 
                 {limitEnabled && (
-                  <div className="space-y-3 pt-1">
+                  <div className="space-y-5 pt-1">
                     <div>
-                      <label className="mb-1 block text-xs font-medium text-slate-600">
-                        Max photos per person
+                      <label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-400">
+                        Photos per guest
                       </label>
-                      <input
-                        type="number"
-                        min="1"
-                        placeholder="e.g. 5 (leave blank = unlimited)"
-                        value={maxPerUser}
-                        onChange={(e) => setMaxPerUser(e.target.value)}
-                        className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900"
-                      />
-                      <p className="mt-1 text-[10px] text-slate-400">Control how many photos each guest can contribute.</p>
+                      
+                      <div className="grid grid-cols-5 gap-1.5">
+                        {[5, 10, 25, 50].map((val) => (
+                           <button
+                             key={val}
+                             type="button"
+                             onClick={() => {
+                                setMaxPerUser(String(val));
+                                setIsCustomLimit(false);
+                             }}
+                             className={[
+                               "py-2.5 rounded-xl text-xs font-black transition-all border-2",
+                               !isCustomLimit && parseInt(maxPerUser) === val 
+                                 ? "bg-slate-900 border-slate-900 text-white shadow-lg scale-[1.05] z-10" 
+                                 : "bg-white border-slate-100 text-slate-500 hover:border-slate-200 hover:bg-slate-50"
+                             ].join(" ")}
+                           >
+                             {val}
+                           </button>
+                        ))}
+                        <button
+                           type="button"
+                           onClick={() => setIsCustomLimit(true)}
+                           className={[
+                              "py-2.5 rounded-xl text-[10px] font-black uppercase tracking-tighter transition-all border-2",
+                              isCustomLimit 
+                                ? "bg-slate-900 border-slate-900 text-white shadow-lg scale-[1.05] z-10" 
+                                : "bg-white border-slate-100 text-slate-500 hover:border-slate-200 hover:bg-slate-50"
+                           ].join(" ")}
+                        >
+                           Custom
+                        </button>
+                      </div>
+
+                      {isCustomLimit && (
+                        <div className="mt-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                          <input
+                            type="number"
+                            min="1"
+                            placeholder="Enter limit"
+                            value={maxPerUser}
+                            onChange={(e) => setMaxPerUser(e.target.value)}
+                            className="w-full rounded-lg border-2 border-slate-900 bg-white px-3 py-2 text-sm font-bold text-slate-900 focus:outline-none placeholder:text-slate-300 placeholder:font-normal"
+                            autoFocus
+                          />
+                        </div>
+                      )}
+                      
+                      <p className="mt-2 text-[10px] text-slate-400 leading-relaxed font-medium italic">Ensure everyone gets a chance to participate by setting a fair limit per person.</p>
                     </div>
+
+                    <div className="h-px bg-slate-50" />
+
                     <div>
-                      <label className="mb-1 block text-xs font-medium text-slate-600">
+                      <label className="mb-1 block text-[10px] font-black uppercase tracking-widest text-slate-400">
                         Max photos total for event
                       </label>
                       <input
@@ -554,17 +624,20 @@ export function ManageEventSheet({ event: incomingEvent, isOpen, onClose, onDele
                         value={maxTotal}
                         disabled={!isAdmin}
                         onChange={(e) => setMaxTotal(e.target.value)}
-                        className={["w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900", !isAdmin ? "opacity-60 cursor-not-allowed bg-slate-100" : ""].join(" ")}
+                        className={["w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900", !isAdmin ? "opacity-60 cursor-not-allowed bg-slate-100 font-mono" : "font-bold text-indigo-600"].join(" ")}
                       />
                       {!isAdmin && (
-                        <p className="mt-1 text-[10px] text-slate-400 font-medium italic text-indigo-600 uppercase tracking-tight">Tier Protected Limit</p>
+                        <p className="mt-1 text-[9px] text-slate-400 font-black uppercase tracking-tighter text-indigo-600/60 leading-none">Tier Protected Limit</p>
                       )}
                     </div>
                   </div>
                 )}
                 
                 {!limitEnabled && !isAdmin && (
-                   <p className="text-[10px] text-slate-400 italic">Upload limits are currently disabled for this event.</p>
+                   <div className="flex items-center gap-2 text-amber-600 bg-amber-50 p-3 rounded-lg border border-amber-100">
+                      <span className="material-symbols-outlined text-[18px]">info</span>
+                      <p className="text-[10px] font-bold uppercase tracking-tight">Upload limits are disabled.</p>
+                   </div>
                 )}
 
                 {uploadLimitsMutation.isError && (
