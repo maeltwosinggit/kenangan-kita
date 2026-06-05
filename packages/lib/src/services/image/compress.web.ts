@@ -5,9 +5,9 @@ export type CompressOptions = {
 };
 
 export async function compressImageOnWeb(file: Blob, options: CompressOptions = {}) {
-  const maxWidth = options.maxWidth ?? 2048;
-  const maxHeight = options.maxHeight ?? 2048;
-  const quality = options.quality ?? 0.85;
+  const maxWidth = options.maxWidth ?? 3200;
+  const maxHeight = options.maxHeight ?? 3200;
+  const quality = options.quality ?? 0.90;
 
   const bitmap = await createImageBitmap(file);
   const ratio = Math.min(maxWidth / bitmap.width, maxHeight / bitmap.height, 1);
