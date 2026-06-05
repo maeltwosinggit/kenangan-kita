@@ -12,3 +12,4 @@ apps/mobile/.expo
 .env.local
 .env.*.local
 
+stress-test.js
