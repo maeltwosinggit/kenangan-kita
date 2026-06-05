@@ -389,17 +389,19 @@ export function ManageEventSheet({ event: incomingEvent, isOpen, onClose, onDele
           >
             {/* ── OVERVIEW ── */}
             <div className="w-full shrink-0 overflow-y-auto px-4 py-4 space-y-4">
-              {/* Plan Tier Indicator */}
-              <section className="rounded-xl border-2 border-indigo-100 bg-indigo-50/50 p-4 flex items-center justify-between shadow-sm">
-                 <div>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400 leading-none mb-1 block">Current Event Tier</span>
-                    <h4 className="text-xl font-black text-indigo-900 uppercase tracking-tight leading-none">{getTierName(event.max_uploads_total)}</h4>
-                 </div>
-                 <div className="flex flex-col items-end border-l border-indigo-100 pl-4">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400 leading-none mb-1 block">Total Quota</span>
-                    <span className="text-xs font-bold text-indigo-700 bg-white border border-indigo-100 px-2 py-0.5 rounded-full">{event.max_uploads_total ? `${event.max_uploads_total} Photos` : "Unlimited"}</span>
-                 </div>
-              </section>
+              {/* Plan Tier Indicator — Admin Only */}
+              {isAdmin && (
+                <section className="rounded-xl border-2 border-indigo-100 bg-indigo-50/50 p-4 flex items-center justify-between shadow-sm">
+                   <div>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400 leading-none mb-1 block">Current Event Tier</span>
+                      <h4 className="text-xl font-black text-indigo-900 uppercase tracking-tight leading-none">{getTierName(event.max_uploads_total)}</h4>
+                   </div>
+                   <div className="flex flex-col items-end border-l border-indigo-100 pl-4">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400 leading-none mb-1 block">Total Quota</span>
+                      <span className="text-xs font-bold text-indigo-700 bg-white border border-indigo-100 px-2 py-0.5 rounded-full">{event.max_uploads_total ? `${event.max_uploads_total} Photos` : "Unlimited"}</span>
+                   </div>
+                </section>
+              )}
 
               {/* Guest link + QR */}
               <section className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3">
@@ -544,18 +546,19 @@ export function ManageEventSheet({ event: incomingEvent, isOpen, onClose, onDele
               {/* Upload Limits */}
               <section className="rounded-xl border border-slate-200 bg-white p-4 space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500">Guest Upload Limits</h3>
-                  {/* Toggle — Admin Only */}
+                  <div className="flex flex-col">
+                    <h3 className="text-xs font-bold uppercase tracking-widest text-slate-900">Limit per guest</h3>
+                    <p className="text-[9px] font-medium text-slate-400 uppercase tracking-tight">Enable individual upload quotas</p>
+                  </div>
+                  {/* Toggle — Enabled for Everyone */}
                   <button
                     type="button"
                     role="switch"
-                    disabled={!isAdmin}
                     aria-checked={limitEnabled}
                     onClick={() => setLimitEnabled((v) => !v)}
                     className={[
                       "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200",
                       limitEnabled ? "bg-slate-900" : "bg-slate-200",
-                      !isAdmin ? "opacity-50 cursor-not-allowed" : ""
                     ].join(" ")}
                   >
                     <span
@@ -567,11 +570,11 @@ export function ManageEventSheet({ event: incomingEvent, isOpen, onClose, onDele
                   </button>
                 </div>
 
-                {limitEnabled && (
-                  <div className="space-y-5 pt-1">
+                {limitEnabled ? (
+                  <div className="space-y-5 pt-1 animate-in fade-in slide-in-from-top-2 duration-300">
                     <div>
                       <label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-400">
-                        Photos per guest
+                        Photos allowed per person
                       </label>
                       
                       <div className="grid grid-cols-5 gap-1.5">
@@ -644,10 +647,15 @@ export function ManageEventSheet({ event: incomingEvent, isOpen, onClose, onDele
                       )}
                     </div>
                   </div>
+                ) : (
+                  <div className="flex items-center gap-3 text-slate-500 bg-slate-50 p-4 rounded-xl border border-slate-100 italic animate-in fade-in duration-300">
+                    <span className="material-symbols-outlined text-[20px]">all_inclusive</span>
+                    <p className="text-[11px] font-medium leading-tight">Guests can upload unlimited photos, up to the overall event capacity.</p>
+                  </div>
                 )}
                 
                 {!limitEnabled && !isAdmin && (
-                   <div className="flex items-center gap-2 text-amber-600 bg-amber-50 p-3 rounded-lg border border-amber-100">
+                   <div className="flex items-center gap-2 text-amber-600 bg-amber-50 p-3 rounded-lg border border-amber-100 hidden">
                       <span className="material-symbols-outlined text-[18px]">info</span>
                       <p className="text-[10px] font-bold uppercase tracking-tight">Upload limits are disabled.</p>
                    </div>

@@ -364,17 +364,21 @@ export async function checkUserUploadLimit(
 
   const uploadCount = (countResult.data as number) ?? 0;
   const statsRow = (statsResult.data as any)?.[0] || statsResult.data;
-  const limitEnabled: boolean     = statsRow?.limit_enabled ?? false;
-  const userLimit: number | null  = limitEnabled ? (statsRow?.max_uploads_per_user ?? null) : null;
-  const totalLimit: number | null = limitEnabled ? (statsRow?.max_uploads_total ?? null) : null;
+  
+  // Logic: 
+  // 1. Total Event Limit is ALWAYS enforced if max_uploads_total is set (Business Rule).
+  // 2. Per User Limit is only enforced if upload_limit_enabled is true (Host Preference).
+  const isPerGuestLimitEnabled: boolean = statsRow?.limit_enabled ?? false;
+  const userLimit: number | null  = isPerGuestLimitEnabled ? (statsRow?.max_uploads_per_user ?? null) : null;
+  const totalLimit: number | null = statsRow?.max_uploads_total ?? null;
   const totalUploads: number      = Number(statsRow?.total_uploads ?? 0);
 
   return {
     uploadCount,
     userLimit,
     totalLimit,
-    isUserLimitReached:  limitEnabled && userLimit  !== null && uploadCount  >= userLimit,
-    isEventLimitReached: limitEnabled && totalLimit !== null && totalUploads >= totalLimit,
+    isUserLimitReached:  isPerGuestLimitEnabled && userLimit  !== null && uploadCount  >= userLimit,
+    isEventLimitReached: totalLimit !== null && totalUploads >= totalLimit,
   };
 }
 
