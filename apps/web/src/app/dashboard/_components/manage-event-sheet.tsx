@@ -23,7 +23,6 @@ type Props = {
   isOpen: boolean;
   onClose: () => void;
   onDeleted: (eventId: string) => void;
-  isAdmin?: boolean;
 };
 
 const PAGE_SIZE = 12;
@@ -57,7 +56,8 @@ function Spinner() {
 
 type Section = "overview" | "edit" | "guests" | "photos" | "photobook" | "danger";
 
-export function ManageEventSheet({ event: incomingEvent, isOpen, onClose, onDeleted, isAdmin = false }: Props) {
+export function ManageEventSheet({ event: incomingEvent, isOpen, onClose, onDeleted }: Props) {
+  const isAdmin = false; // Even admins must use /admin dashboard for elevated edits
   const supabase = getSupabaseBrowserClient();
   const queryClient = useQueryClient();
   
