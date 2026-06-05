@@ -627,25 +627,24 @@ export function ManageEventSheet({ event: incomingEvent, isOpen, onClose, onDele
                       <p className="mt-2 text-[10px] text-slate-400 leading-relaxed font-medium italic">Ensure everyone gets a chance to participate by setting a fair limit per person.</p>
                     </div>
 
-                    <div className="h-px bg-slate-50" />
-
-                    <div>
-                      <label className="mb-1 block text-[10px] font-black uppercase tracking-widest text-slate-400">
-                        Max photos total for event
-                      </label>
-                      <input
-                        type="number"
-                        min="1"
-                        placeholder={isAdmin ? "e.g. 200 (leave blank = unlimited)" : "Admin controlled"}
-                        value={maxTotal}
-                        disabled={!isAdmin}
-                        onChange={(e) => setMaxTotal(e.target.value)}
-                        className={["w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900", !isAdmin ? "opacity-60 cursor-not-allowed bg-slate-100 font-mono" : "font-bold text-indigo-600"].join(" ")}
-                      />
-                      {!isAdmin && (
-                        <p className="mt-1 text-[9px] text-slate-400 font-black uppercase tracking-tighter text-indigo-600/60 leading-none">Tier Protected Limit</p>
-                      )}
-                    </div>
+                    {isAdmin && (
+                      <>
+                        <div className="h-px bg-slate-50" />
+                        <div>
+                          <label className="mb-1 block text-[10px] font-black uppercase tracking-widest text-slate-400">
+                            Max photos total for event
+                          </label>
+                          <input
+                            type="number"
+                            min="1"
+                            placeholder="e.g. 200 (leave blank = unlimited)"
+                            value={maxTotal}
+                            onChange={(e) => setMaxTotal(e.target.value)}
+                            className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900 font-bold text-indigo-600"
+                          />
+                        </div>
+                      </>
+                    )}
                   </div>
                 ) : (
                   <div className="flex items-center gap-3 text-slate-500 bg-slate-50 p-4 rounded-xl border border-slate-100 italic animate-in fade-in duration-300">
