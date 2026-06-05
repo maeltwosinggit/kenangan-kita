@@ -13,3 +13,4 @@ apps/mobile/.expo
 .env.*.local
 
 stress-test.js
+cleanup-test.js
