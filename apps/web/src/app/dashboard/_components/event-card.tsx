@@ -190,6 +190,18 @@ export function EventCard({ event, isCreated = false, onManage }: EventCardProps
           >
             <span className="material-symbols-outlined text-[20px]">share</span>
           </button>
+          
+          {/* Manage — restored for archived/ended state if host */}
+          {isCreated && (
+            <button
+              type="button"
+              onClick={onManage}
+              aria-label="Manage event"
+              className="flex items-center justify-center rounded-xl border border-slate-200 px-3 text-slate-500 transition-all hover:bg-slate-50 active:scale-95"
+            >
+              <span className="material-symbols-outlined text-[20px]">settings</span>
+            </button>
+          )}
         </div>
       ) : (
         <div className="flex gap-2">
