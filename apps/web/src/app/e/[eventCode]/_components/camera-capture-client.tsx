@@ -6,6 +6,7 @@ import {
   uploadEventPhoto, 
   checkUserUploadLimit, 
   WebCameraAdapter, 
+  getGuestId,
   type CapturedPhoto, 
   type UserUploadLimitStatus 
 } from "@kenangan/lib";
@@ -54,14 +55,9 @@ export function CameraCaptureClient({ eventCode, themeFilter = "normal", onClose
 
   const fetchLimitStatus = (uid: string | null) => {
     const supabase = getSupabaseBrowserClient();
-    checkUserUploadLimit(eventCode, uid, supabase)
+    const guestId = getGuestId();
+    checkUserUploadLimit(eventCode, uid, supabase, guestId)
       .then((status) => {
-        if (!uid && status.userLimit !== null) {
-          const guestCountStr = localStorage.getItem(`guest_uploads_${eventCode}`);
-          const guestCount = guestCountStr ? parseInt(guestCountStr, 10) : 0;
-          status.uploadCount = guestCount;
-          status.isUserLimitReached = guestCount >= status.userLimit;
-        }
         setLimitStatus(status);
       })
       .catch((err) => {
@@ -207,15 +203,8 @@ export function CameraCaptureClient({ eventCode, themeFilter = "normal", onClose
     const nameToUse = loggedInName ?? undefined;
     try {
       const supabase = getSupabaseBrowserClient();
-      const freshStatus = await checkUserUploadLimit(eventCode, userId, supabase);
-      
-      // Client-side persistence check for guests
-      if (!userId && freshStatus.userLimit !== null) {
-        const guestCountStr = localStorage.getItem(`guest_uploads_${eventCode}`);
-        const guestCount = guestCountStr ? parseInt(guestCountStr, 10) : 0;
-        freshStatus.uploadCount = guestCount;
-        freshStatus.isUserLimitReached = guestCount >= freshStatus.userLimit;
-      }
+      const guestId = getGuestId();
+      const freshStatus = await checkUserUploadLimit(eventCode, userId, supabase, guestId);
       
       setLimitStatus(freshStatus);
 
@@ -225,7 +214,7 @@ export function CameraCaptureClient({ eventCode, themeFilter = "normal", onClose
         return;
       }
       if (freshStatus.isUserLimitReached) {
-        setError("You've reached your photo limit.");
+        setError(userId ? "You've reached your photo limit." : "Guest limit reached. Sign in to upload more!");
         setLoading(false);
         return;
       }
@@ -241,6 +230,7 @@ export function CameraCaptureClient({ eventCode, themeFilter = "normal", onClose
         file: compressed.blob,
         nickname: nameToUse,
         uploaderId: userId ?? undefined,
+        guestId: !userId ? guestId : undefined,
         width: compressed.width,
         height: compressed.height
       });
@@ -256,10 +246,7 @@ export function CameraCaptureClient({ eventCode, themeFilter = "normal", onClose
       setCaptured(null);
       setShowSaved(true);
       setTimeout(() => setShowSaved(false), 3000);
-      if (!userId) {
-        const count = parseInt(localStorage.getItem(`guest_uploads_${eventCode}`) || "0", 10);
-        localStorage.setItem(`guest_uploads_${eventCode}`, String(count + 1));
-      }
+      
       fetchLimitStatus(userId);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed");
@@ -360,14 +347,25 @@ export function CameraCaptureClient({ eventCode, themeFilter = "normal", onClose
               />
             </div>
           )}
-          {limitStatus && limitStatus.userLimit !== null && (
+          {limitStatus && limitStatus.userLimit !== null && !limitStatus.isEventExpired && (
             <div className="mb-5 flex flex-col items-center gap-2 w-full">
-              <div className={["flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold backdrop-blur-sm", limitStatus.isUserLimitReached ? "bg-red-500/30 text-red-300 ring-1 ring-red-400/40" : "bg-white/10 text-white/90 ring-1 ring-white/20"].join(" ")}>
-                {limitStatus.isUserLimitReached ? "No shots left" : `${shotsLeft} shots left`}
+              <div className={["flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold backdrop-blur-sm", limitStatus.isUserLimitReached ? "bg-red-500 text-white ring-1 ring-red-400" : "bg-white/10 text-white/90 ring-1 ring-white/20"].join(" ")}>
+                {limitStatus.isUserLimitReached ? "Personal limit reached" : `${shotsLeft} shots left`}
               </div>
-              <div className="h-1 w-32 overflow-hidden rounded-full bg-white/20"><div className={["h-full rounded-full transition-all duration-500", limitStatus.isUserLimitReached ? "bg-red-400" : "bg-white"].join(" ")} style={{ width: `${Math.min(100, (limitStatus.uploadCount / limitStatus.userLimit) * 100)}%` }} /></div>
+              <div className="h-1.5 w-32 overflow-hidden rounded-full bg-white/20"><div className={["h-full rounded-full transition-all duration-500", limitStatus.isUserLimitReached ? "bg-red-500" : "bg-white"].join(" ")} style={{ width: `${Math.min(100, (limitStatus.uploadCount / limitStatus.userLimit) * 100)}%` }} /></div>
+
+              {limitStatus.isUserLimitReached && !userId && (
+                 <Link 
+                   href="/login" 
+                   className="mt-2 flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-900 shadow-xl animate-in fade-in slide-in-from-bottom-2"
+                 >
+                   <span className="material-symbols-outlined text-[16px]">login</span>
+                   Sign in for more shots
+                 </Link>
+              )}
             </div>
           )}
+
           <div className="flex w-full items-center justify-between">
             <button 
               onClick={() => onGalleryClick?.()} 

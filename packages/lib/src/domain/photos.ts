@@ -6,6 +6,7 @@ type UploadPhotoInput = {
   file: Blob;
   nickname?: string;
   uploaderId?: string;
+  guestId?: string;
   capturedAt?: string;
   width?: number;
   height?: number;
@@ -20,37 +21,44 @@ export async function uploadEventPhoto(input: UploadPhotoInput) {
   }
 
   // ── Limit Enforcement ──────────────────────────────────────────────────────
-  if (event.upload_limit_enabled) {
-    // 1. Check total event limit
-    if (event.max_uploads_total !== null) {
-      const { data: statsData, error: totalError } = await supabase
-        .rpc("get_event_upload_stats", { p_event_id: event.id });
-      
-      if (totalError) throw totalError;
-      
-      const stats = (statsData as any)?.[0] || statsData;
-      const totalCount = Number(stats?.total_uploads ?? 0);
-      if (totalCount >= event.max_uploads_total) {
-        throw new Error("Event upload limit reached");
+  // 1. Check total event limit (ALWAYS enforced for business compliance)
+  if (event.max_uploads_total !== null) {
+    const { data: statsData, error: totalError } = await supabase
+      .rpc("get_event_upload_stats", { p_event_id: event.id });
+    
+    if (totalError) throw totalError;
+    
+    const stats = (statsData as any)?.[0] || statsData;
+    const totalCount = Number(stats?.total_uploads ?? 0);
+    if (totalCount >= event.max_uploads_total) {
+      throw new Error("Event upload limit reached");
+    }
+  }
+
+  // 2. Check per-user limit
+  if (!input.uploaderId) {
+    // ANONYMOUS GUEST: Limit to 2 photos total
+    if (input.guestId) {
+      const { count, error: countError } = await supabase
+        .from("photos")
+        .select("id", { count: "exact", head: true })
+        .eq("event_id", event.id)
+        .eq("guest_id", input.guestId)
+        .eq("is_deleted", false);
+
+      if (countError) throw countError;
+      if ((count ?? 0) >= 2) {
+        throw new Error("Guest limit reached. Please sign in to upload more photos.");
       }
     }
+  } else if (event.upload_limit_enabled && event.max_uploads_per_user !== null) {
+    // LOGGED IN USER: Enforce host's preference
+    const { data: userCount, error: countError } = await supabase
+      .rpc("get_user_upload_count", { p_event_id: event.id, p_user_id: input.uploaderId });
+    if (countError) throw countError;
 
-    // 2. Check per-user limit
-    if (event.max_uploads_per_user !== null) {
-      let currentCount = 0;
-      if (input.uploaderId) {
-        const { data: userCount, error: countError } = await supabase
-          .rpc("get_user_upload_count", { p_event_id: event.id, p_user_id: input.uploaderId });
-        if (countError) throw countError;
-        currentCount = userCount ?? 0;
-      }
-      // Note: for anonymous guests, we can't reliably enforce per-user limits
-      // on the server without a session/IP tracking, so we rely on client-side
-      // localStorage + this best-effort check if uploaderId is present.
-
-      if (input.uploaderId && currentCount >= event.max_uploads_per_user) {
-        throw new Error("Personal upload limit reached for this event");
-      }
+    if ((userCount ?? 0) >= event.max_uploads_per_user) {
+      throw new Error("Personal upload limit reached for this event");
     }
   }
   // ───────────────────────────────────────────────────────────────────────────
@@ -77,6 +85,7 @@ export async function uploadEventPhoto(input: UploadPhotoInput) {
     captured_at: capturedAt,
     nickname: input.nickname ?? null,
     uploader_id: input.uploaderId ?? null,
+    guest_id: input.guestId ?? null,
     mime_type: "image/jpeg",
     size_bytes: input.file.size,
     width: input.width ?? null,
