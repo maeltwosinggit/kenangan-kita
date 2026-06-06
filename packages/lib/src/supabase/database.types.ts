@@ -94,6 +94,7 @@ export type Database = {
           width: number | null;
           height: number | null;
           size_bytes: number | null;
+          orientation: string | null;
           is_deleted: boolean;
           created_at: string;
         };
@@ -109,6 +110,7 @@ export type Database = {
           width?: number | null;
           height?: number | null;
           size_bytes?: number | null;
+          orientation?: string | null;
           is_deleted?: boolean;
           created_at?: string;
         };
@@ -124,6 +126,7 @@ export type Database = {
           width?: number | null;
           height?: number | null;
           size_bytes?: number | null;
+          orientation?: string | null;
           is_deleted?: boolean;
           created_at?: string;
         };

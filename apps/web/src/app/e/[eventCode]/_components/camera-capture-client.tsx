@@ -228,6 +228,7 @@ export function CameraCaptureClient({ eventCode, themeFilter = "normal", guestNi
       }
 
       const compressed = await compressImage(captured.blob);
+      const orientation = compressed.width > compressed.height ? "landscape" : "portrait";
       await uploadEventPhoto({
         eventCode,
         file: compressed.blob,
@@ -235,7 +236,8 @@ export function CameraCaptureClient({ eventCode, themeFilter = "normal", guestNi
         uploaderId: userId ?? undefined,
         guestId: !userId ? guestId : undefined,
         width: compressed.width,
-        height: compressed.height
+        height: compressed.height,
+        orientation
       }, supabase);
 
       const thumbUrl = URL.createObjectURL(compressed.blob);

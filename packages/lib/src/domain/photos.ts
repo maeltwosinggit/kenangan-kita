@@ -11,6 +11,7 @@ type UploadPhotoInput = {
   capturedAt?: string;
   width?: number;
   height?: number;
+  orientation?: string;
 };
 
 export async function uploadEventPhoto(input: UploadPhotoInput, supabaseClient?: SupabaseClient) {
@@ -90,7 +91,8 @@ export async function uploadEventPhoto(input: UploadPhotoInput, supabaseClient?:
     mime_type: "image/jpeg",
     size_bytes: input.file.size,
     width: input.width ?? null,
-    height: input.height ?? null
+    height: input.height ?? null,
+    orientation: input.orientation ?? null
   });
 
   if (insertError) {
