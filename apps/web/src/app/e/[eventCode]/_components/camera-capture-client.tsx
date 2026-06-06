@@ -169,7 +169,8 @@ export function CameraCaptureClient({ eventCode, themeFilter = "normal", guestNi
       if (flashOn) {
         if (isBackCamera) {
           await adapter.setTorch(true);
-          await new Promise((r) => setTimeout(r, 150));
+          // Wait for device auto-exposure and auto-white-balance to adjust
+          await new Promise((r) => setTimeout(r, 450));
         } else {
           setFlashActive(true);
           await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
