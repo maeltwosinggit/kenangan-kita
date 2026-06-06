@@ -127,3 +127,42 @@ export async function generateDiscountCode(
   if (error) throw error;
   return data as DiscountCode;
 }
+
+/**
+ * Terminates (deactivates) a discount code (Admin only).
+ */
+export async function terminateDiscountCode(
+  codeId: string,
+  supabaseClient?: any
+): Promise<DiscountCode> {
+  const supabase = supabaseClient ?? getSupabaseClient();
+  const { data, error } = await supabase
+    .from("discount_codes")
+    .update({ is_active: false })
+    .eq("id", codeId)
+    .select("*")
+    .single();
+
+  if (error) throw error;
+  return data as DiscountCode;
+}
+
+/**
+ * Updates the max uses for a discount code (Admin only).
+ */
+export async function updateDiscountCodeMaxUses(
+  codeId: string,
+  maxUses: number | null,
+  supabaseClient?: any
+): Promise<DiscountCode> {
+  const supabase = supabaseClient ?? getSupabaseClient();
+  const { data, error } = await supabase
+    .from("discount_codes")
+    .update({ max_uses: maxUses })
+    .eq("id", codeId)
+    .select("*")
+    .single();
+
+  if (error) throw error;
+  return data as DiscountCode;
+}

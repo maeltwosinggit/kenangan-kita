@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { generateDiscountCode, getSupabaseClient, listPricingPlans } from "@kenangan/lib";
+import { generateDiscountCode, getSupabaseClient, listPricingPlans, terminateDiscountCode, updateDiscountCodeMaxUses } from "@kenangan/lib";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export function BillingAdmin() {
@@ -46,6 +46,26 @@ export function BillingAdmin() {
     },
     onError: (err) => {
       alert("Failed to generate code: " + (err as Error).message);
+    }
+  });
+
+  const terminateMutation = useMutation({
+    mutationFn: (codeId: string) => terminateDiscountCode(codeId, supabase),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-discount-codes"] });
+    },
+    onError: (err) => {
+      alert("Failed to deactivate code: " + (err as Error).message);
+    }
+  });
+
+  const updateMaxUsesMutation = useMutation({
+    mutationFn: ({ id, max }: { id: string, max: number | null }) => updateDiscountCodeMaxUses(id, max, supabase),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-discount-codes"] });
+    },
+    onError: (err) => {
+      alert("Failed to update limit: " + (err as Error).message);
     }
   });
 
@@ -170,23 +190,64 @@ export function BillingAdmin() {
 
       {/* 3. EXISTING CODES LIST */}
       <section>
-        <h2 className="mb-4 text-sm font-bold uppercase tracking-wider text-slate-900 px-1">Active Discount Codes</h2>
+        <h2 className="mb-4 text-sm font-bold uppercase tracking-wider text-slate-900 px-1">Manage Discount Codes</h2>
         <div className="space-y-3">
           {discountCodesQuery.data?.map((dc: any) => (
-            <div key={dc.id} className="flex items-center justify-between rounded-2xl border border-slate-100 bg-white p-4 shadow-sm transition-colors hover:border-slate-200">
-              <div className="flex items-center gap-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-50 text-indigo-600">
-                  <span className="material-symbols-outlined text-[20px]">sell</span>
+            <div key={dc.id} className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm transition-all hover:border-slate-300">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-4">
+                  <div className={["flex h-10 w-10 items-center justify-center rounded-full text-indigo-600 transition-colors", dc.is_active ? "bg-indigo-50" : "bg-slate-100 grayscale"].join(" ")}>
+                    <span className="material-symbols-outlined text-[20px]">sell</span>
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                       <p className={["text-sm font-black tracking-widest", dc.is_active ? "text-slate-900" : "text-slate-400 line-through"].join(" ")}>{dc.code}</p>
+                       {!dc.is_active && <span className="text-[8px] font-black uppercase bg-slate-100 px-1.5 py-0.5 rounded text-slate-500">Terminated</span>}
+                    </div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
+                      {dc.discount_type === 'percentage' ? `${dc.value}% OFF` : `$${(dc.value / 100).toFixed(2)} OFF`}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-black tracking-widest text-slate-900">{dc.code}</p>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
-                    {dc.discount_type === 'percentage' ? `${dc.value}% OFF` : `$${(dc.value / 100).toFixed(2)} OFF`}
-                    {dc.max_uses ? ` • ${dc.use_count}/${dc.max_uses} used` : ` • ${dc.use_count} used`}
-                  </p>
-                </div>
+                <div className={["h-2 w-2 rounded-full", dc.is_active ? "bg-green-500" : "bg-slate-300"].join(" ")} />
               </div>
-              <div className={["h-2 w-2 rounded-full", dc.is_active ? "bg-green-500" : "bg-slate-300"].join(" ")} />
+
+              <div className="flex items-center justify-between pt-4 border-t border-slate-50">
+                 <div className="flex items-center gap-4">
+                    <div>
+                       <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-0.5">Usage</p>
+                       <p className="text-xs font-bold text-slate-700">{dc.use_count} used</p>
+                    </div>
+                    <div>
+                       <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-0.5">Limit</p>
+                       <button 
+                         onClick={() => {
+                           const next = prompt("Enter new max uses (empty for unlimited):", dc.max_uses ?? "");
+                           if (next !== null) {
+                             updateMaxUsesMutation.mutate({ id: dc.id, max: next === "" ? null : parseInt(next) });
+                           }
+                         }}
+                         className="group flex items-center gap-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-700"
+                       >
+                          {dc.max_uses ?? "Unlimited"}
+                          <span className="material-symbols-outlined text-[14px] opacity-0 group-hover:opacity-100 transition-opacity">edit</span>
+                       </button>
+                    </div>
+                 </div>
+
+                 {dc.is_active && (
+                   <button 
+                     onClick={() => {
+                       if (confirm(`Are you sure you want to terminate ${dc.code}?`)) {
+                         terminateMutation.mutate(dc.id);
+                       }
+                     }}
+                     className="rounded-lg border border-red-100 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-red-500 hover:bg-red-50 transition-colors"
+                   >
+                     Terminate
+                   </button>
+                 )}
+              </div>
             </div>
           ))}
           {discountCodesQuery.data?.length === 0 && (
