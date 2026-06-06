@@ -9,6 +9,7 @@ import {
   updateEventUploadLimits,
   getEventUploadStats,
   updateEventCoverPhoto,
+  isEventActive,
 } from "@kenangan/lib";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
