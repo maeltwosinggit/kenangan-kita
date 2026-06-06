@@ -12,6 +12,10 @@ export function BillingAdmin() {
   // Tab for regional plans view
   const [pricingRegion, setPricingRegion] = useState<"MY" | "GLOBAL">("MY");
 
+  // Discount code list filtering
+  const [codeFilter, setCodeFilter] = useState<"active" | "terminated" | "all">("active");
+  const [showGenerate, setShowGenerate] = useState(false);
+
   const [code, setCode] = useState("");
   const [type, setType] = useState<"percentage" | "fixed">("percentage");
   const [value, setValue] = useState<number>(0);
@@ -34,6 +38,12 @@ export function BillingAdmin() {
     refetchInterval: 10000 // Poll every 10s
   });
 
+  const filteredCodes = (discountCodesQuery.data ?? []).filter(dc => {
+    if (codeFilter === 'active') return dc.is_active;
+    if (codeFilter === 'terminated') return !dc.is_active;
+    return true;
+  });
+
   const pricingPlansQuery = useQuery({
     queryKey: ["admin-pricing-plans", pricingRegion],
     queryFn: () => listPricingPlans(supabase, pricingRegion),
@@ -46,7 +56,7 @@ export function BillingAdmin() {
       setCode("");
       setValue(0);
       setMaxUses(undefined);
-      alert("Discount code generated!");
+      setShowGenerate(false);
     },
     onError: (err) => {
       alert("Failed to generate code: " + (err as Error).message);
@@ -91,220 +101,175 @@ export function BillingAdmin() {
   };
 
   return (
-    <div className="space-y-10">
-      {/* 1. PRICING PLANS VIEW */}
+    <div className="space-y-8 pb-20">
+      {/* 1. PRICING PLANS VIEW — Compact Grid */}
       <section>
-        <div className="mb-4 flex items-end justify-between px-1">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900">Regional Pricing Plans</h2>
-          <div className="flex bg-slate-100 p-1 rounded-lg">
+        <div className="mb-4 flex items-center justify-between px-1">
+          <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Regional Tiers</h2>
+          <div className="flex bg-slate-200/50 p-1 rounded-xl">
              <button 
                onClick={() => setPricingRegion("MY")}
-               className={["px-3 py-1 text-[10px] font-black rounded-md transition-all", pricingRegion === 'MY' ? "bg-white text-slate-900 shadow-sm" : "text-slate-400"].join(" ")}
+               className={["px-3 py-1 text-[9px] font-black rounded-lg transition-all", pricingRegion === 'MY' ? "bg-white text-slate-900 shadow-sm" : "text-slate-400"].join(" ")}
              >MY</button>
              <button 
                onClick={() => setPricingRegion("GLOBAL")}
-               className={["px-3 py-1 text-[10px] font-black rounded-md transition-all", pricingRegion === 'GLOBAL' ? "bg-white text-slate-900 shadow-sm" : "text-slate-400"].join(" ")}
+               className={["px-3 py-1 text-[9px] font-black rounded-lg transition-all", pricingRegion === 'GLOBAL' ? "bg-white text-slate-900 shadow-sm" : "text-slate-400"].join(" ")}
              >GLOBAL</button>
           </div>
         </div>
         
-        <div className="space-y-3">
+        <div className="grid grid-cols-2 gap-2">
           {pricingPlansQuery.data?.map((plan) => (
-            <div key={plan.id} className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-              <div className="flex justify-between items-start">
-                 <div>
-                    <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-1">{plan.region}</p>
-                    <h3 className="text-sm font-black uppercase text-slate-900">{plan.name}</h3>
-                    <p className="text-xs text-slate-500 mt-1">{plan.description}</p>
-                 </div>
-                 <div className="text-right">
-                    <p className="text-lg font-black text-slate-900">
-                      {getCurrencySymbol(plan.currency)}{plan.price_cents / 100}
-                    </p>
-                    <p className="text-[9px] font-bold text-slate-400 uppercase">{plan.currency}</p>
-                 </div>
+            <div key={plan.id} className="rounded-xl border border-slate-100 bg-white p-3 shadow-sm flex flex-col justify-between">
+              <div>
+                <h3 className="text-[10px] font-black uppercase text-slate-900 tracking-tight">{plan.name}</h3>
+                <p className="text-[11px] font-black text-indigo-600 mt-1">
+                   {getCurrencySymbol(plan.currency)}{plan.price_cents / 100}
+                </p>
               </div>
+              <p className="text-[9px] font-medium text-slate-400 leading-tight mt-2 line-clamp-2">{plan.description}</p>
             </div>
           ))}
-          {pricingPlansQuery.isLoading && <div className="py-10 text-center animate-pulse text-slate-300 font-bold uppercase text-xs">Loading Plans...</div>}
         </div>
       </section>
 
-      {/* 2. GENERATE CODE FORM */}
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="mb-4 text-sm font-bold uppercase tracking-wider text-slate-900">Generate Discount Code</h2>
-        <form onSubmit={handleGenerate} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Code</label>
-              <input 
-                type="text" 
-                placeholder="e.g. SAVE20" 
-                value={code}
-                onChange={(e) => setCode(e.target.value.toUpperCase())}
-                className="w-full rounded-xl border border-slate-200 p-3 text-sm font-black tracking-widest focus:border-slate-900 focus:outline-none"
-                required
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Type</label>
-              <select 
-                value={type}
-                onChange={(e) => setType(e.target.value as any)}
-                className="w-full rounded-xl border border-slate-200 p-3 text-sm font-bold focus:border-slate-900 focus:outline-none"
-              >
-                <option value="percentage">Percentage (%)</option>
-                <option value="fixed">Fixed Amount (Cents)</option>
-              </select>
-            </div>
+      <div className="h-px bg-slate-100" />
+
+      {/* 2. DISCOUNT CODES MANAGEMENT */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between px-1">
+           <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Discount Codes</h2>
+           <button 
+             onClick={() => setShowGenerate(!showGenerate)}
+             className={["flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all", showGenerate ? "bg-slate-100 text-slate-500" : "bg-indigo-600 text-white shadow-lg shadow-indigo-100"].join(" ")}
+           >
+             <span className="material-symbols-outlined text-[16px]">{showGenerate ? 'close' : 'add'}</span>
+             {showGenerate ? 'Cancel' : 'New Code'}
+           </button>
+        </div>
+
+        {/* Generate Form — Collapsible */}
+        {showGenerate && (
+          <div className="rounded-2xl border-2 border-indigo-600 bg-white p-5 shadow-2xl animate-in fade-in slide-in-from-top-2 duration-300">
+            <form onSubmit={handleGenerate} className="space-y-4">
+               <div className="grid grid-cols-2 gap-3">
+                 <div className="space-y-1">
+                   <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 pl-1">Code</label>
+                   <input type="text" placeholder="SAVE20" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} className="w-full rounded-xl border border-slate-200 p-2.5 text-sm font-black tracking-widest focus:border-indigo-600 focus:outline-none" required />
+                 </div>
+                 <div className="space-y-1">
+                   <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 pl-1">Type</label>
+                   <select value={type} onChange={(e) => setType(e.target.value as any)} className="w-full rounded-xl border border-slate-200 p-2.5 text-sm font-bold focus:border-indigo-600 focus:outline-none">
+                     <option value="percentage">Percentage (%)</option>
+                     <option value="fixed">Fixed (Cents)</option>
+                   </select>
+                 </div>
+               </div>
+               <div className="grid grid-cols-2 gap-3">
+                 <div className="space-y-1">
+                   <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 pl-1">Value</label>
+                   <input type="number" value={value || ""} onChange={(e) => setValue(parseInt(e.target.value))} className="w-full rounded-xl border border-slate-200 p-2.5 text-sm font-bold focus:border-indigo-600 focus:outline-none" required />
+                 </div>
+                 <div className="space-y-1">
+                   <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 pl-1">Max Uses</label>
+                   <input type="number" placeholder="∞" value={maxUses || ""} onChange={(e) => setMaxUses(e.target.value ? parseInt(e.target.value) : undefined)} className="w-full rounded-xl border border-slate-200 p-2.5 text-sm font-bold focus:border-indigo-600 focus:outline-none" />
+                 </div>
+               </div>
+               <button type="submit" disabled={generateMutation.isPending} className="w-full rounded-xl bg-indigo-600 py-3 text-[10px] font-black uppercase tracking-widest text-white shadow-xl transition-all active:scale-[0.98]">
+                 {generateMutation.isPending ? "Generating..." : "Generate & Save"}
+               </button>
+            </form>
           </div>
+        )}
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Value</label>
-              <input 
-                type="number" 
-                placeholder={type === 'percentage' ? "20" : "500"} 
-                value={value || ""}
-                onChange={(e) => setValue(parseInt(e.target.value))}
-                className="w-full rounded-xl border border-slate-200 p-3 text-sm font-bold focus:border-slate-900 focus:outline-none"
-                required
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Max Uses (Optional)</label>
-              <input 
-                type="number" 
-                placeholder="Unlimited" 
-                value={maxUses || ""}
-                onChange={(e) => setMaxUses(e.target.value ? parseInt(e.target.value) : undefined)}
-                className="w-full rounded-xl border border-slate-200 p-3 text-sm font-bold focus:border-slate-900 focus:outline-none"
-              />
-            </div>
-          </div>
+        {/* Filter Tabs */}
+        <div className="flex gap-2 p-1 bg-slate-100 rounded-xl w-fit">
+           {(['active', 'terminated', 'all'] as const).map(f => (
+             <button
+               key={f}
+               onClick={() => setCodeFilter(f)}
+               className={["px-3 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all", codeFilter === f ? "bg-white text-slate-900 shadow-sm" : "text-slate-400"].join(" ")}
+             >
+               {f}
+             </button>
+           ))}
+        </div>
 
-          <button 
-            type="submit"
-            disabled={generateMutation.isPending}
-            className="w-full rounded-xl bg-slate-900 py-3.5 text-xs font-black uppercase tracking-widest text-white shadow-lg shadow-slate-200 transition-all active:scale-[0.98] disabled:opacity-50"
-          >
-            {generateMutation.isPending ? "Generating..." : "Generate Code"}
-          </button>
-        </form>
-      </section>
-
-      {/* 3. EXISTING CODES LIST */}
-      <section>
-        <h2 className="mb-4 text-sm font-bold uppercase tracking-wider text-slate-900 px-1">Manage Discount Codes</h2>
-        <div className="space-y-3">
-          {discountCodesQuery.data?.map((dc: any) => (
-            <div key={dc.id} className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm transition-all hover:border-slate-300">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-4">
-                  <div className={["flex h-10 w-10 items-center justify-center rounded-full text-indigo-600 transition-colors", dc.is_active ? "bg-indigo-50" : "bg-slate-100 grayscale"].join(" ")}>
-                    <span className="material-symbols-outlined text-[20px]">sell</span>
+        {/* Dense List */}
+        <div className="space-y-2">
+          {filteredCodes.map((dc: any) => (
+            <div key={dc.id} className={["rounded-2xl border bg-white shadow-sm transition-all overflow-hidden", dc.is_active ? "border-slate-100" : "border-slate-50 opacity-60 grayscale"].join(" ")}>
+              <div className="p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className={["flex h-8 w-8 shrink-0 items-center justify-center rounded-full", dc.is_active ? "bg-indigo-50 text-indigo-600" : "bg-slate-100 text-slate-400"].join(" ")}>
+                    <span className="material-symbols-outlined text-[18px]">sell</span>
                   </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                       <p className={["text-sm font-black tracking-widest", dc.is_active ? "text-slate-900" : "text-slate-400 line-through"].join(" ")}>{dc.code}</p>
-                       {!dc.is_active && <span className="text-[8px] font-black uppercase bg-slate-100 px-1.5 py-0.5 rounded text-slate-500">Terminated</span>}
-                    </div>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
+                  <div className="min-w-0">
+                    <p className="text-xs font-black tracking-widest text-slate-900 truncate uppercase">{dc.code}</p>
+                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">
                       {dc.discount_type === 'percentage' ? `${dc.value}% OFF` : `$${(dc.value / 100).toFixed(2)} OFF`}
                     </p>
                   </div>
                 </div>
-                <div className={["h-2 w-2 rounded-full", dc.is_active ? "bg-green-500" : "bg-slate-300"].join(" ")} />
+
+                <div className="flex items-center gap-3 shrink-0 pl-2">
+                   <div className="text-right hidden sm:block">
+                      <p className="text-[9px] font-black text-slate-400 uppercase leading-none">{dc.use_count}{dc.max_uses ? ` / ${dc.max_uses}` : ''}</p>
+                      <p className="text-[8px] font-bold text-slate-300 uppercase mt-0.5 tracking-tighter">Uses</p>
+                   </div>
+                   
+                   {editingId !== dc.id && dc.is_active && (
+                     <button 
+                       onClick={() => { setEditingId(dc.id); setEditingValue(dc.max_uses?.toString() ?? ""); }}
+                       className="p-2 rounded-lg bg-slate-50 text-slate-400 hover:text-indigo-600 transition-colors"
+                     >
+                        <span className="material-symbols-outlined text-[18px]">edit_note</span>
+                     </button>
+                   )}
+                   
+                   {dc.is_active && editingId !== dc.id && (
+                     <button 
+                       onClick={() => confirm(`Terminate ${dc.code}?`) && terminateMutation.mutate(dc.id)}
+                       className="p-2 rounded-lg bg-red-50 text-red-400 hover:text-red-600 transition-colors"
+                     >
+                        <span className="material-symbols-outlined text-[18px]">block</span>
+                     </button>
+                   )}
+                </div>
               </div>
 
-              <div className="flex flex-col gap-4 pt-4 border-t border-slate-50">
-                 <div className="flex items-center justify-between bg-slate-50 rounded-xl p-3">
-                    <div className="flex gap-6">
-                       <div>
-                          <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-0.5">Usage</p>
-                          <p className="text-sm font-bold text-slate-900 leading-none">{dc.use_count} used</p>
+              {/* Inline Edit Area */}
+              {editingId === dc.id && (
+                 <div className="bg-indigo-50 p-4 border-t border-indigo-100 animate-in fade-in duration-200">
+                    <div className="flex items-center gap-2">
+                       <div className="flex-1">
+                          <p className="text-[8px] font-black uppercase text-indigo-400 mb-1 pl-1">New Quota Limit</p>
+                          <input
+                             type="number"
+                             value={editingValue}
+                             onChange={(e) => setEditingValue(e.target.value)}
+                             onKeyDown={(e) => e.key === 'Enter' && updateMaxUsesMutation.mutate({ id: dc.id, max: editingValue === "" ? null : parseInt(editingValue) })}
+                             className="w-full rounded-xl border-2 border-indigo-600 bg-white px-3 py-2 text-sm font-bold focus:outline-none"
+                             autoFocus
+                             placeholder="∞"
+                          />
                        </div>
-                       <div>
-                          <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-0.5">Quota Limit</p>
-                          <div className="flex items-center gap-2">
-                             <p className="text-sm font-bold text-slate-900 leading-none">{dc.max_uses ?? "Unlimited"}</p>
-                          </div>
+                       <div className="flex gap-1 pt-4">
+                          <button 
+                             onClick={() => updateMaxUsesMutation.mutate({ id: dc.id, max: editingValue === "" ? null : parseInt(editingValue) })}
+                             className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-lg"
+                          ><span className="material-symbols-outlined">check</span></button>
+                          <button onClick={() => setEditingId(null)} className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-slate-400 border border-indigo-100"><span className="material-symbols-outlined">close</span></button>
                        </div>
                     </div>
-
-                    {editingId !== dc.id && dc.is_active && (
-                       <button 
-                         onClick={() => {
-                           setEditingId(dc.id);
-                           setEditingValue(dc.max_uses?.toString() ?? "");
-                         }}
-                         className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-white shadow-md shadow-indigo-100 hover:bg-indigo-700 transition-all active:scale-95"
-                       >
-                          <span className="material-symbols-outlined text-[14px]">edit_note</span>
-                          Edit Quota
-                       </button>
-                    )}
                  </div>
-
-                 {editingId === dc.id && (
-                    <div className="animate-in fade-in slide-in-from-top-1 duration-200">
-                       <div className="flex flex-col gap-2 p-1">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-indigo-500">Update Quota Limit</label>
-                          <div className="flex items-center gap-2">
-                             <input
-                               type="number"
-                               value={editingValue}
-                               onChange={(e) => setEditingValue(e.target.value)}
-                               onKeyDown={(e) => {
-                                 if (e.key === 'Enter') {
-                                   updateMaxUsesMutation.mutate({ id: dc.id, max: editingValue === "" ? null : parseInt(editingValue) });
-                                 } else if (e.key === 'Escape') {
-                                   setEditingId(null);
-                                 }
-                               }}
-                               className="flex-1 rounded-xl border-2 border-indigo-600 bg-white px-3 py-2.5 text-sm font-bold text-slate-900 focus:outline-none shadow-sm"
-                               autoFocus
-                               placeholder="e.g. 50 (empty for unlimited)"
-                             />
-                             <button 
-                               onClick={() => updateMaxUsesMutation.mutate({ id: dc.id, max: editingValue === "" ? null : parseInt(editingValue) })}
-                               disabled={updateMaxUsesMutation.isPending}
-                               className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 shadow-lg shadow-indigo-100"
-                               title="Save Changes"
-                             >
-                               <span className="material-symbols-outlined text-[20px]">check</span>
-                             </button>
-                             <button 
-                               onClick={() => setEditingId(null)}
-                               className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-100 text-slate-500 hover:bg-slate-200"
-                               title="Cancel"
-                             >
-                               <span className="material-symbols-outlined text-[20px]">close</span>
-                             </button>
-                          </div>
-                          <p className="text-[10px] text-slate-400 font-medium italic px-1">Press Enter to save, Esc to cancel.</p>
-                       </div>
-                    </div>
-                 )}
-
-                 {dc.is_active && editingId !== dc.id && (
-                   <button 
-                     onClick={() => {
-                       if (confirm(`Are you sure you want to terminate ${dc.code}?`)) {
-                         terminateMutation.mutate(dc.id);
-                       }
-                     }}
-                     className="w-full rounded-xl border border-red-100 py-2.5 text-[10px] font-black uppercase tracking-widest text-red-500 hover:bg-red-50 transition-colors"
-                   >
-                     Terminate Code
-                   </button>
-                 )}
-              </div>
+              )}
             </div>
           ))}
-          {discountCodesQuery.data?.length === 0 && (
-            <div className="rounded-2xl border-2 border-dashed border-slate-100 py-12 text-center text-slate-300">
-              <p className="text-xs font-bold uppercase tracking-widest">No codes generated yet</p>
+          {filteredCodes.length === 0 && (
+            <div className="py-12 text-center rounded-2xl border-2 border-dashed border-slate-100">
+               <span className="material-symbols-outlined text-slate-200 text-4xl mb-2">inventory_2</span>
+               <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">No {codeFilter} codes found</p>
             </div>
           )}
         </div>
