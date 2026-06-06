@@ -24,6 +24,7 @@ export function BillingAdmin() {
   // Inline editing state
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState<string>("");
+  const [terminatingId, setTerminatingId] = useState<string | null>(null);
 
   const discountCodesQuery = useQuery({
     queryKey: ["admin-discount-codes"],
@@ -67,6 +68,7 @@ export function BillingAdmin() {
     mutationFn: (codeId: string) => terminateDiscountCode(codeId, supabase),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-discount-codes"] });
+      setTerminatingId(null);
     },
     onError: (err) => {
       alert("Failed to deactivate code: " + (err as Error).message);
@@ -213,23 +215,23 @@ export function BillingAdmin() {
                 </div>
 
                 <div className="flex items-center gap-3 shrink-0 pl-2">
-                   <div className="text-right hidden sm:block">
+                   <div className="text-right">
                       <p className="text-[9px] font-black text-slate-400 uppercase leading-none">{dc.use_count}{dc.max_uses ? ` / ${dc.max_uses}` : ''}</p>
                       <p className="text-[8px] font-bold text-slate-300 uppercase mt-0.5 tracking-tighter">Uses</p>
                    </div>
                    
                    {editingId !== dc.id && dc.is_active && (
                      <button 
-                       onClick={() => { setEditingId(dc.id); setEditingValue(dc.max_uses?.toString() ?? ""); }}
+                       onClick={() => { setEditingId(dc.id); setTerminatingId(null); setEditingValue(dc.max_uses?.toString() ?? ""); }}
                        className="p-2 rounded-lg bg-slate-50 text-slate-400 hover:text-indigo-600 transition-colors"
                      >
                         <span className="material-symbols-outlined text-[18px]">edit_note</span>
                      </button>
                    )}
                    
-                   {dc.is_active && editingId !== dc.id && (
+                   {dc.is_active && editingId !== dc.id && terminatingId !== dc.id && (
                      <button 
-                       onClick={() => confirm(`Terminate ${dc.code}?`) && terminateMutation.mutate(dc.id)}
+                       onClick={() => { setTerminatingId(dc.id); setEditingId(null); }}
                        className="p-2 rounded-lg bg-red-50 text-red-400 hover:text-red-600 transition-colors"
                      >
                         <span className="material-symbols-outlined text-[18px]">block</span>
@@ -237,6 +239,26 @@ export function BillingAdmin() {
                    )}
                 </div>
               </div>
+
+              {/* Inline Terminate Confirmation */}
+              {terminatingId === dc.id && (
+                 <div className="bg-red-50 p-4 border-t border-red-100 animate-in fade-in slide-in-from-top-1 duration-200">
+                    <p className="text-xs font-bold text-red-800 mb-3 text-center">Terminate {dc.code}?</p>
+                    <div className="flex gap-2">
+                       <button 
+                         onClick={() => setTerminatingId(null)}
+                         className="flex-1 rounded-xl bg-white border border-red-200 text-slate-600 py-2 text-xs font-bold transition-all hover:bg-slate-50"
+                       >Cancel</button>
+                       <button 
+                         onClick={() => terminateMutation.mutate(dc.id)}
+                         disabled={terminateMutation.isPending}
+                         className="flex-1 rounded-xl bg-red-600 text-white py-2 text-xs font-black uppercase tracking-widest shadow-lg shadow-red-100 transition-all active:scale-95 disabled:opacity-50"
+                       >
+                         {terminateMutation.isPending ? "..." : "Terminate"}
+                       </button>
+                    </div>
+                 </div>
+              )}
 
               {/* Inline Edit Area */}
               {editingId === dc.id && (
