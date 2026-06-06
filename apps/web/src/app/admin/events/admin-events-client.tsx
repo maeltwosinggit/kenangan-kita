@@ -13,6 +13,7 @@ type Event = {
   reveal_mode: string;
   created_by: string | null;
   latestPhotoUrl: string | null;
+  photoCount?: number;
 };
 
 type Props = { events: Event[]; creatorMap: Record<string, string> };
