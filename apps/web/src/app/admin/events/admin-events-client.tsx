@@ -39,39 +39,23 @@ export default function AdminEventsClient({ events, creatorMap }: Props) {
   const busy = loading !== null;
 
   return (
-    <>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Admin Events</h1>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => navigate("/admin/users")}
-            className="flex items-center gap-1.5 rounded border border-slate-300 px-3 py-2 text-xs font-medium text-slate-800 disabled:opacity-60"
-          >
-            {loading === "/admin/users" ? <><Spinner className="h-3 w-3" />Loading...</> : "Users"}
-          </button>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => navigate("/events/new")}
-            className="flex items-center gap-1.5 rounded bg-slate-900 px-3 py-2 text-xs font-medium text-white disabled:opacity-60"
-          >
-            {loading === "/events/new" ? <><Spinner className="h-3 w-3" />Loading...</> : "New Event"}
-          </button>
-        </div>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between px-1">
+         <h1 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">All Events</h1>
       </div>
 
       {events.length === 0 ? (
-        <div className="rounded border border-slate-200 p-6 text-center">
-          <p className="text-sm text-slate-600">No events created yet.</p>
+        <div className="rounded-2xl border-2 border-dashed border-slate-100 p-10 text-center animate-in fade-in duration-300">
+          <span className="material-symbols-outlined text-[40px] text-slate-200 mb-2">event_note</span>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-4">No events found</p>
           <button
             type="button"
             disabled={busy}
             onClick={() => navigate("/events/new")}
-            className="mt-3 inline-block text-sm font-medium text-slate-900 underline disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-white transition-all hover:bg-slate-800 active:scale-95 disabled:opacity-50"
           >
-            Create your first event
+            <span className="material-symbols-outlined text-[14px]">add</span>
+            Create Event
           </button>
         </div>
       ) : (
@@ -164,6 +148,6 @@ export default function AdminEventsClient({ events, creatorMap }: Props) {
           })}
         </div>
       )}
-    </>
+    </div>
   );
 }
