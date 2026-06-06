@@ -17,6 +17,10 @@ export function BillingAdmin() {
   const [value, setValue] = useState<number>(0);
   const [maxUses, setMaxUses] = useState<number | undefined>();
 
+  // Inline editing state
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingValue, setEditingValue] = useState<string>("");
+
   const discountCodesQuery = useQuery({
     queryKey: ["admin-discount-codes"],
     queryFn: async () => {
@@ -63,6 +67,7 @@ export function BillingAdmin() {
     mutationFn: ({ id, max }: { id: string, max: number | null }) => updateDiscountCodeMaxUses(id, max, supabase),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-discount-codes"] });
+      setEditingId(null);
     },
     onError: (err) => {
       alert("Failed to update limit: " + (err as Error).message);
@@ -220,18 +225,49 @@ export function BillingAdmin() {
                     </div>
                     <div>
                        <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-0.5">Limit</p>
-                       <button 
-                         onClick={() => {
-                           const next = prompt("Enter new max uses (empty for unlimited):", dc.max_uses ?? "");
-                           if (next !== null) {
-                             updateMaxUsesMutation.mutate({ id: dc.id, max: next === "" ? null : parseInt(next) });
-                           }
-                         }}
-                         className="group flex items-center gap-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-700"
-                       >
-                          {dc.max_uses ?? "Unlimited"}
-                          <span className="material-symbols-outlined text-[14px] opacity-0 group-hover:opacity-100 transition-opacity">edit</span>
-                       </button>
+                       {editingId === dc.id ? (
+                         <div className="flex items-center gap-1 animate-in fade-in slide-in-from-left-1 duration-200">
+                           <input
+                             type="number"
+                             value={editingValue}
+                             onChange={(e) => setEditingValue(e.target.value)}
+                             onKeyDown={(e) => {
+                               if (e.key === 'Enter') {
+                                 updateMaxUsesMutation.mutate({ id: dc.id, max: editingValue === "" ? null : parseInt(editingValue) });
+                               } else if (e.key === 'Escape') {
+                                 setEditingId(null);
+                               }
+                             }}
+                             className="w-16 rounded border-2 border-slate-900 bg-white px-1.5 py-0.5 text-xs font-bold focus:outline-none"
+                             autoFocus
+                             placeholder="∞"
+                           />
+                           <button 
+                             onClick={() => updateMaxUsesMutation.mutate({ id: dc.id, max: editingValue === "" ? null : parseInt(editingValue) })}
+                             disabled={updateMaxUsesMutation.isPending}
+                             className="flex h-6 w-6 items-center justify-center rounded bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50"
+                           >
+                             <span className="material-symbols-outlined text-[16px]">check</span>
+                           </button>
+                           <button 
+                             onClick={() => setEditingId(null)}
+                             className="flex h-6 w-6 items-center justify-center rounded bg-slate-100 text-slate-500 hover:bg-slate-200"
+                           >
+                             <span className="material-symbols-outlined text-[16px]">close</span>
+                           </button>
+                         </div>
+                       ) : (
+                         <button 
+                           onClick={() => {
+                             setEditingId(dc.id);
+                             setEditingValue(dc.max_uses?.toString() ?? "");
+                           }}
+                           className="group flex items-center gap-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-700"
+                         >
+                            {dc.max_uses ?? "Unlimited"}
+                            <span className="material-symbols-outlined text-[14px] opacity-0 group-hover:opacity-100 transition-opacity">edit</span>
+                         </button>
+                       )}
                     </div>
                  </div>
 
