@@ -120,19 +120,21 @@ export default function AdminEventsClient({ events, creatorMap }: Props) {
                   </div>
                   
                   {/* Event Details */}
-                  <div className="min-w-0 flex-1">
-                    <div className="mb-1 flex items-start justify-between gap-2">
-                       <h3 className="truncate text-base font-bold text-slate-900 leading-tight group-hover:text-indigo-600 transition-colors">{event.name}</h3>
+                  <div className="min-w-0 flex-1 overflow-hidden">
+                    <div className="mb-1 flex items-start justify-between gap-2 w-full">
+                       <div className="min-w-0 flex-1">
+                          <h3 className="truncate text-base font-bold text-slate-900 leading-tight group-hover:text-indigo-600 transition-colors w-full block">{event.name}</h3>
+                       </div>
                        
                        {/* Standardized Status */}
-                       <div className="shrink-0">
+                       <div className="shrink-0 flex-none ml-1">
                          {expired ? (
-                            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-amber-700 ring-1 ring-amber-200">Ended</span>
+                            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-amber-700 ring-1 ring-amber-200 whitespace-nowrap">Ended</span>
                          ) : !event.gallery_visible ? (
-                            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-slate-600 ring-1 ring-slate-200">Hidden</span>
+                            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-slate-600 ring-1 ring-slate-200 whitespace-nowrap">Hidden</span>
                          ) : (
-                            <div className="flex items-center gap-1.5 rounded-full bg-green-50 px-2 py-0.5 ring-1 ring-green-200">
-                              <span className="h-1 w-1 rounded-full bg-green-500 animate-pulse" />
+                            <div className="flex items-center gap-1.5 rounded-full bg-green-50 px-2 py-0.5 ring-1 ring-green-200 whitespace-nowrap">
+                              <span className="h-1 w-1 rounded-full bg-green-500 animate-pulse shrink-0" />
                               <span className="text-[8px] font-black uppercase tracking-widest text-green-700">Live</span>
                             </div>
                          )}
