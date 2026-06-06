@@ -104,12 +104,17 @@ export async function createEvent(
 /**
  * Returns true if the current time is within the event window.
  * Buffer: We allow uploads until 6 AM the morning AFTER the event date 
- * to accommodate parties that go past midnight.
+ * (or 6 hours after the specific end time) to accommodate late parties.
  */
 export function isEventActive(eventDateStr: string): boolean {
+  if (!eventDateStr) return true;
+  
   const eventDate = new Date(eventDateStr);
-  // Set to end of day (23:59:59)
-  eventDate.setHours(23, 59, 59, 999);
+  
+  // If the string is just YYYY-MM-DD (length 10), we default to end of that day
+  if (eventDateStr.length === 10) {
+    eventDate.setHours(23, 59, 59, 999);
+  }
   
   // Add 6 hour buffer for late-night uploads
   const cutoffTime = eventDate.getTime() + (6 * 60 * 60 * 1000);

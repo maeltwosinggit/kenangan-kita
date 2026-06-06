@@ -53,15 +53,29 @@ export function EditEventForm({ event, onSuccess }: Props) {
       </div>
       <div>
         <label className="mb-1 block text-xs font-bold uppercase tracking-widest text-slate-500">
-          Event Date
+          Event Date & End Time
         </label>
-        <input
-          type="date"
-          required
-          value={eventDate}
-          onChange={(e) => setEventDate(e.target.value)}
-          className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900"
-        />
+        <div className="relative group">
+          <input
+            type="datetime-local"
+            required
+            value={eventDate}
+            onChange={(e) => setEventDate(e.target.value)}
+            className="w-full rounded-xl border-2 border-slate-100 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-slate-900 focus:bg-white focus:ring-0 appearance-none cursor-pointer"
+          />
+          <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">
+            <span className="material-symbols-outlined text-[18px]">calendar_today</span>
+          </div>
+        </div>
+        
+        {eventDate && (
+          <div className="mt-2 rounded-xl bg-indigo-50/50 border border-indigo-100 p-3 animate-in fade-in slide-in-from-top-1 duration-300">
+             <p className="text-[9px] font-black uppercase tracking-widest text-indigo-500 mb-1 leading-none italic">Upload Window Remark</p>
+             <p className="text-[11px] font-medium text-indigo-900/70 leading-normal">
+                Camera will lock on <strong>{new Date(new Date(eventDate).getTime() + 6 * 60 * 60 * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} at {new Date(new Date(eventDate).getTime() + 6 * 60 * 60 * 1000).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</strong>.
+             </p>
+          </div>
+        )}
       </div>
       <div>
         <label className="mb-1 block text-xs font-bold uppercase tracking-widest text-slate-500">

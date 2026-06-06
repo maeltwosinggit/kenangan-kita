@@ -378,15 +378,35 @@ export default function CreateEventForm({
 
           <div>
             <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-              Event Date
+              Event Date & End Time
             </label>
-            <input
-              className="w-full rounded-2xl border border-slate-200 bg-white px-5 py-4 text-sm font-bold text-slate-900 outline-none transition focus:border-slate-900 focus:ring-1 focus:ring-slate-900 appearance-none"
-              type="date"
-              value={eventDate}
-              onChange={(e) => setEventDate(e.target.value)}
-              required
-            />
+            <div className="relative group">
+              <input
+                className="w-full rounded-2xl border-2 border-slate-100 bg-white px-5 py-4 text-base font-bold text-slate-900 outline-none transition focus:border-slate-900 focus:ring-0 appearance-none cursor-pointer group-hover:border-slate-200"
+                type="datetime-local"
+                value={eventDate}
+                onChange={(e) => setEventDate(e.target.value)}
+                required
+              />
+              <div className="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 text-slate-400">
+                <span className="material-symbols-outlined text-[20px]">calendar_today</span>
+              </div>
+            </div>
+            
+            {eventDate && (
+               <div className="mt-3 rounded-2xl bg-indigo-50 border border-indigo-100 p-4 animate-in fade-in slide-in-from-top-1 duration-300">
+                  <div className="flex gap-3">
+                     <span className="material-symbols-outlined text-indigo-500 text-[20px] shrink-0">timer</span>
+                     <div>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-indigo-600 mb-1 leading-none">Upload Window Remark</p>
+                        <p className="text-xs font-medium text-indigo-900/80 leading-snug">
+                           Photo uploads will automatically close on <strong>{new Date(new Date(eventDate).getTime() + 6 * 60 * 60 * 1000).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })} at {new Date(new Date(eventDate).getTime() + 6 * 60 * 60 * 1000).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</strong>.
+                        </p>
+                        <p className="mt-1 text-[9px] text-indigo-400 font-bold uppercase tracking-tighter">Includes 6-hour late party buffer</p>
+                     </div>
+                  </div>
+               </div>
+            )}
           </div>
 
           <div>
