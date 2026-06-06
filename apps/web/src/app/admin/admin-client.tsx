@@ -29,6 +29,7 @@ type Event = {
   created_by: string | null;
   latestPhotoUrl: string | null;
   isOpen?: boolean;
+  photoCount?: number;
 };
 
 type Props = {

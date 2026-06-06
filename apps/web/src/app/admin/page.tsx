@@ -69,11 +69,20 @@ export default async function AdminPage() {
 
   // We need allEvents and creatorMap for the Events tab
   const allEvents = await Promise.all(
-    events.map(async (event) => ({
-      ...event,
-      latestPhotoUrl: await getLatestEventPhoto(event.id),
-      isOpen: isEventGalleryOpen(event),
-    }))
+    events.map(async (event) => {
+      const { count } = await supabase
+        .from("photos")
+        .select("id", { count: "exact", head: true })
+        .eq("event_id", event.id)
+        .eq("is_deleted", false);
+
+      return {
+        ...event,
+        latestPhotoUrl: await getLatestEventPhoto(event.id),
+        isOpen: isEventGalleryOpen(event),
+        photoCount: count ?? 0,
+      };
+    })
   );
 
   const creatorMap: Record<string, string> = {};

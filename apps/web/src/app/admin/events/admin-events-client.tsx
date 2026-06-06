@@ -74,63 +74,88 @@ export default function AdminEventsClient({ events, creatorMap }: Props) {
           </button>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="grid gap-4">
           {events.map((event) => {
             const href = `/admin/events/${event.id}`;
             const isThisLoading = loading === href;
+            const expired = !isEventActive(event.event_date);
+            
             return (
               <button
                 key={event.id}
                 type="button"
                 disabled={busy}
                 onClick={() => navigate(href)}
-                className="relative block w-full rounded border border-slate-200 p-4 text-left transition-colors hover:bg-slate-50 disabled:cursor-default"
+                className="group relative block w-full rounded-2xl border border-slate-200 bg-white p-4 text-left transition-all hover:border-slate-300 hover:shadow-md disabled:cursor-default"
               >
-                {/* Loading overlay on the clicked card */}
+                {/* Loading overlay */}
                 {isThisLoading && (
-                  <span className="absolute inset-0 flex items-center justify-center rounded bg-white/60">
-                    <Spinner className="h-5 w-5 text-slate-600" />
+                  <span className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-white/70 backdrop-blur-sm">
+                    <Spinner className="h-6 w-6 text-slate-900" />
                   </span>
                 )}
-                <div className={`flex items-start gap-3 ${isThisLoading ? "opacity-40" : busy ? "opacity-50" : ""}`}>
-                  {event.latestPhotoUrl ? (
-                    <img
-                      src={event.latestPhotoUrl}
-                      alt={`Latest from ${event.name}`}
-                      className="h-12 w-12 rounded object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded bg-slate-100 text-xs text-slate-500">
-                      No photos
-                    </div>
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <h3 className="truncate font-medium">{event.name}</h3>
-                    <p className="text-sm text-slate-600">
-                      {new Date(event.event_date).toLocaleDateString()}
-                    </p>
-                    <p className="text-xs text-slate-500">Code: {event.event_code}</p>
-                    {event.created_by && (
-                      <p className="text-xs text-slate-400">
-                        By: {creatorMap[event.created_by] ?? event.created_by.slice(0, 8)}
-                      </p>
+                
+                <div className={`flex items-start gap-4 ${isThisLoading ? "opacity-40" : busy ? "opacity-50" : ""}`}>
+                  {/* Thumbnail Container */}
+                  <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-slate-100 ring-1 ring-slate-200">
+                    {event.latestPhotoUrl ? (
+                      <img
+                        src={event.latestPhotoUrl}
+                        alt={`Latest from ${event.name}`}
+                        className={["h-full w-full object-cover transition-transform group-hover:scale-105", expired ? "grayscale opacity-80" : ""].join(" ")}
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-slate-300">
+                         <span className="material-symbols-outlined text-[24px]">image</span>
+                      </div>
                     )}
-                    <div className="mt-1 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest">
-                      {(() => {
-                        const expired = !isEventActive(event.event_date);
-                        if (expired) {
-                          return <span className="rounded px-1.5 py-0.5 bg-amber-100 text-amber-700">Ended</span>;
-                        }
-                        if (!event.gallery_visible) {
-                          return <span className="rounded px-1.5 py-0.5 bg-slate-100 text-slate-500">Hidden</span>;
-                        }
-                        return <span className="rounded px-1.5 py-0.5 bg-green-100 text-green-700">Live</span>;
-                      })()}
-                      <span className="text-slate-400 font-bold">
-                        {event.reveal_mode === "instant"
-                          ? "Instant Reveal"
-                          : "Reveal After Event"}
-                      </span>
+                    {/* Photo Count Badge overlay */}
+                    {event.photoCount !== undefined && (
+                      <div className="absolute bottom-1 right-1 flex items-center gap-1 rounded bg-black/60 px-1.5 py-0.5 text-white backdrop-blur-md">
+                         <span className="material-symbols-outlined text-[10px]">photo_library</span>
+                         <span className="text-[10px] font-bold">{event.photoCount}</span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Event Details */}
+                  <div className="min-w-0 flex-1">
+                    <div className="mb-1 flex items-start justify-between gap-2">
+                       <h3 className="truncate text-base font-bold text-slate-900 leading-tight group-hover:text-indigo-600 transition-colors">{event.name}</h3>
+                       
+                       {/* Standardized Status */}
+                       <div className="shrink-0">
+                         {expired ? (
+                            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-amber-700 ring-1 ring-amber-200">Ended</span>
+                         ) : !event.gallery_visible ? (
+                            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-slate-600 ring-1 ring-slate-200">Hidden</span>
+                         ) : (
+                            <div className="flex items-center gap-1.5 rounded-full bg-green-50 px-2 py-0.5 ring-1 ring-green-200">
+                              <span className="h-1 w-1 rounded-full bg-green-500 animate-pulse" />
+                              <span className="text-[8px] font-black uppercase tracking-widest text-green-700">Live</span>
+                            </div>
+                         )}
+                       </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 mb-2">
+                       <span className="text-xs font-mono font-medium text-slate-500 bg-slate-100 px-1.5 rounded">{event.event_code}</span>
+                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                         {new Date(event.event_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                       </span>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                       {event.created_by && (
+                         <div className="flex items-center gap-1 text-[10px] font-bold text-slate-500">
+                            <span className="material-symbols-outlined text-[12px]">person</span>
+                            <span className="truncate max-w-[100px]">{creatorMap[event.created_by] ?? "Unknown Host"}</span>
+                         </div>
+                       )}
+                       <div className="flex items-center gap-1 text-[10px] font-bold text-slate-500">
+                          <span className="material-symbols-outlined text-[12px]">{event.reveal_mode === 'instant' ? 'visibility' : 'visibility_off'}</span>
+                          <span>{event.reveal_mode === 'instant' ? 'Instant Reveal' : 'Reveal After'}</span>
+                       </div>
                     </div>
                   </div>
                 </div>
