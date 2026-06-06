@@ -16,7 +16,11 @@ type Event = {
   photoCount?: number;
 };
 
-type Props = { events: Event[]; creatorMap: Record<string, string> };
+type Props = { 
+  events: Event[]; 
+  creatorMap: Record<string, string>;
+  onManageEvent?: (event: Event) => void;
+};
 
 function Spinner({ className = "h-4 w-4" }: { className?: string }) {
   return (
@@ -27,7 +31,7 @@ function Spinner({ className = "h-4 w-4" }: { className?: string }) {
   );
 }
 
-export default function AdminEventsClient({ events, creatorMap }: Props) {
+export default function AdminEventsClient({ events, creatorMap, onManageEvent }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState<string | null>(null); // stores href being navigated to
 
@@ -129,8 +133,7 @@ export default function AdminEventsClient({ events, creatorMap }: Props) {
                     <div className="mt-1">
                       <button
                         type="button"
-                        disabled={busy}
-                        onClick={() => navigate(href)}
+                        onClick={() => onManageEvent?.(event)}
                         className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-50 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-indigo-600 transition-colors hover:bg-indigo-100 active:scale-95 disabled:opacity-50"
                       >
                         <span className="material-symbols-outlined text-[14px]">settings</span>

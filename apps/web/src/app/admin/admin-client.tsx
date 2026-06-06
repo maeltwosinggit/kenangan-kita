@@ -10,6 +10,8 @@ import { UsersClient } from "./users/users-client";
 import { BillingAdmin } from "./_components/billing-admin";
 import UserMenu from "@/components/user-menu";
 import { isEventActive } from "@kenangan/lib";
+import { ManageEventSheet } from "../dashboard/_components/manage-event-sheet";
+import { type CreatedEvent } from "@/lib/data/dashboard";
 
 // Types
 type ActivityRow = {
@@ -30,6 +32,12 @@ type Event = {
   latestPhotoUrl: string | null;
   isOpen?: boolean;
   photoCount?: number;
+  coverImageUrl?: string | null;
+  cover_image_path?: string | null;
+  upload_limit_enabled?: boolean;
+  max_uploads_per_user?: number | null;
+  max_uploads_total?: number | null;
+  theme_filter?: string;
 };
 
 type Props = {
@@ -96,6 +104,7 @@ export default function AdminClient({
   const searchParams = useSearchParams();
   const queryTab = searchParams.get("tab") as any;
   const [tab, setTab] = useState<"overview" | "events" | "users" | "analytics" | "billing">(queryTab || initialTab);
+  const [managingEvent, setManagingEvent] = useState<CreatedEvent | null>(null);
 
   // Sync with browser history manually if we want to support back button, 
   // but for a pure SPA dashboard, simple state is usually fine.
@@ -105,6 +114,13 @@ export default function AdminClient({
 
   return (
     <div className="relative min-h-screen-fix bg-slate-50 pt-safe">
+      <ManageEventSheet
+        event={managingEvent}
+        isOpen={managingEvent !== null}
+        onClose={() => setManagingEvent(null)}
+        isAdmin={true}
+        onDeleted={() => { window.location.reload(); }}
+      />
       
       {/* ── OVERVIEW TAB ── */}
       {tab === "overview" && (
@@ -175,10 +191,10 @@ export default function AdminClient({
                 </p>
               ) : (
                 recentEvents.map((event) => (
-                  <Link
+                  <button
                     key={event.id}
-                    href={`/admin/events/${event.id}`}
-                    className="flex overflow-hidden rounded-xl border border-slate-200 bg-white transition-colors hover:bg-slate-50 active:scale-[0.99]"
+                    onClick={() => setManagingEvent(event as any)}
+                    className="flex w-full text-left overflow-hidden rounded-xl border border-slate-200 bg-white transition-colors hover:bg-slate-50 active:scale-[0.99]"
                   >
                     {/* Thumbnail */}
                     <div className="h-24 w-24 shrink-0 bg-slate-100">
@@ -224,11 +240,14 @@ export default function AdminClient({
                           })}
                         </p>
                       </div>
-                      <p className="font-mono text-xs text-slate-400">
-                        Code: {event.event_code}
-                      </p>
+                      <div className="flex items-center justify-between">
+                        <p className="font-mono text-xs text-slate-400">
+                          Code: {event.event_code}
+                        </p>
+                        <span className="material-symbols-outlined text-[16px] text-slate-400">settings</span>
+                      </div>
                     </div>
-                  </Link>
+                  </button>
                 ))
               )}
             </div>
@@ -274,7 +293,7 @@ export default function AdminClient({
       {tab === "events" && (
         <main className="mx-auto max-w-[448px] px-4 pb-28 pt-6">
           <div className="mt-4">
-            <AdminEventsClient events={allEvents} creatorMap={creatorMap} />
+            <AdminEventsClient events={allEvents} creatorMap={creatorMap} onManageEvent={(event) => setManagingEvent(event as any)} />
           </div>
         </main>
       )}
