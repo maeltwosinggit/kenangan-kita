@@ -66,12 +66,9 @@ export default function AdminEventsClient({ events, creatorMap }: Props) {
             const expired = !isEventActive(event.event_date);
             
             return (
-              <button
+              <div
                 key={event.id}
-                type="button"
-                disabled={busy}
-                onClick={() => navigate(href)}
-                className="group relative block w-full rounded-2xl border border-slate-200 bg-white p-4 text-left transition-all hover:border-slate-300 hover:shadow-md disabled:cursor-default"
+                className="group relative block w-full rounded-2xl border border-slate-200 bg-white p-4 text-left transition-all hover:border-slate-300 hover:shadow-md"
               >
                 {/* Loading overlay */}
                 {isThisLoading && (
@@ -120,30 +117,29 @@ export default function AdminEventsClient({ events, creatorMap }: Props) {
                   
                   {/* Event Details */}
                   <div className="min-w-0 flex-1 grid grid-cols-1 gap-1">
-                    <h3 className="truncate text-base font-bold text-slate-900 leading-tight group-hover:text-indigo-600 transition-colors w-full">{event.name}</h3>
+                    <h3 className="truncate text-base font-bold text-slate-900 leading-tight w-full">{event.name}</h3>
 
-                    <div className="flex items-center gap-2 overflow-hidden w-full">
+                    <div className="flex items-center gap-2 overflow-hidden w-full mb-1">
                        <span className="text-xs font-mono font-medium text-slate-500 bg-slate-100 px-1.5 rounded shrink-0">{event.event_code}</span>
                        <span className="truncate text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                          {new Date(event.event_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                        </span>
                     </div>
 
-                    <div className="flex items-center gap-3 overflow-hidden w-full mt-1">
-                       {event.created_by && (
-                         <div className="flex items-center gap-1 text-[10px] font-bold text-slate-500 min-w-0 shrink">
-                            <span className="material-symbols-outlined text-[12px] shrink-0">person</span>
-                            <span className="truncate">{creatorMap[event.created_by] ?? "Unknown Host"}</span>
-                         </div>
-                       )}
-                       <div className="flex items-center gap-1 text-[10px] font-bold text-slate-500 shrink-0">
-                          <span className="material-symbols-outlined text-[12px] shrink-0">{event.reveal_mode === 'instant' ? 'visibility' : 'visibility_off'}</span>
-                          <span className="truncate">{event.reveal_mode === 'instant' ? 'Instant Reveal' : 'Reveal After'}</span>
-                       </div>
+                    <div className="mt-1">
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => navigate(href)}
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-50 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-indigo-600 transition-colors hover:bg-indigo-100 active:scale-95 disabled:opacity-50"
+                      >
+                        <span className="material-symbols-outlined text-[14px]">settings</span>
+                        Manage Event
+                      </button>
                     </div>
                   </div>
                 </div>
-              </button>
+              </div>
             );
           })}
         </div>
