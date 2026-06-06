@@ -96,7 +96,7 @@ export default function AdminEventsClient({ events, creatorMap }: Props) {
                   </span>
                 )}
                 
-                <div className={`flex items-start gap-4 ${isThisLoading ? "opacity-40" : busy ? "opacity-50" : ""}`}>
+                <div className={`flex items-start gap-4 w-full overflow-hidden ${isThisLoading ? "opacity-40" : busy ? "opacity-50" : ""}`}>
                   {/* Thumbnail Container */}
                   <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-slate-100 ring-1 ring-slate-200">
                     {event.latestPhotoUrl ? (
@@ -110,7 +110,22 @@ export default function AdminEventsClient({ events, creatorMap }: Props) {
                          <span className="material-symbols-outlined text-[24px]">image</span>
                       </div>
                     )}
-                    {/* Photo Count Badge overlay */}
+                    
+                    {/* Status Badge overlay (Top Left) */}
+                    <div className="absolute top-1 left-1 flex items-center">
+                       {expired ? (
+                          <span className="rounded bg-amber-100/90 px-1.5 py-0.5 text-[7px] font-black uppercase tracking-widest text-amber-800 backdrop-blur-sm shadow-sm border border-amber-200/50">Ended</span>
+                       ) : !event.gallery_visible ? (
+                          <span className="rounded bg-slate-100/90 px-1.5 py-0.5 text-[7px] font-black uppercase tracking-widest text-slate-700 backdrop-blur-sm shadow-sm border border-slate-200/50">Hidden</span>
+                       ) : (
+                          <div className="flex items-center gap-1 rounded bg-green-100/90 px-1.5 py-0.5 backdrop-blur-sm shadow-sm border border-green-200/50">
+                            <span className="h-1.5 w-1.5 rounded-full bg-green-600 animate-pulse shrink-0" />
+                            <span className="text-[7px] font-black uppercase tracking-widest text-green-800">Live</span>
+                          </div>
+                       )}
+                    </div>
+
+                    {/* Photo Count Badge overlay (Bottom Right) */}
                     {event.photoCount !== undefined && (
                       <div className="absolute bottom-1 right-1 flex items-center gap-1 rounded bg-black/60 px-1.5 py-0.5 text-white backdrop-blur-md">
                          <span className="material-symbols-outlined text-[10px]">photo_library</span>
@@ -120,44 +135,26 @@ export default function AdminEventsClient({ events, creatorMap }: Props) {
                   </div>
                   
                   {/* Event Details */}
-                  <div className="min-w-0 flex-1 overflow-hidden">
-                    <div className="mb-1 flex items-start justify-between gap-2 w-full">
-                       <div className="min-w-0 flex-1">
-                          <h3 className="truncate text-base font-bold text-slate-900 leading-tight group-hover:text-indigo-600 transition-colors w-full block">{event.name}</h3>
-                       </div>
-                       
-                       {/* Standardized Status */}
-                       <div className="shrink-0 flex-none ml-1">
-                         {expired ? (
-                            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-amber-700 ring-1 ring-amber-200 whitespace-nowrap">Ended</span>
-                         ) : !event.gallery_visible ? (
-                            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-slate-600 ring-1 ring-slate-200 whitespace-nowrap">Hidden</span>
-                         ) : (
-                            <div className="flex items-center gap-1.5 rounded-full bg-green-50 px-2 py-0.5 ring-1 ring-green-200 whitespace-nowrap">
-                              <span className="h-1 w-1 rounded-full bg-green-500 animate-pulse shrink-0" />
-                              <span className="text-[8px] font-black uppercase tracking-widest text-green-700">Live</span>
-                            </div>
-                         )}
-                       </div>
-                    </div>
+                  <div className="min-w-0 flex-1 grid grid-cols-1 gap-1">
+                    <h3 className="truncate text-base font-bold text-slate-900 leading-tight group-hover:text-indigo-600 transition-colors w-full">{event.name}</h3>
 
-                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-2">
+                    <div className="flex items-center gap-2 overflow-hidden w-full">
                        <span className="text-xs font-mono font-medium text-slate-500 bg-slate-100 px-1.5 rounded shrink-0">{event.event_code}</span>
-                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">
+                       <span className="truncate text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                          {new Date(event.event_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                        </span>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <div className="flex items-center gap-3 overflow-hidden w-full mt-1">
                        {event.created_by && (
-                         <div className="flex items-center gap-1 text-[10px] font-bold text-slate-500 min-w-0">
+                         <div className="flex items-center gap-1 text-[10px] font-bold text-slate-500 min-w-0 shrink">
                             <span className="material-symbols-outlined text-[12px] shrink-0">person</span>
-                            <span className="truncate max-w-[100px]">{creatorMap[event.created_by] ?? "Unknown Host"}</span>
+                            <span className="truncate">{creatorMap[event.created_by] ?? "Unknown Host"}</span>
                          </div>
                        )}
                        <div className="flex items-center gap-1 text-[10px] font-bold text-slate-500 shrink-0">
                           <span className="material-symbols-outlined text-[12px] shrink-0">{event.reveal_mode === 'instant' ? 'visibility' : 'visibility_off'}</span>
-                          <span className="whitespace-nowrap">{event.reveal_mode === 'instant' ? 'Instant Reveal' : 'Reveal After'}</span>
+                          <span className="truncate">{event.reveal_mode === 'instant' ? 'Instant Reveal' : 'Reveal After'}</span>
                        </div>
                     </div>
                   </div>
