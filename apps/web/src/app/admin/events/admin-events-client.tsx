@@ -139,23 +139,23 @@ export default function AdminEventsClient({ events, creatorMap }: Props) {
                        </div>
                     </div>
 
-                    <div className="flex items-center gap-2 mb-2">
-                       <span className="text-xs font-mono font-medium text-slate-500 bg-slate-100 px-1.5 rounded">{event.event_code}</span>
-                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-2">
+                       <span className="text-xs font-mono font-medium text-slate-500 bg-slate-100 px-1.5 rounded shrink-0">{event.event_code}</span>
+                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">
                          {new Date(event.event_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                        </span>
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                        {event.created_by && (
-                         <div className="flex items-center gap-1 text-[10px] font-bold text-slate-500">
-                            <span className="material-symbols-outlined text-[12px]">person</span>
+                         <div className="flex items-center gap-1 text-[10px] font-bold text-slate-500 min-w-0">
+                            <span className="material-symbols-outlined text-[12px] shrink-0">person</span>
                             <span className="truncate max-w-[100px]">{creatorMap[event.created_by] ?? "Unknown Host"}</span>
                          </div>
                        )}
-                       <div className="flex items-center gap-1 text-[10px] font-bold text-slate-500">
-                          <span className="material-symbols-outlined text-[12px]">{event.reveal_mode === 'instant' ? 'visibility' : 'visibility_off'}</span>
-                          <span>{event.reveal_mode === 'instant' ? 'Instant Reveal' : 'Reveal After'}</span>
+                       <div className="flex items-center gap-1 text-[10px] font-bold text-slate-500 shrink-0">
+                          <span className="material-symbols-outlined text-[12px] shrink-0">{event.reveal_mode === 'instant' ? 'visibility' : 'visibility_off'}</span>
+                          <span className="whitespace-nowrap">{event.reveal_mode === 'instant' ? 'Instant Reveal' : 'Reveal After'}</span>
                        </div>
                     </div>
                   </div>
