@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { isEventActive } from "@kenangan/lib";
 
 type Event = {
   id: string;
@@ -114,20 +115,21 @@ export default function AdminEventsClient({ events, creatorMap }: Props) {
                         By: {creatorMap[event.created_by] ?? event.created_by.slice(0, 8)}
                       </p>
                     )}
-                    <div className="mt-1 flex items-center gap-2 text-xs">
-                      <span
-                        className={`rounded px-1.5 py-0.5 ${
-                          event.gallery_visible
-                            ? "bg-green-100 text-green-700"
-                            : "bg-gray-100 text-gray-700"
-                        }`}
-                      >
-                        {event.gallery_visible ? "Gallery Open" : "Gallery Closed"}
-                      </span>
-                      <span className="text-slate-500">
+                    <div className="mt-1 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest">
+                      {(() => {
+                        const expired = !isEventActive(event.event_date);
+                        if (expired) {
+                          return <span className="rounded px-1.5 py-0.5 bg-amber-100 text-amber-700">Ended</span>;
+                        }
+                        if (!event.gallery_visible) {
+                          return <span className="rounded px-1.5 py-0.5 bg-slate-100 text-slate-500">Hidden</span>;
+                        }
+                        return <span className="rounded px-1.5 py-0.5 bg-green-100 text-green-700">Live</span>;
+                      })()}
+                      <span className="text-slate-400 font-bold">
                         {event.reveal_mode === "instant"
-                          ? "Photos visible immediately"
-                          : "Photos visible after event date"}
+                          ? "Instant Reveal"
+                          : "Reveal After Event"}
                       </span>
                     </div>
                   </div>

@@ -84,6 +84,7 @@ export function ManageEventSheet({ event: incomingEvent, isOpen, onClose, onDele
   const guestUrl = useEventUrl(event?.event_code ?? "");
   const [copied, setCopied] = useState(false);
   const [galleryVisible, setGalleryVisible] = useState(event?.isOpen ?? false);
+  const isExpired = event ? !isEventActive(event.event_date) : false;
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [photoToDelete, setPhotoToDelete] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState<Section>("overview");
@@ -343,13 +344,15 @@ export function ManageEventSheet({ event: incomingEvent, isOpen, onClose, onDele
             <div className="flex items-center gap-2 shrink-0">
               <span
                 className={[
-                  "rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest",
-                  galleryVisible
+                  "rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest",
+                  isExpired
+                    ? "bg-amber-100 text-amber-700"
+                    : galleryVisible
                     ? "bg-green-100 text-green-700"
                     : "bg-slate-100 text-slate-500",
                 ].join(" ")}
               >
-                {galleryVisible ? "Open" : "Closed"}
+                {isExpired ? "Ended" : galleryVisible ? "Live" : "Hidden"}
               </span>
               <button
                 type="button"

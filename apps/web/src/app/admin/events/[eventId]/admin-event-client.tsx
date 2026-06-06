@@ -1,6 +1,6 @@
 "use client";
 
-import { listEventPhotosForAdmin, setEventGalleryVisibility, softDeletePhoto, deleteEvent, updateEventUploadLimits, type EventRow } from "@kenangan/lib";
+import { listEventPhotosForAdmin, setEventGalleryVisibility, softDeletePhoto, deleteEvent, updateEventUploadLimits, isEventActive, type EventRow } from "@kenangan/lib";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -22,6 +22,8 @@ export function AdminEventClient({ event }: Props) {
   const [eventState, setEventState] = useState(event);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [activeSection, setActiveSection] = useState<"overview" | "edit" | "photobook" | "guests" | "photos" | "danger">("overview");
+
+  const isExpired = !isEventActive(eventState.event_date);
 
   // Upload limits state
   const [limitEnabled, setLimitEnabled] = useState(event.upload_limit_enabled);
@@ -127,6 +129,26 @@ export function AdminEventClient({ event }: Props) {
 
       {activeSection === "overview" && (
       <div className="space-y-4">
+        {/* Standardized Status Indicator */}
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm flex items-center justify-between">
+           <div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5 leading-none">Event Status</p>
+              <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight leading-none mt-1">Platform Label</h3>
+           </div>
+           <div className="flex items-center gap-2">
+              {isExpired ? (
+                <span className="rounded-full bg-amber-100 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-amber-700 ring-1 ring-amber-200">Ended</span>
+              ) : !eventState.gallery_visible ? (
+                <span className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-600 ring-1 ring-slate-200">Hidden</span>
+              ) : (
+                <div className="flex items-center gap-2 rounded-full bg-green-50 px-3 py-1 ring-1 ring-green-200">
+                  <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
+                  <span className="text-[10px] font-black uppercase tracking-widest text-green-700">Live</span>
+                </div>
+              )}
+           </div>
+        </div>
+
         <div className="rounded border border-slate-200 bg-white p-4 shadow-sm">
           <h2 className="text-sm font-semibold text-slate-900 uppercase tracking-tight">Gallery Visibility</h2>
           <p className="mt-1 text-xs text-slate-600">

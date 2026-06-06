@@ -20,14 +20,16 @@ function StatusBadge({ isOpen, isExpired }: { isOpen: boolean; isExpired?: boole
       </span>
     );
   }
+  if (!isOpen) {
+    return (
+      <span className="shrink-0 rounded-lg px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-500">
+        Hidden
+      </span>
+    );
+  }
   return (
-    <span
-      className={[
-        "shrink-0 rounded-lg px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider",
-        isOpen ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-500",
-      ].join(" ")}
-    >
-      {isOpen ? "Active" : "Archived"}
+    <span className="shrink-0 rounded-lg px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-green-100 text-green-700">
+      Live
     </span>
   );
 }
@@ -205,7 +207,7 @@ export function EventCard({ event, isCreated = false, onManage }: EventCardProps
         </div>
       ) : (
         <div className="flex gap-2">
-          {/* Live Hub — fills half width, dark */}
+          {/* Event Hub — fills half width, dark */}
           <button
             onClick={onLiveHubClick}
             disabled={isNavigating}
@@ -219,7 +221,7 @@ export function EventCard({ event, isCreated = false, onManage }: EventCardProps
             ) : (
               <span className="material-symbols-outlined text-[20px]">rocket_launch</span>
             )}
-            {isNavigating ? "Entering..." : "Live Hub"}
+            {isNavigating ? "Entering..." : "Event Hub"}
           </button>
 
           {/* Share — small WhatsApp button */}

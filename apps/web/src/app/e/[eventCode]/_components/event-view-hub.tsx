@@ -192,10 +192,16 @@ export function EventViewHub({
             </Link>
           )}
 
-          <div className="flex items-center gap-1.5 rounded-full bg-green-50 px-2.5 py-1">
+          <div className="flex items-center gap-1.5 rounded-full bg-green-50 px-2.5 py-1 ring-1 ring-green-200">
             <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
-            <span className="text-[10px] font-bold uppercase tracking-wider text-green-700">
-              {activeTab === "gallery" ? "Live" : "Live Hub"}
+            <span className="text-[10px] font-black uppercase tracking-widest text-green-700">
+              {activeTab === "gallery" ? "Live" : "Live"}
+            </span>
+          </div>
+
+          <div className="ml-2 flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600">
+              {activeTab === "gallery" ? "Gallery" : "Event Hub"}
             </span>
           </div>
 

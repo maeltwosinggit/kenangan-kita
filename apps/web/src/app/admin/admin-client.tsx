@@ -9,6 +9,7 @@ import AdminEventsClient from "./events/admin-events-client";
 import { UsersClient } from "./users/users-client";
 import { BillingAdmin } from "./_components/billing-admin";
 import UserMenu from "@/components/user-menu";
+import { isEventActive } from "@kenangan/lib";
 
 // Types
 type ActivityRow = {
@@ -203,16 +204,16 @@ export default function AdminClient({
                           <span className="truncate text-sm font-semibold leading-tight text-slate-900">
                             {event.name}
                           </span>
-                          <span
-                            className={[
-                              "shrink-0 rounded px-2 py-0.5 text-[10px] font-bold uppercase",
-                              event.isOpen
-                                ? "bg-green-50 text-green-700"
-                                : "bg-slate-100 text-slate-500",
-                            ].join(" ")}
-                          >
-                            {event.isOpen ? "Open" : "Closed"}
-                          </span>
+                          {(() => {
+                            const expired = !isEventActive(event.event_date);
+                            if (expired) {
+                              return <span className="shrink-0 rounded px-2 py-0.5 text-[8px] font-black uppercase tracking-widest bg-amber-100 text-amber-700">Ended</span>;
+                            }
+                            if (!event.gallery_visible) {
+                              return <span className="shrink-0 rounded px-2 py-0.5 text-[8px] font-black uppercase tracking-widest bg-slate-100 text-slate-500">Hidden</span>;
+                            }
+                            return <span className="shrink-0 rounded px-2 py-0.5 text-[8px] font-black uppercase tracking-widest bg-green-50 text-green-700">Live</span>;
+                          })()}
                         </div>
                         <p className="mt-1 text-xs text-slate-500">
                           {new Date(event.event_date).toLocaleDateString("en-US", {

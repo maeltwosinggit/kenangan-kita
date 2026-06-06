@@ -29,7 +29,7 @@ export function GuestLinkSection({ eventId, eventCode, fullUrl }: GuestLinkSecti
         <QRCodeDisplay url={fullUrl} size={150} />
       </div>
 
-      <p className="text-xs text-slate-700 font-medium mb-2">Guest Link</p>
+      <p className="text-xs text-slate-700 font-bold uppercase tracking-widest mb-2">Event Hub Link</p>
       <div className="rounded border border-slate-300 bg-white p-2 text-xs text-slate-800 font-mono break-all mb-3">
         {fullUrl}
       </div>
