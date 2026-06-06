@@ -217,70 +217,86 @@ export function BillingAdmin() {
                 <div className={["h-2 w-2 rounded-full", dc.is_active ? "bg-green-500" : "bg-slate-300"].join(" ")} />
               </div>
 
-              <div className="flex items-center justify-between pt-4 border-t border-slate-50">
-                 <div className="flex items-center gap-4">
-                    <div>
-                       <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-0.5">Usage</p>
-                       <p className="text-xs font-bold text-slate-700">{dc.use_count} used</p>
+              <div className="flex flex-col gap-4 pt-4 border-t border-slate-50">
+                 <div className="flex items-center justify-between bg-slate-50 rounded-xl p-3">
+                    <div className="flex gap-6">
+                       <div>
+                          <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-0.5">Usage</p>
+                          <p className="text-sm font-bold text-slate-900 leading-none">{dc.use_count} used</p>
+                       </div>
+                       <div>
+                          <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-0.5">Quota Limit</p>
+                          <div className="flex items-center gap-2">
+                             <p className="text-sm font-bold text-slate-900 leading-none">{dc.max_uses ?? "Unlimited"}</p>
+                          </div>
+                       </div>
                     </div>
-                    <div>
-                       <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-0.5">Limit</p>
-                       {editingId === dc.id ? (
-                         <div className="flex items-center gap-1 animate-in fade-in slide-in-from-left-1 duration-200">
-                           <input
-                             type="number"
-                             value={editingValue}
-                             onChange={(e) => setEditingValue(e.target.value)}
-                             onKeyDown={(e) => {
-                               if (e.key === 'Enter') {
-                                 updateMaxUsesMutation.mutate({ id: dc.id, max: editingValue === "" ? null : parseInt(editingValue) });
-                               } else if (e.key === 'Escape') {
-                                 setEditingId(null);
-                               }
-                             }}
-                             className="w-16 rounded border-2 border-slate-900 bg-white px-1.5 py-0.5 text-xs font-bold focus:outline-none"
-                             autoFocus
-                             placeholder="∞"
-                           />
-                           <button 
-                             onClick={() => updateMaxUsesMutation.mutate({ id: dc.id, max: editingValue === "" ? null : parseInt(editingValue) })}
-                             disabled={updateMaxUsesMutation.isPending}
-                             className="flex h-6 w-6 items-center justify-center rounded bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50"
-                           >
-                             <span className="material-symbols-outlined text-[16px]">check</span>
-                           </button>
-                           <button 
-                             onClick={() => setEditingId(null)}
-                             className="flex h-6 w-6 items-center justify-center rounded bg-slate-100 text-slate-500 hover:bg-slate-200"
-                           >
-                             <span className="material-symbols-outlined text-[16px]">close</span>
-                           </button>
-                         </div>
-                       ) : (
-                         <button 
-                           onClick={() => {
-                             setEditingId(dc.id);
-                             setEditingValue(dc.max_uses?.toString() ?? "");
-                           }}
-                           className="group flex items-center gap-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-700"
-                         >
-                            {dc.max_uses ?? "Unlimited"}
-                            <span className="material-symbols-outlined text-[14px] opacity-0 group-hover:opacity-100 transition-opacity">edit</span>
-                         </button>
-                       )}
-                    </div>
+
+                    {editingId !== dc.id && dc.is_active && (
+                       <button 
+                         onClick={() => {
+                           setEditingId(dc.id);
+                           setEditingValue(dc.max_uses?.toString() ?? "");
+                         }}
+                         className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-white shadow-md shadow-indigo-100 hover:bg-indigo-700 transition-all active:scale-95"
+                       >
+                          <span className="material-symbols-outlined text-[14px]">edit_note</span>
+                          Edit Quota
+                       </button>
+                    )}
                  </div>
 
-                 {dc.is_active && (
+                 {editingId === dc.id && (
+                    <div className="animate-in fade-in slide-in-from-top-1 duration-200">
+                       <div className="flex flex-col gap-2 p-1">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-indigo-500">Update Quota Limit</label>
+                          <div className="flex items-center gap-2">
+                             <input
+                               type="number"
+                               value={editingValue}
+                               onChange={(e) => setEditingValue(e.target.value)}
+                               onKeyDown={(e) => {
+                                 if (e.key === 'Enter') {
+                                   updateMaxUsesMutation.mutate({ id: dc.id, max: editingValue === "" ? null : parseInt(editingValue) });
+                                 } else if (e.key === 'Escape') {
+                                   setEditingId(null);
+                                 }
+                               }}
+                               className="flex-1 rounded-xl border-2 border-indigo-600 bg-white px-3 py-2.5 text-sm font-bold text-slate-900 focus:outline-none shadow-sm"
+                               autoFocus
+                               placeholder="e.g. 50 (empty for unlimited)"
+                             />
+                             <button 
+                               onClick={() => updateMaxUsesMutation.mutate({ id: dc.id, max: editingValue === "" ? null : parseInt(editingValue) })}
+                               disabled={updateMaxUsesMutation.isPending}
+                               className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 shadow-lg shadow-indigo-100"
+                               title="Save Changes"
+                             >
+                               <span className="material-symbols-outlined text-[20px]">check</span>
+                             </button>
+                             <button 
+                               onClick={() => setEditingId(null)}
+                               className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-100 text-slate-500 hover:bg-slate-200"
+                               title="Cancel"
+                             >
+                               <span className="material-symbols-outlined text-[20px]">close</span>
+                             </button>
+                          </div>
+                          <p className="text-[10px] text-slate-400 font-medium italic px-1">Press Enter to save, Esc to cancel.</p>
+                       </div>
+                    </div>
+                 )}
+
+                 {dc.is_active && editingId !== dc.id && (
                    <button 
                      onClick={() => {
                        if (confirm(`Are you sure you want to terminate ${dc.code}?`)) {
                          terminateMutation.mutate(dc.id);
                        }
                      }}
-                     className="rounded-lg border border-red-100 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-red-500 hover:bg-red-50 transition-colors"
+                     className="w-full rounded-xl border border-red-100 py-2.5 text-[10px] font-black uppercase tracking-widest text-red-500 hover:bg-red-50 transition-colors"
                    >
-                     Terminate
+                     Terminate Code
                    </button>
                  )}
               </div>
