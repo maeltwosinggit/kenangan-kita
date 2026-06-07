@@ -110,34 +110,40 @@ export default function AdminEventsClient({ events, creatorMap, onManageEvent }:
                        )}
                     </div>
 
-                    {/* Photo Count Badge overlay (Bottom Right) */}
+                    {/* Photo Count Badge overlay */}
                     {event.photoCount !== undefined && (
-                      <div className="absolute bottom-1 right-1 flex items-center gap-1 rounded bg-black/60 px-1.5 py-0.5 text-white backdrop-blur-md">
-                         <span className="material-symbols-outlined text-[10px]">photo_library</span>
-                         <span className="text-[10px] font-bold">{event.photoCount}</span>
+                      <div className="absolute bottom-1 right-1 flex items-center justify-center min-w-[20px] h-5 rounded bg-slate-900/80 px-1.5 backdrop-blur-md shadow-sm border border-slate-700/50">
+                         <span className="text-[9px] font-black text-white">{event.photoCount}</span>
                       </div>
                     )}
                   </div>
                   
                   {/* Event Details */}
-                  <div className="min-w-0 flex-1 grid grid-cols-1 gap-1">
+                  <div className="min-w-0 flex-1 grid grid-cols-1 gap-1 py-0.5">
                     <h3 className="truncate text-base font-bold text-slate-900 leading-tight w-full">{event.name}</h3>
 
-                    <div className="flex items-center gap-2 overflow-hidden w-full mb-1">
+                    <div className="flex items-center gap-2 overflow-hidden w-full mb-0.5">
                        <span className="text-xs font-mono font-medium text-slate-500 bg-slate-100 px-1.5 rounded shrink-0">{event.event_code}</span>
                        <span className="truncate text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                          {new Date(event.event_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                        </span>
                     </div>
 
-                    <div className="mt-1">
+                    <div className="flex items-center justify-between w-full mt-1">
+                      <div className="flex items-center gap-1 text-[10px] font-bold text-slate-500 min-w-0 shrink">
+                        <span className="material-symbols-outlined text-[12px] shrink-0">person</span>
+                        <span className="truncate">{event.created_by ? (creatorMap[event.created_by] ?? "Unknown") : "Unknown"}</span>
+                      </div>
                       <button
                         type="button"
-                        onClick={() => onManageEvent?.(event)}
-                        className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-50 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-indigo-600 transition-colors hover:bg-indigo-100 active:scale-95 disabled:opacity-50"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          onManageEvent?.(event);
+                        }}
+                        className="flex items-center justify-center p-1.5 rounded-lg bg-slate-50 text-slate-400 transition-colors hover:bg-indigo-50 hover:text-indigo-600 active:scale-95 disabled:opacity-50"
                       >
-                        <span className="material-symbols-outlined text-[14px]">settings</span>
-                        Manage Event
+                        <span className="material-symbols-outlined text-[18px]">settings</span>
                       </button>
                     </div>
                   </div>
