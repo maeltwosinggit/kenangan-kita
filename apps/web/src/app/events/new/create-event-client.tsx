@@ -187,9 +187,10 @@ export default function CreateEventForm({
         throw new Error("Cover photo upload failed. Please try again.");
       }
 
+      const isoEventDate = new Date(eventDate).toISOString();
       const created = await createEvent({ 
         name, 
-        eventDate, 
+        eventDate: isoEventDate, 
         coverImagePath,
         upload_limit_enabled: selectedPlan?.photo_limit !== null,
         max_uploads_total: selectedPlan?.photo_limit ?? undefined,

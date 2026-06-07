@@ -18,12 +18,26 @@ type Props = {
 export function EditEventForm({ event, onSuccess }: Props) {
   const queryClient = useQueryClient();
   const [name, setName] = useState(event.name);
-  const [eventDate, setEventDate] = useState(event.event_date);
+  
+  // Format the initial date for datetime-local input (YYYY-MM-DDTHH:mm)
+  const [eventDate, setEventDate] = useState(() => {
+    try {
+      const d = new Date(event.event_date);
+      return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+    } catch {
+      return event.event_date.slice(0, 16);
+    }
+  });
+
   const [revealMode, setRevealMode] = useState(event.reveal_mode);
   const [themeFilter, setThemeFilter] = useState(event.theme_filter || "normal");
 
   const mutation = useMutation({
-    mutationFn: () => updateEvent({ id: event.id, name, eventDate, revealMode, themeFilter }),
+    mutationFn: () => {
+      // Convert back to ISO string for the backend
+      const isoDate = new Date(eventDate).toISOString();
+      return updateEvent({ id: event.id, name, eventDate: isoDate, revealMode, themeFilter });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       queryClient.invalidateQueries({ queryKey: ["admin-event", event.id] });
