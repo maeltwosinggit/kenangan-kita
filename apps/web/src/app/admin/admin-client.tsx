@@ -29,7 +29,6 @@ type Event = {
   gallery_visible: boolean;
   reveal_mode: string;
   created_by: string | null;
-  latestPhotoUrl: string | null;
   isOpen?: boolean;
   photoCount?: number;
   coverImageUrl?: string | null;
@@ -45,7 +44,6 @@ type Props = {
   totalPhotos: number;
   activeEventsCount: number;
   totalGuests: number;
-  recentEvents: Event[];
   activityRows: ActivityRow[];
   
   // Events tab
@@ -93,7 +91,6 @@ export default function AdminClient({
   totalPhotos,
   activeEventsCount,
   totalGuests,
-  recentEvents,
   activityRows,
   allEvents,
   creatorMap,

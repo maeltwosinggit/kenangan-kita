@@ -12,7 +12,6 @@ type Event = {
   gallery_visible: boolean;
   reveal_mode: string;
   created_by: string | null;
-  latestPhotoUrl: string | null;
   photoCount?: number;
 };
 
@@ -121,18 +120,13 @@ export default function AdminEventsClient({ events, creatorMap, onManageEvent }:
                 
                 <div className={`flex items-start gap-4 w-full overflow-hidden ${isThisLoading ? "opacity-40" : busy ? "opacity-50" : ""}`}>
                   {/* Thumbnail Container */}
-                  <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-slate-100 ring-1 ring-slate-200">
-                    {event.latestPhotoUrl ? (
-                      <img
-                        src={event.latestPhotoUrl}
-                        alt={`Latest from ${event.name}`}
-                        className={["h-full w-full object-cover transition-transform group-hover:scale-105", expired ? "grayscale opacity-80" : ""].join(" ")}
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center text-slate-300">
-                         <span className="material-symbols-outlined text-[24px]">image</span>
-                      </div>
-                    )}
+                  <div 
+                    className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl shadow-inner border border-white/20 flex items-center justify-center"
+                    style={{
+                      background: `linear-gradient(135deg, hsl(${(event.name.charCodeAt(0) * 137) % 360}, 80%, 75%), hsl(${((event.name.charCodeAt(0) * 137) + 40) % 360}, 70%, 60%))`
+                    }}
+                  >
+                    <span className="text-3xl font-black text-white mix-blend-overlay opacity-90 drop-shadow-md">{event.name.charAt(0).toUpperCase()}</span>
                     
                     {/* Status Badge overlay (Top Left) */}
                     <div className="absolute top-1 left-1 flex items-center">
