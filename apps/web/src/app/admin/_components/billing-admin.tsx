@@ -160,9 +160,11 @@ export function BillingAdmin() {
                      </div>
                      <div className="grid grid-cols-3 gap-3">
                        <div>
-                         <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1 block">Price (Cents)</label>
+                         <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1 block">Price</label>
                          <input 
-                           type="number" 
+                           type="number"
+                           step="0.01"
+                           min="0"
                            value={editingPlanData.price_cents} 
                            onChange={(e) => setEditingPlanData(prev => ({ ...prev, price_cents: e.target.value }))}
                            className="w-full rounded-lg border-2 border-indigo-100 bg-indigo-50/30 p-2 text-sm font-bold focus:border-indigo-600 focus:bg-white focus:outline-none transition-colors" 
@@ -192,7 +194,7 @@ export function BillingAdmin() {
                        onClick={() => updatePlanMutation.mutate({ 
                          id: plan.id, 
                          data: {
-                           price_cents: parseInt(editingPlanData.price_cents),
+                           price_cents: Math.round(parseFloat(editingPlanData.price_cents) * 100),
                            photo_limit: editingPlanData.photo_limit === "" ? null : parseInt(editingPlanData.photo_limit),
                            storage_days: parseInt(editingPlanData.storage_days)
                          }
@@ -216,13 +218,13 @@ export function BillingAdmin() {
                     
                     <div className="flex flex-col items-end shrink-0 gap-2">
                       <p className="text-sm font-black text-indigo-600 bg-indigo-50 px-3 py-1 rounded-lg">
-                         {getCurrencySymbol(plan.currency)}{plan.price_cents / 100}
+                         {getCurrencySymbol(plan.currency)}{(plan.price_cents / 100).toFixed(2)}
                       </p>
                       <button 
                         onClick={() => {
                           setEditingPlanId(plan.id);
                           setEditingPlanData({
-                            price_cents: plan.price_cents.toString(),
+                            price_cents: (plan.price_cents / 100).toFixed(2),
                             photo_limit: plan.photo_limit?.toString() ?? "",
                             storage_days: plan.storage_days?.toString() ?? "7"
                           });
