@@ -5,6 +5,7 @@ import { getEventByCode } from "./events";
 type UploadPhotoInput = {
   eventCode: string;
   file: Blob;
+  thumbnailFile?: Blob;
   nickname?: string;
   uploaderId?: string;
   guestId?: string;
@@ -78,6 +79,18 @@ export async function uploadEventPhoto(input: UploadPhotoInput, supabaseClient?:
 
   if (uploadError) {
     throw uploadError;
+  }
+
+  if (input.thumbnailFile) {
+    const thumbPath = `events/${event.id}/${photoId}_thumb.jpg`;
+    await supabase.storage
+      .from("event-photos")
+      .upload(thumbPath, input.thumbnailFile, {
+        contentType: "image/jpeg",
+        upsert: false
+      }).catch(() => {
+        // Silently fail if thumb upload fails, original image is what matters
+      });
   }
 
   const { error: insertError } = await supabase.from("photos").insert({
@@ -168,12 +181,14 @@ export async function listEventPhotosByCode(input: ListEventPhotosInput) {
 
   const rows = (data as EventPhoto[]) ?? [];
   const paths = rows.map((row) => row.storage_path);
+  const thumbPaths = rows.map((row) => row.storage_path.replace(".jpg", "_thumb.jpg"));
+  
   let signedUrlMap = new Map<string, string>();
 
   if (paths.length > 0) {
     const { data: signedData, error: signedError } = await supabase.storage
       .from("event-photos")
-      .createSignedUrls(paths, 60 * 60);
+      .createSignedUrls([...paths, ...thumbPaths], 60 * 60);
 
     if (signedError) {
       throw signedError;
@@ -186,10 +201,14 @@ export async function listEventPhotosByCode(input: ListEventPhotosInput) {
     );
   }
 
-  const items = rows.map((row) => ({
-    ...row,
-    imageUrl: signedUrlMap.get(row.storage_path) ?? ""
-  }));
+  const items = rows.map((row) => {
+    const thumbPath = row.storage_path.replace(".jpg", "_thumb.jpg");
+    return {
+      ...row,
+      imageUrl: signedUrlMap.get(row.storage_path) ?? "",
+      thumbUrl: signedUrlMap.get(thumbPath) ?? signedUrlMap.get(row.storage_path) ?? ""
+    };
+  });
 
   return {
     event,

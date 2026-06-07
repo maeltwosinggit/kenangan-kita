@@ -228,10 +228,12 @@ export function CameraCaptureClient({ eventCode, themeFilter = "normal", guestNi
       }
 
       const compressed = await compressImage(captured.blob);
+      const thumbnail = await compressImage(captured.blob, { maxWidth: 400, maxHeight: 400, quality: 0.6 });
       const orientation = compressed.width > compressed.height ? "landscape" : "portrait";
       await uploadEventPhoto({
         eventCode,
         file: compressed.blob,
+        thumbnailFile: thumbnail.blob,
         nickname: nameToUse,
         uploaderId: userId ?? undefined,
         guestId: !userId ? guestId : undefined,

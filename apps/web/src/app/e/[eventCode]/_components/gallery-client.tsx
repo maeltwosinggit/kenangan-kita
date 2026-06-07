@@ -6,7 +6,7 @@ import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
-type PhotoItem = { id: string; imageUrl: string; nickname: string | null; uploader_id: string | null; captured_at: string };
+type PhotoItem = { id: string; imageUrl: string; thumbUrl: string; nickname: string | null; uploader_id: string | null; captured_at: string };
 
 type Props = {
   eventCode: string;
@@ -192,9 +192,13 @@ export function GalleryClient({ eventCode, eventName, currentUserId, eventId }: 
         async (payload) => {
           const newPhoto = payload.new as any;
           if (!newPhoto || newPhoto.is_deleted) return;
-          const { data: signed } = await supabase.storage.from("event-photos").createSignedUrl(newPhoto.storage_path, 3600);
-          if (!signed?.signedUrl) return;
-          const newItem: PhotoItem = { id: newPhoto.id, imageUrl: signed.signedUrl, nickname: newPhoto.nickname, uploader_id: newPhoto.uploader_id, captured_at: newPhoto.captured_at };
+          const thumbPath = newPhoto.storage_path.replace(".jpg", "_thumb.jpg");
+          const { data: signedData } = await supabase.storage.from("event-photos").createSignedUrls([newPhoto.storage_path, thumbPath], 3600);
+          if (!signedData || signedData.length === 0) return;
+          const fullUrl = signedData.find(d => d.path === newPhoto.storage_path)?.signedUrl;
+          const thumbUrl = signedData.find(d => d.path === thumbPath)?.signedUrl;
+          if (!fullUrl) return;
+          const newItem: PhotoItem = { id: newPhoto.id, imageUrl: fullUrl, thumbUrl: thumbUrl || fullUrl, nickname: newPhoto.nickname, uploader_id: newPhoto.uploader_id, captured_at: newPhoto.captured_at };
           queryClient.setQueryData(["gallery", eventCode], (oldData: any) => {
             if (!oldData) return oldData;
             const alreadyExists = oldData.pages.some((page: any) => page.items.some((item: any) => item.id === newItem.id));
@@ -306,7 +310,17 @@ export function GalleryClient({ eventCode, eventName, currentUserId, eventId }: 
               {group.items.map((item, idx) => (
                 <article key={item.id} className="group relative rounded-lg overflow-hidden bg-slate-200 aspect-[3/4]">
                   <button onClick={() => openPhoto(item, idx)} className="h-full w-full">
-                    <img src={item.imageUrl} alt="" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
+                    <img 
+                      src={item.thumbUrl || item.imageUrl} 
+                      onError={(e) => {
+                        if (e.currentTarget.src !== item.imageUrl) {
+                          e.currentTarget.src = item.imageUrl;
+                        }
+                      }}
+                      alt="" 
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" 
+                      loading="lazy" 
+                    />
                     <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent px-2 py-3 flex justify-between items-end">
                       <span className="truncate text-[10px] font-bold text-white uppercase tracking-wider drop-shadow-sm">{item.nickname ?? "Guest"}</span>
                       <span className="ml-2 shrink-0 text-[10px] font-bold text-white/80 drop-shadow-sm uppercase tracking-wider">

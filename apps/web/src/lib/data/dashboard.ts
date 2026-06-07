@@ -73,17 +73,20 @@ export async function getDashboardData(userId: string, supabase: SupabaseClient<
   ];
 
   // Resolve signed URLs for recent photos in one batch call
+  // We use _thumb.jpg if available, fallback to original if missing. But to save API calls, we'll just request both.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const recentPaths = (recentPhotoRows ?? []).map((r: any) => r.storage_path as string);
   const throwbackPath = (throwbackPhotoRows?.[0] as any)?.storage_path;
   const allPaths = [...recentPaths];
   if (throwbackPath) allPaths.push(throwbackPath);
+  
+  const allThumbPaths = allPaths.map(p => p.replace('.jpg', '_thumb.jpg'));
 
   let signedUrlMap = new Map<string, string>();
   if (allPaths.length > 0) {
     const { data: signedData } = await supabase.storage
       .from("event-photos")
-      .createSignedUrls(allPaths, 3600);
+      .createSignedUrls([...allPaths, ...allThumbPaths], 3600);
     signedUrlMap = new Map(
       (signedData ?? [])
         .filter(
@@ -97,14 +100,14 @@ export async function getDashboardData(userId: string, supabase: SupabaseClient<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const recentPhotos: RecentPhoto[] = (recentPhotoRows ?? []).map((r: any) => ({
     id: r.id,
-    imageUrl: signedUrlMap.get(r.storage_path) ?? "",
+    imageUrl: signedUrlMap.get(r.storage_path.replace('.jpg', '_thumb.jpg')) ?? signedUrlMap.get(r.storage_path) ?? "",
     eventName: r.events?.name ?? null,
     eventCode: r.events?.event_code ?? null,
   }));
 
   const throwbackPhoto: RecentPhoto | null = throwbackPhotoRows?.[0] ? {
     id: (throwbackPhotoRows[0] as any).id,
-    imageUrl: signedUrlMap.get(throwbackPath) ?? "",
+    imageUrl: signedUrlMap.get(throwbackPath.replace('.jpg', '_thumb.jpg')) ?? signedUrlMap.get(throwbackPath) ?? "",
     eventName: (throwbackPhotoRows[0] as any).events?.name ?? null,
     eventCode: (throwbackPhotoRows[0] as any).events?.event_code ?? null,
   } : null;

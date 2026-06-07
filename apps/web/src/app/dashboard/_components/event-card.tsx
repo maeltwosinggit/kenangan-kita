@@ -48,30 +48,28 @@ function RoleBadge({ isCreated }: { isCreated: boolean }) {
 }
 
 function EventThumbnail({
-  src,
-  alt,
+  name,
   grayscale,
 }: {
-  src: string | null;
-  alt: string;
+  name: string;
   grayscale: boolean;
 }) {
-  if (src) {
-    return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={src}
-        alt={alt}
-        className={[
-          "h-24 w-24 shrink-0 rounded-lg object-cover border border-slate-100",
-          grayscale ? "grayscale opacity-70" : "",
-        ].join(" ")}
-      />
-    );
-  }
+  const initial = name.charAt(0).toUpperCase();
+  // Generate a deterministic gradient color based on the first letter
+  const charCode = initial.charCodeAt(0);
+  const hue = (charCode * 137) % 360;
+
   return (
-    <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-100">
-      <span className="material-symbols-outlined text-[32px] text-slate-300">image</span>
+    <div 
+      className={[
+        "flex h-24 w-24 shrink-0 items-center justify-center rounded-xl shadow-inner border border-white/20",
+        grayscale ? "grayscale opacity-60" : ""
+      ].join(" ")}
+      style={{
+        background: `linear-gradient(135deg, hsl(${hue}, 80%, 75%), hsl(${(hue + 40) % 360}, 70%, 60%))`
+      }}
+    >
+      <span className="text-3xl font-black text-white mix-blend-overlay opacity-90 drop-shadow-md">{initial}</span>
     </div>
   );
 }
@@ -137,7 +135,7 @@ export function EventCard({ event, isCreated = false, onManage }: EventCardProps
     >
       {/* ── Top row: thumbnail + meta ── */}
       <div className="flex gap-4">
-        <EventThumbnail src={event.coverImageUrl} alt={event.name} grayscale={isArchived} />
+        <EventThumbnail name={event.name} grayscale={isArchived} />
 
         <div className="flex-1 min-w-0">
           {/* Name + status badge on same row */}

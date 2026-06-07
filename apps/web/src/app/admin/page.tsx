@@ -58,18 +58,6 @@ export default async function AdminPage() {
     (uploaderRows ?? []).map((r: { uploader_id: string }) => r.uploader_id)
   ).size;
 
-  // Recent 5 events with thumbnails + open/closed state
-  const recentEvents = await Promise.all(
-    events.slice(0, 5).map(async (event) => ({
-      ...event,
-      latestPhotoUrl: await getLatestEventPhoto(event.id),
-      isOpen: isEventGalleryOpen(event),
-      coverImageUrl: event.cover_image_path
-        ? supabase.storage.from("event-covers").getPublicUrl(event.cover_image_path).data.publicUrl
-        : null,
-    }))
-  );
-
   // We need allEvents and creatorMap for the Events tab
   const allEvents = await Promise.all(
     events.map(async (event) => {
@@ -81,7 +69,6 @@ export default async function AdminPage() {
 
       return {
         ...event,
-        latestPhotoUrl: await getLatestEventPhoto(event.id),
         isOpen: isEventGalleryOpen(event),
         coverImageUrl: event.cover_image_path
           ? supabase.storage.from("event-covers").getPublicUrl(event.cover_image_path).data.publicUrl
@@ -102,7 +89,6 @@ export default async function AdminPage() {
       totalPhotos={totalPhotos ?? 0}
       activeEventsCount={activeEventsCount ?? 0}
       totalGuests={totalGuests}
-      recentEvents={recentEvents}
       activityRows={activityRows}
       allEvents={allEvents}
       creatorMap={creatorMap}
