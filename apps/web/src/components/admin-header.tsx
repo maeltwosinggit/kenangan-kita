@@ -28,12 +28,6 @@ export default function AdminHeader({ userInfo }: { userInfo: UserInfo }) {
           <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest text-amber-800">Admin</span>
         </Link>
         <div className="flex items-center gap-2">
-          <Link
-            href="/dashboard"
-            className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50"
-          >
-            Dashboard
-          </Link>
           <UserMenu avatarUrl={userInfo.avatarUrl || null} displayName={displayName} />
         </div>
       </div>
