@@ -166,3 +166,27 @@ export async function updateDiscountCodeMaxUses(
   if (error) throw error;
   return data as DiscountCode;
 }
+
+/**
+ * Updates a pricing plan (Admin only).
+ */
+export async function updatePricingPlan(
+  planId: string,
+  updates: Partial<Omit<PricingPlan, "id" | "region" | "features">>,
+  supabaseClient?: any
+): Promise<PricingPlan> {
+  const supabase = supabaseClient ?? getSupabaseClient();
+  const { data, error } = await supabase
+    .from("pricing_plans")
+    .update(updates)
+    .eq("id", planId)
+    .select("*")
+    .single();
+
+  if (error) throw error;
+  
+  return {
+    ...data,
+    features: Array.isArray(data.features) ? data.features : []
+  } as PricingPlan;
+}

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { generateDiscountCode, getSupabaseClient, listPricingPlans, terminateDiscountCode, updateDiscountCodeMaxUses } from "@kenangan/lib";
+import { generateDiscountCode, getSupabaseClient, listPricingPlans, terminateDiscountCode, updateDiscountCodeMaxUses, updatePricingPlan } from "@kenangan/lib";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export function BillingAdmin() {
@@ -25,6 +25,13 @@ export function BillingAdmin() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState<string>("");
   const [terminatingId, setTerminatingId] = useState<string | null>(null);
+
+  const [editingPlanId, setEditingPlanId] = useState<string | null>(null);
+  const [editingPlanData, setEditingPlanData] = useState<{
+    price_cents: string;
+    photo_limit: string;
+    storage_days: string;
+  }>({ price_cents: "", photo_limit: "", storage_days: "" });
 
   const discountCodesQuery = useQuery({
     queryKey: ["admin-discount-codes"],
@@ -75,6 +82,17 @@ export function BillingAdmin() {
     }
   });
 
+  const updatePlanMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string, data: any }) => updatePricingPlan(id, data, supabase),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-pricing-plans"] });
+      setEditingPlanId(null);
+    },
+    onError: (err) => {
+      alert("Failed to update pricing plan: " + (err as Error).message);
+    }
+  });
+
   const updateMaxUsesMutation = useMutation({
     mutationFn: ({ id, max }: { id: string, max: number | null }) => updateDiscountCodeMaxUses(id, max, supabase),
     onSuccess: () => {
@@ -122,14 +140,90 @@ export function BillingAdmin() {
         
         <div className="grid grid-cols-2 gap-2">
           {pricingPlansQuery.data?.map((plan) => (
-            <div key={plan.id} className="rounded-xl border border-slate-100 bg-white p-3 shadow-sm flex flex-col justify-between">
-              <div>
-                <h3 className="text-[10px] font-black uppercase text-slate-900 tracking-tight">{plan.name}</h3>
-                <p className="text-[11px] font-black text-indigo-600 mt-1">
-                   {getCurrencySymbol(plan.currency)}{plan.price_cents / 100}
-                </p>
-              </div>
-              <p className="text-[9px] font-medium text-slate-400 leading-tight mt-2 line-clamp-2">{plan.description}</p>
+            <div key={plan.id} className="rounded-xl border border-slate-100 bg-white p-3 shadow-sm flex flex-col justify-between group">
+              {editingPlanId === plan.id ? (
+                <div className="space-y-3 animate-in fade-in duration-200">
+                   <div className="flex items-center justify-between">
+                     <h3 className="text-[10px] font-black uppercase text-indigo-600 tracking-tight">Edit {plan.name}</h3>
+                     <button onClick={() => setEditingPlanId(null)} className="text-slate-400 hover:text-slate-600">
+                       <span className="material-symbols-outlined text-[14px]">close</span>
+                     </button>
+                   </div>
+                   <div className="space-y-2">
+                     <div>
+                       <label className="text-[8px] font-black uppercase text-slate-400">Price (Cents)</label>
+                       <input 
+                         type="number" 
+                         value={editingPlanData.price_cents} 
+                         onChange={(e) => setEditingPlanData(prev => ({ ...prev, price_cents: e.target.value }))}
+                         className="w-full rounded-md border border-slate-200 p-1.5 text-xs font-bold focus:border-indigo-600 focus:outline-none" 
+                       />
+                     </div>
+                     <div>
+                       <label className="text-[8px] font-black uppercase text-slate-400">Photo Limit (empty = ∞)</label>
+                       <input 
+                         type="number" 
+                         value={editingPlanData.photo_limit} 
+                         onChange={(e) => setEditingPlanData(prev => ({ ...prev, photo_limit: e.target.value }))}
+                         className="w-full rounded-md border border-slate-200 p-1.5 text-xs font-bold focus:border-indigo-600 focus:outline-none" 
+                       />
+                     </div>
+                     <div>
+                       <label className="text-[8px] font-black uppercase text-slate-400">Storage (Days)</label>
+                       <input 
+                         type="number" 
+                         value={editingPlanData.storage_days} 
+                         onChange={(e) => setEditingPlanData(prev => ({ ...prev, storage_days: e.target.value }))}
+                         className="w-full rounded-md border border-slate-200 p-1.5 text-xs font-bold focus:border-indigo-600 focus:outline-none" 
+                       />
+                     </div>
+                   </div>
+                   <button 
+                     onClick={() => updatePlanMutation.mutate({ 
+                       id: plan.id, 
+                       data: {
+                         price_cents: parseInt(editingPlanData.price_cents),
+                         photo_limit: editingPlanData.photo_limit === "" ? null : parseInt(editingPlanData.photo_limit),
+                         storage_days: parseInt(editingPlanData.storage_days)
+                       }
+                     })}
+                     disabled={updatePlanMutation.isPending}
+                     className="w-full rounded-lg bg-indigo-600 py-1.5 text-[9px] font-black uppercase tracking-widest text-white hover:bg-indigo-700 disabled:opacity-50 transition-all active:scale-95"
+                   >
+                     {updatePlanMutation.isPending ? "Saving..." : "Save"}
+                   </button>
+                </div>
+              ) : (
+                <>
+                  <div>
+                    <div className="flex items-start justify-between">
+                      <h3 className="text-[10px] font-black uppercase text-slate-900 tracking-tight">{plan.name}</h3>
+                      <button 
+                        onClick={() => {
+                          setEditingPlanId(plan.id);
+                          setEditingPlanData({
+                            price_cents: plan.price_cents.toString(),
+                            photo_limit: plan.photo_limit?.toString() ?? "",
+                            storage_days: plan.storage_days?.toString() ?? "7"
+                          });
+                        }}
+                        className="text-slate-300 hover:text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <span className="material-symbols-outlined text-[14px]">edit</span>
+                      </button>
+                    </div>
+                    <p className="text-[11px] font-black text-indigo-600 mt-1">
+                       {getCurrencySymbol(plan.currency)}{plan.price_cents / 100}
+                    </p>
+                  </div>
+                  <div className="mt-2">
+                    <p className="text-[9px] font-medium text-slate-400 leading-tight line-clamp-2 mb-1">{plan.description}</p>
+                    <p className="text-[8px] font-black text-slate-300 uppercase tracking-widest">
+                       {plan.photo_limit ?? "∞"} Photos • {plan.storage_days} Days
+                    </p>
+                  </div>
+                </>
+              )}
             </div>
           ))}
         </div>
