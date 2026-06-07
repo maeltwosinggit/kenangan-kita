@@ -156,7 +156,7 @@ export async function listEventPhotosByCode(input: ListEventPhotosInput) {
     return {
       event,
       galleryOpen: false,
-      items: [] as Array<EventPhoto & { imageUrl: string }>,
+      items: [] as Array<EventPhoto & { imageUrl: string; thumbUrl: string }>,
       hasMore: false,
       page: input.page ?? 0
     };
