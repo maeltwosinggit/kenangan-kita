@@ -34,6 +34,7 @@ function Spinner({ className = "h-4 w-4" }: { className?: string }) {
 export default function AdminEventsClient({ events, creatorMap, onManageEvent }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState<string | null>(null); // stores href being navigated to
+  const [searchQuery, setSearchQuery] = useState("");
 
   const navigate = (href: string) => {
     setLoading(href);
@@ -42,11 +43,43 @@ export default function AdminEventsClient({ events, creatorMap, onManageEvent }:
 
   const busy = loading !== null;
 
+  const filteredEvents = events.filter((event) => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    const hostName = (event.created_by ? creatorMap[event.created_by] : "Unknown")?.toLowerCase() || "";
+    return (
+      event.name.toLowerCase().includes(query) ||
+      event.event_code.toLowerCase().includes(query) ||
+      hostName.includes(query)
+    );
+  });
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between px-1">
          <h1 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">All Events</h1>
       </div>
+      
+      {events.length > 0 && (
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Search by name, code, or host..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-sm font-medium text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-400"
+          />
+          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[20px] text-slate-400">search</span>
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              <span className="material-symbols-outlined text-[16px]">close</span>
+            </button>
+          )}
+        </div>
+      )}
 
       {events.length === 0 ? (
         <div className="rounded-2xl border-2 border-dashed border-slate-100 p-10 text-center animate-in fade-in duration-300">
@@ -62,9 +95,14 @@ export default function AdminEventsClient({ events, creatorMap, onManageEvent }:
             Create Event
           </button>
         </div>
+      ) : filteredEvents.length === 0 ? (
+        <div className="py-12 text-center rounded-2xl border-2 border-dashed border-slate-100">
+           <span className="material-symbols-outlined text-slate-200 text-4xl mb-2">search_off</span>
+           <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">No matching events</p>
+        </div>
       ) : (
         <div className="grid gap-4">
-          {events.map((event) => {
+          {filteredEvents.map((event) => {
             const href = `/admin/events/${event.id}`;
             const isThisLoading = loading === href;
             const expired = !isEventActive(event.event_date);
