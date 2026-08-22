@@ -2,7 +2,57 @@ import { getEventByCode, getLatestEventPhoto, getEventStats } from "@kenangan/li
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { headers } from "next/headers";
+import type { Metadata } from "next";
 import { EventViewHub } from "./_components/event-view-hub";
+
+/**
+ * Per-event metadata for social link previews (WhatsApp, Telegram, etc.).
+ * Emits Open Graph + Twitter tags so the shared link shows the event's
+ * cover photo and name instead of the generic site logo.
+ */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ eventCode: string }>;
+}): Promise<Metadata> {
+  const { eventCode } = await params;
+  const event = await getEventByCode(eventCode);
+
+  if (!event) {
+    return { title: "Event Not Found — Kenangan Kita" };
+  }
+
+  const supabase = await getSupabaseServerClient();
+
+  // Resolve the best preview image: event cover, else latest gallery photo.
+  let imageUrl: string | null = null;
+  if (event.cover_image_path) {
+    const { data } = supabase.storage.from("event-covers").getPublicUrl(event.cover_image_path);
+    imageUrl = data.publicUrl ?? null;
+  } else {
+    imageUrl = await getLatestEventPhoto(event.id);
+  }
+
+  const title = `${event.name} — Kenangan Kita`;
+  const description = "Join the digital disposable camera! Capture & share your favorite moments from this event.";
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: "website",
+      images: imageUrl ? [{ url: imageUrl }] : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: imageUrl ? [imageUrl] : undefined,
+    },
+  };
+}
 
 export default async function UnifiedEventPage({
   params,
