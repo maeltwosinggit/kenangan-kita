@@ -13,6 +13,7 @@ type Event = {
   reveal_mode: string;
   created_by: string | null;
   photoCount?: number;
+  coverImageUrl?: string | null;
 };
 
 type Props = { 
@@ -120,13 +121,21 @@ export default function AdminEventsClient({ events, creatorMap, onManageEvent }:
                 
                 <div className={`flex items-start gap-4 w-full overflow-hidden ${isThisLoading ? "opacity-40" : busy ? "opacity-50" : ""}`}>
                   {/* Thumbnail Container */}
-                  <div 
+                  <div
                     className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl shadow-inner border border-white/20 flex items-center justify-center"
                     style={{
                       background: `linear-gradient(135deg, hsl(${(event.name.charCodeAt(0) * 137) % 360}, 80%, 75%), hsl(${((event.name.charCodeAt(0) * 137) + 40) % 360}, 70%, 60%))`
                     }}
                   >
-                    <span className="text-3xl font-black text-white mix-blend-overlay opacity-90 drop-shadow-md">{event.name.charAt(0).toUpperCase()}</span>
+                    {event.coverImageUrl ? (
+                      <img
+                        src={event.coverImageUrl}
+                        alt={event.name}
+                        className="absolute inset-0 h-full w-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-3xl font-black text-white mix-blend-overlay opacity-90 drop-shadow-md">{event.name.charAt(0).toUpperCase()}</span>
+                    )}
                     
                     {/* Status Badge overlay (Top Left) */}
                     <div className="absolute top-1 left-1 flex items-center">
