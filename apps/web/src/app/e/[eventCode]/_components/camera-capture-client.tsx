@@ -362,8 +362,8 @@ export function CameraCaptureClient({ eventCode, themeFilter = "normal", guestNi
               <div className="h-1.5 w-32 overflow-hidden rounded-full bg-white/20"><div className={["h-full rounded-full transition-all duration-500", limitStatus.isUserLimitReached ? "bg-red-500" : "bg-white"].join(" ")} style={{ width: `${Math.min(100, (limitStatus.uploadCount / limitStatus.userLimit) * 100)}%` }} /></div>
 
               {limitStatus.isUserLimitReached && !userId && (
-                 <Link 
-                   href="/login" 
+                 <Link
+                   href={`/login?next=${encodeURIComponent(`/e/${eventCode}?tab=camera`)}`}
                    className="mt-2 flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-900 shadow-xl animate-in fade-in slide-in-from-bottom-2"
                  >
                    <span className="material-symbols-outlined text-[16px]">login</span>
