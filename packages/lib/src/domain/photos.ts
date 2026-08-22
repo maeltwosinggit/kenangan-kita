@@ -40,7 +40,7 @@ export async function uploadEventPhoto(input: UploadPhotoInput, supabaseClient?:
 
   // 2. Check per-user limit
   if (!input.uploaderId) {
-    // ANONYMOUS GUEST: Limit to 2 photos total
+    // ANONYMOUS GUEST: Limit to 10 photos total
     if (input.guestId) {
       const { count, error: countError } = await supabase
         .from("photos")
@@ -50,7 +50,7 @@ export async function uploadEventPhoto(input: UploadPhotoInput, supabaseClient?:
         .eq("is_deleted", false);
 
       if (countError) throw countError;
-      if ((count ?? 0) >= 2) {
+      if ((count ?? 0) >= 10) {
         throw new Error("Guest limit reached. Please sign in to upload more photos.");
       }
     }

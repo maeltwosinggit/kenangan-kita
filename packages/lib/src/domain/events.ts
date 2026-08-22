@@ -398,9 +398,9 @@ export async function checkUserUploadLimit(
   // 2. Per User Limit is only enforced if upload_limit_enabled is true (Host Preference).
   const isPerGuestLimitEnabled: boolean = statsRow?.limit_enabled ?? false;
   
-  // Anonymous Limit: Fixed at 2 photos per guest ID if not logged in.
+  // Anonymous Limit: Fixed at 10 photos per guest ID if not logged in.
   const isAnonymous = !userId;
-  const anonLimit = 2;
+  const anonLimit = 10;
 
   const userLimit: number | null  = isAnonymous 
     ? anonLimit 
