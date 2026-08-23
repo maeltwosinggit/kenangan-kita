@@ -49,9 +49,11 @@ function RoleBadge({ isCreated }: { isCreated: boolean }) {
 
 function EventThumbnail({
   name,
+  coverImageUrl,
   grayscale,
 }: {
   name: string;
+  coverImageUrl?: string | null;
   grayscale: boolean;
 }) {
   const initial = name.charAt(0).toUpperCase();
@@ -60,16 +62,24 @@ function EventThumbnail({
   const hue = (charCode * 137) % 360;
 
   return (
-    <div 
+    <div
       className={[
-        "flex h-24 w-24 shrink-0 items-center justify-center rounded-xl shadow-inner border border-white/20",
+        "relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl shadow-inner border border-white/20",
         grayscale ? "grayscale opacity-60" : ""
       ].join(" ")}
       style={{
         background: `linear-gradient(135deg, hsl(${hue}, 80%, 75%), hsl(${(hue + 40) % 360}, 70%, 60%))`
       }}
     >
-      <span className="text-3xl font-black text-white mix-blend-overlay opacity-90 drop-shadow-md">{initial}</span>
+      {coverImageUrl ? (
+        <img
+          src={coverImageUrl}
+          alt={name}
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+      ) : (
+        <span className="text-3xl font-black text-white mix-blend-overlay opacity-90 drop-shadow-md">{initial}</span>
+      )}
     </div>
   );
 }
@@ -135,7 +145,7 @@ export function EventCard({ event, isCreated = false, onManage }: EventCardProps
     >
       {/* ── Top row: thumbnail + meta ── */}
       <div className="flex gap-4">
-        <EventThumbnail name={event.name} grayscale={isArchived} />
+        <EventThumbnail name={event.name} coverImageUrl={event.coverImageUrl} grayscale={isArchived} />
 
         <div className="flex-1 min-w-0">
           {/* Name + status badge on same row */}
